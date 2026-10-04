@@ -10,6 +10,7 @@
   window.FreeIPTV = window.FreeIPTV || {};
 
   var previousFocusedElement = null;
+  var previousRoute = 'playlists';
   var isOpen = false;
   var isLoading = false;
   var activeTab = 'm3u'; // 'm3u' | 'xtream'
@@ -56,6 +57,14 @@
       if (tabXtream) {
         tabXtream.addEventListener('click', function () {
           self.switchTab('xtream');
+        });
+      }
+
+      // Top Back Button
+      var btnPageBack = document.getElementById('btn-add-playlist-back');
+      if (btnPageBack) {
+        btnPageBack.addEventListener('click', function () {
+          self.close();
         });
       }
 
@@ -139,6 +148,19 @@
       }
 
       // Xtream Keyboard Navigation
+      var inputXtreamName = document.getElementById('input-xtream-name');
+      if (inputXtreamName) {
+        inputXtreamName.addEventListener('keydown', function (e) {
+          if (e.keyCode === 13) {
+            e.preventDefault();
+            var nextS = document.getElementById('input-xtream-server');
+            if (nextS && window.FreeIPTV.Navigation) {
+              window.FreeIPTV.Navigation.focus(nextS);
+            }
+          }
+        });
+      }
+
       var inputServer = document.getElementById('input-xtream-server');
       if (inputServer) {
         inputServer.addEventListener('keydown', function (e) {
@@ -201,10 +223,12 @@
         if (panelM3u) panelM3u.classList.add('hidden');
         if (panelXtream) panelXtream.classList.remove('hidden');
 
+        var nameInputXtream = document.getElementById('input-xtream-name');
         var serverInput = document.getElementById('input-xtream-server');
-        if (serverInput && window.FreeIPTV.Navigation) {
+        var targetToFocus = nameInputXtream || serverInput;
+        if (targetToFocus && window.FreeIPTV.Navigation) {
           setTimeout(function () {
-            window.FreeIPTV.Navigation.focus(serverInput);
+            window.FreeIPTV.Navigation.focus(targetToFocus);
           }, 50);
         }
       } else {
@@ -238,14 +262,32 @@
       if (!overlay) return;
 
       previousFocusedElement = window.FreeIPTV.Navigation ? window.FreeIPTV.Navigation.getCurrent() : null;
+      if (window.FreeIPTV.Navigation && window.FreeIPTV.Navigation.getCurrentRoute) {
+        var cr = window.FreeIPTV.Navigation.getCurrentRoute();
+        if (cr && cr !== 'add_playlist') {
+          previousRoute = cr;
+        }
+      }
       isOpen = true;
       isLoading = false;
 
       this.showFormState();
-      overlay.classList.remove('hidden');
 
-      if (window.FreeIPTV.I18n) {
-        window.FreeIPTV.I18n.updateDOM(overlay);
+      if (window.FreeIPTV.Home && window.FreeIPTV.Home.switchView) {
+        window.FreeIPTV.Home.switchView('add_playlist');
+      } else {
+        var addView = document.getElementById('view-add_playlist');
+        if (addView) addView.classList.remove('hidden');
+      }
+
+      var overlay = document.getElementById('modal-overlay');
+      if (overlay) {
+        overlay.classList.remove('hidden');
+      }
+
+      var addPlScreen = document.getElementById('view-add_playlist');
+      if (addPlScreen && window.FreeIPTV.I18n) {
+        window.FreeIPTV.I18n.updateDOM(addPlScreen);
       }
 
       // Clear input fields
@@ -254,9 +296,11 @@
       if (nameInput) nameInput.value = '';
       if (urlInput) urlInput.value = '';
 
+      var xtreamNameInput = document.getElementById('input-xtream-name');
       var serverInput = document.getElementById('input-xtream-server');
       var usernameInput = document.getElementById('input-xtream-username');
       var passwordInput = document.getElementById('input-xtream-password');
+      if (xtreamNameInput) xtreamNameInput.value = '';
       if (serverInput) serverInput.value = '';
       if (usernameInput) usernameInput.value = '';
       if (passwordInput) passwordInput.value = '';
@@ -290,6 +334,11 @@
     close: function () {
       if (!isOpen) return;
 
+      var addView = document.getElementById('view-add_playlist');
+      if (addView) {
+        addView.classList.add('hidden');
+      }
+
       var overlay = document.getElementById('modal-overlay');
       if (overlay) {
         overlay.classList.add('hidden');
@@ -300,6 +349,11 @@
 
       if (window.FreeIPTV.Remote) {
         window.FreeIPTV.Remote.popBackHandler();
+      }
+
+      var returnRoute = (previousRoute && previousRoute !== 'add_playlist') ? previousRoute : 'playlists';
+      if (window.FreeIPTV.Home && window.FreeIPTV.Home.switchView) {
+        window.FreeIPTV.Home.switchView(returnRoute);
       }
 
       if (window.FreeIPTV.Navigation && previousFocusedElement && document.body.contains(previousFocusedElement)) {
@@ -433,10 +487,12 @@
     submitXtream: function () {
       if (isLoading) return;
 
+      var xtreamNameInput = document.getElementById('input-xtream-name');
       var serverInput = document.getElementById('input-xtream-server');
       var usernameInput = document.getElementById('input-xtream-username');
       var passwordInput = document.getElementById('input-xtream-password');
 
+      var customName = xtreamNameInput ? xtreamNameInput.value.trim() : '';
       var server = serverInput ? serverInput.value.trim() : '';
       var username = usernameInput ? usernameInput.value.trim() : '';
       var password = passwordInput ? passwordInput.value.trim() : '';
@@ -469,7 +525,7 @@
         return;
       }
 
-      var providerName = 'Xtream (' + (username || 'IPTV') + ')';
+      var providerName = customName || 'Xtream IPTV';
 
       PlaylistManager.addXtreamPlaylist(providerName, server, username, password)
         .then(function (result) {
@@ -482,6 +538,10 @@
           var liveTvNav = document.querySelector('[data-route="live_tv"]');
           if (liveTvNav) {
             liveTvNav.click();
+          } else if (window.FreeIPTV.Home && window.FreeIPTV.Home.switchView) {
+            window.FreeIPTV.Home.switchView('live_tv');
+          } else if (window.FreeIPTV.Navigation && window.FreeIPTV.Navigation.switchView) {
+            window.FreeIPTV.Navigation.switchView('live_tv');
           }
         })
         .catch(function (error) {

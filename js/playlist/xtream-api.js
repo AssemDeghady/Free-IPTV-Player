@@ -1058,16 +1058,47 @@
       }
 
       // 1. Process Seasons
-      if (Array.isArray(rawInfo.seasons)) {
-        for (var i = 0; i < rawInfo.seasons.length; i++) {
-          var s = rawInfo.seasons[i];
-          if (!s) continue;
-          var sNum = s.season_number !== undefined ? Number(s.season_number) : (i + 1);
-          var sName = s.name ? String(s.name).trim() : 'Season ' + sNum;
-          var epCount = s.episode_count !== undefined ? Number(s.episode_count) : 0;
+      var rawSeasons = rawInfo.seasons;
+      var rawSeasonList = [];
 
+      if (Array.isArray(rawSeasons)) {
+        rawSeasonList = rawSeasons;
+      } else if (rawSeasons && typeof rawSeasons === 'object') {
+        var sKeys = Object.keys(rawSeasons);
+        for (var sk = 0; sk < sKeys.length; sk++) {
+          var item = rawSeasons[sKeys[sk]];
+          if (item && typeof item === 'object') {
+            if (item.season_number === undefined && item.season_num === undefined && item.season === undefined) {
+              item.season_number = sKeys[sk];
+            }
+            rawSeasonList.push(item);
+          }
+        }
+      }
+
+      var seenSeasons = {};
+      for (var i = 0; i < rawSeasonList.length; i++) {
+        var s = rawSeasonList[i];
+        if (!s) continue;
+        var rawNum = s.season_number !== undefined ? s.season_number :
+                     (s.season_num !== undefined ? s.season_num :
+                     (s.season !== undefined ? s.season :
+                     (s.seasonNumber !== undefined ? s.seasonNumber : (i + 1))));
+        var sNum = parseInt(String(rawNum), 10);
+        if (isNaN(sNum)) {
+          sNum = i + 1;
+        }
+
+        var sName = s.name ? String(s.name).trim() :
+                    (s.title ? String(s.title).trim() : 'Season ' + sNum);
+        var epCount = s.episode_count !== undefined ? Number(s.episode_count) :
+                      (s.episodeCount !== undefined ? Number(s.episodeCount) : 0);
+        var customId = s.id || s.season_id ? String(s.id || s.season_id) : ('season_' + pId + '_' + sId + '_' + sNum);
+
+        if (!seenSeasons[sNum]) {
+          seenSeasons[sNum] = true;
           seasons.push({
-            id: 'season_' + pId + '_' + sId + '_' + sNum,
+            id: customId,
             seriesId: sId,
             seasonNumber: sNum,
             name: sName,
@@ -1076,7 +1107,7 @@
         }
       }
 
-      // Sort seasons by seasonNumber
+      // Sort seasons ascending by seasonNumber
       seasons.sort(function (a, b) { return a.seasonNumber - b.seasonNumber; });
 
       // 2. Process Episodes

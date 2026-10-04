@@ -55,25 +55,31 @@
       var PlaylistManager = window.FreeIPTV.PlaylistManager;
       var activePlaylist = PlaylistManager ? PlaylistManager.getActivePlaylist() : null;
 
+      var onboardingArea = document.getElementById('home-onboarding-area');
       var emptyCard = document.getElementById('home-empty-card');
       var dashboardContent = document.getElementById('home-dashboard-content');
       var btnAddPlaylist = document.getElementById('btn-add-playlist');
 
       if (!activePlaylist) {
+        if (onboardingArea) onboardingArea.classList.remove('hidden');
         if (emptyCard) emptyCard.classList.remove('hidden');
         if (dashboardContent) dashboardContent.classList.add('hidden');
         if (btnAddPlaylist) btnAddPlaylist.style.display = 'inline-flex';
         return;
       }
 
+      if (onboardingArea) onboardingArea.classList.add('hidden');
       if (emptyCard) emptyCard.classList.add('hidden');
       if (dashboardContent) dashboardContent.classList.remove('hidden');
       if (btnAddPlaylist) btnAddPlaylist.style.display = 'none';
 
-      this.renderProviderBanner(activePlaylist);
+      var bannerEl = document.getElementById('home-provider-banner');
+      if (bannerEl) bannerEl.innerHTML = '';
+      var actionsEl = document.getElementById('home-quick-actions-row');
+      if (actionsEl) actionsEl.innerHTML = '';
+      this.renderQuickAccess(activePlaylist);
       this.renderContinueWatching();
       this.renderRecentlyWatched();
-      this.renderQuickActions(activePlaylist);
     },
 
     /**
@@ -91,12 +97,13 @@
       var movieCount = playlist.movieCount || 0;
       var seriesCount = playlist.seriesCount || 0;
       var formatCount = (PlaylistManager && PlaylistManager.formatChannelCount) ? PlaylistManager.formatChannelCount : function (n) { return n; };
+      var playlistName = (PlaylistManager && PlaylistManager.getDisplayName) ? PlaylistManager.getDisplayName(playlist) : playlist.name;
 
       var html = '';
       html += '<div class="home-banner-card">';
       html += '  <div class="home-banner-info">';
       html += '    <div class="home-banner-type-badge">' + typeLabel + '</div>';
-      html += '    <h2 class="home-banner-title">' + this.escapeHtml(playlist.name) + '</h2>';
+      html += '    <h2 class="home-banner-title">' + this.escapeHtml(playlistName) + '</h2>';
       html += '    <div class="home-banner-stats">';
       html += '      <span class="home-stat-pill"><strong id="home-stat-channels-val">' + formatCount(liveCount) + '</strong> ' + (I18n ? I18n.t('home.stat_channels') : 'Channels') + '</span>';
       if (movieCount > 0) {
@@ -120,6 +127,118 @@
           }
         }).catch(function () {});
       }
+    },
+
+    /**
+     * Render Quick Access primary navigation cards on the Home screen.
+     * @param {Object} playlist
+     */
+    renderQuickAccess: function (playlist) {
+      var container = document.getElementById('home-quick-access-section');
+      if (!container) return;
+
+      var I18n = window.FreeIPTV.I18n;
+      var PlaylistManager = window.FreeIPTV.PlaylistManager;
+      var formatCount = (PlaylistManager && PlaylistManager.formatChannelCount) ? PlaylistManager.formatChannelCount : function (n) { return n; };
+
+      var liveCount = playlist ? (playlist.liveCount !== undefined ? playlist.liveCount : (playlist.channelCount !== undefined ? playlist.channelCount : 0)) : 0;
+      var movieCount = playlist ? (playlist.movieCount || 0) : 0;
+      var seriesCount = playlist ? (playlist.seriesCount || 0) : 0;
+      var favCount = PlaylistManager ? PlaylistManager.getFavorites().length : 0;
+      var playlistCount = PlaylistManager ? PlaylistManager.getPlaylists().length : 0;
+
+      var html = '';
+      html += '<div class="home-section-header">';
+      html += '  <h3 class="home-section-title">' + (I18n ? I18n.t('home.quick_access') : 'Quick Access') + '</h3>';
+      html += '</div>';
+
+      html += '<div class="home-quick-access-grid" role="region" aria-label="Quick Access Navigation">';
+
+      // 1. Live TV
+      html += '<button class="home-quick-card card-live focusable" data-nav-zone="home_quick_access" data-route-target="live_tv" data-initial-focus="true" aria-label="Live TV">';
+      html += '  <div class="quick-card-icon-wrap icon-live">';
+      html += '    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z"/></svg>';
+      html += '  </div>';
+      html += '  <div class="quick-card-info">';
+      html += '    <span class="quick-card-title">' + (I18n ? I18n.t('nav.live_tv') : 'Live TV') + '</span>';
+      html += '    <span class="quick-card-badge" id="quick-badge-live">' + (liveCount > 0 ? formatCount(liveCount) + ' ' + (I18n ? I18n.t('home.stat_channels') : 'Channels') : 'Watch Live') + '</span>';
+      html += '  </div>';
+      html += '</button>';
+
+      // 2. Movies
+      html += '<button class="home-quick-card card-movies focusable" data-nav-zone="home_quick_access" data-route-target="movies" aria-label="Movies">';
+      html += '  <div class="quick-card-icon-wrap icon-movies">';
+      html += '    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/></svg>';
+      html += '  </div>';
+      html += '  <div class="quick-card-info">';
+      html += '    <span class="quick-card-title">' + (I18n ? I18n.t('nav.movies') : 'Movies') + '</span>';
+      html += '    <span class="quick-card-badge" id="quick-badge-movies">' + (movieCount > 0 ? formatCount(movieCount) + ' ' + (I18n ? I18n.t('home.stat_movies') : 'Movies') : 'VOD Films') + '</span>';
+      html += '  </div>';
+      html += '</button>';
+
+      // 3. Series
+      html += '<button class="home-quick-card card-series focusable" data-nav-zone="home_quick_access" data-route-target="series" aria-label="Series">';
+      html += '  <div class="quick-card-icon-wrap icon-series">';
+      html += '    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>';
+      html += '  </div>';
+      html += '  <div class="quick-card-info">';
+      html += '    <span class="quick-card-title">' + (I18n ? I18n.t('nav.series') : 'Series') + '</span>';
+      html += '    <span class="quick-card-badge" id="quick-badge-series">' + (seriesCount > 0 ? formatCount(seriesCount) + ' ' + (I18n ? I18n.t('home.stat_series') : 'Series') : 'TV Shows') + '</span>';
+      html += '  </div>';
+      html += '</button>';
+
+      // 4. Favorites
+      html += '<button class="home-quick-card card-favorites focusable" data-nav-zone="home_quick_access" data-route-target="favorites" aria-label="Favorites">';
+      html += '  <div class="quick-card-icon-wrap icon-favorites">';
+      html += '    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>';
+      html += '  </div>';
+      html += '  <div class="quick-card-info">';
+      html += '    <span class="quick-card-title">' + (I18n ? I18n.t('nav.favorites') : 'Favorites') + '</span>';
+      html += '    <span class="quick-card-badge">' + (favCount > 0 ? favCount + ' Saved' : 'Bookmarked') + '</span>';
+      html += '  </div>';
+      html += '</button>';
+
+      // 5. Playlists
+      html += '<button class="home-quick-card card-playlists focusable" data-nav-zone="home_quick_access" data-route-target="playlists" aria-label="Playlists">';
+      html += '  <div class="quick-card-icon-wrap icon-playlists">';
+      html += '    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12zm-7-2h2v-4h4V8h-4V4h-2v4H9v2h4v4z"/></svg>';
+      html += '  </div>';
+      html += '  <div class="quick-card-info">';
+      html += '    <span class="quick-card-title">' + (I18n ? I18n.t('nav.playlists') : 'Playlists') + '</span>';
+      html += '    <span class="quick-card-badge">' + (playlistCount > 0 ? playlistCount + ' Active' : 'Manage') + '</span>';
+      html += '  </div>';
+      html += '</button>';
+
+      html += '</div>';
+
+      container.innerHTML = html;
+
+      // Bind clicks to switchView
+      var self = this;
+      var cards = container.querySelectorAll('.home-quick-card');
+      for (var c = 0; c < cards.length; c++) {
+        cards[c].addEventListener('click', function (e) {
+          var targetRoute = e.currentTarget.getAttribute('data-route-target');
+          self.switchView(targetRoute);
+          self.focusFirstElementInView(targetRoute);
+        });
+      }
+    },
+
+    /**
+     * Set focus to the first interactive element of a target view.
+     * @param {string} route
+     */
+    focusFirstElementInView: function (route) {
+      setTimeout(function () {
+        var viewEl = document.getElementById('view-' + route);
+        if (!viewEl) return;
+        var firstFocusable = viewEl.querySelector('.focusable.active') ||
+                             viewEl.querySelector('.focusable:not([tabindex="-1"])');
+        if (firstFocusable && window.FreeIPTV.Navigation) {
+          window.FreeIPTV.Navigation.focus(firstFocusable);
+        }
+      }, 50);
     },
 
     /**
@@ -206,21 +325,24 @@
       var mediaBox = document.createElement('div');
       mediaBox.className = 'home-card-media';
 
-      if (item.poster) {
+      var fallback = document.createElement('div');
+      fallback.className = 'home-card-fallback';
+      fallback.innerHTML = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+
+      var posterUrl = item.posterUrl || item.poster || item.logoUrl || item.thumbnailUrl || item.cover || '';
+      if (posterUrl) {
         var img = document.createElement('img');
-        img.src = item.poster;
+        img.src = posterUrl;
         img.alt = '';
         img.loading = 'lazy';
         img.onerror = function () {
           this.style.display = 'none';
+          fallback.style.display = 'flex';
         };
         mediaBox.appendChild(img);
-      } else {
-        var fallback = document.createElement('div');
-        fallback.className = 'home-card-fallback';
-        fallback.innerHTML = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
-        mediaBox.appendChild(fallback);
+        fallback.style.display = 'none';
       }
+      mediaBox.appendChild(fallback);
 
       // Progress bar if requested
       if (showProgress && item.durationSec > 0 && item.positionSec > 0) {
@@ -257,23 +379,27 @@
             id: item.contentId,
             name: item.title,
             streamUrl: item.streamUrl,
-            logoUrl: item.poster
+            logoUrl: item.posterUrl || item.poster || item.logoUrl
           });
         } else if (item.contentType === 'movie' && window.FreeIPTV.Player) {
           var resumePos = (item.positionSec || 0) * 1000;
           window.FreeIPTV.Player.playMovie({
             streamId: item.contentId,
+            id: item.contentId,
             name: item.title,
-            poster: item.poster,
+            posterUrl: item.posterUrl || item.poster || '',
+            poster: item.posterUrl || item.poster || '',
             streamUrl: item.streamUrl
           }, resumePos);
         } else if (item.contentType === 'episode' && window.FreeIPTV.Player) {
           var epResume = (item.positionSec || 0) * 1000;
           window.FreeIPTV.Player.playEpisode({
             seriesId: item.seriesId,
+            id: item.seriesId,
             name: item.title,
-            poster: item.poster
-          }, 1, {
+            posterUrl: item.posterUrl || item.poster || '',
+            poster: item.posterUrl || item.poster || ''
+          }, item.seasonNumber || 1, {
             id: item.contentId,
             title: item.subtitle,
             streamUrl: item.streamUrl
@@ -410,6 +536,16 @@
         var homeView = document.getElementById('view-home');
         if (homeView) homeView.classList.remove('hidden');
       }
+
+      if (window.FreeIPTV.Navigation && typeof window.FreeIPTV.Navigation.setCurrentRoute === 'function') {
+        window.FreeIPTV.Navigation.setCurrentRoute(route);
+      }
+
+      if (window.FreeIPTV.Events && window.FreeIPTV.Constants) {
+        window.FreeIPTV.Events.emit(window.FreeIPTV.Constants.EVENTS.VIEW_CHANGED, {
+          route: route
+        });
+      }
     },
 
     /**
@@ -423,6 +559,13 @@
           if (window.FreeIPTV.Modal) {
             window.FreeIPTV.Modal.showAddPlaylist();
           }
+        });
+      }
+
+      var learnMoreBtn = document.getElementById('btn-learn-more');
+      if (learnMoreBtn) {
+        learnMoreBtn.addEventListener('click', function () {
+          self.switchView('settings');
         });
       }
 

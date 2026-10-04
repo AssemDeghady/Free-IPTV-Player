@@ -12,10 +12,13 @@
   var allMovies = [];
   var filteredMovies = [];
   var currentSearchQuery = '';
+  var categorySearchQuery = '';
+  var rawCategories = [];
   var renderedCount = 0;
   var CHUNK_SIZE = 30; // Batch size for TV performance
   var selectedMovie = null;
   var isDetailsOpen = false;
+  var originRoute = 'movies';
   var previousFocusedElement = null;
 
   var Movies = {
@@ -44,6 +47,13 @@
         });
       }
 
+      var catSearchInput = document.getElementById('movies-category-search-input');
+      if (catSearchInput) {
+        catSearchInput.addEventListener('input', function (e) {
+          self.setCategorySearchQuery(e.target.value);
+        });
+      }
+
       if (window.FreeIPTV.Events && window.FreeIPTV.Constants) {
         window.FreeIPTV.Events.on(window.FreeIPTV.Constants.EVENTS.VIEW_CHANGED, function (data) {
           if (data && data.route === 'movies') {
@@ -51,6 +61,9 @@
           }
         });
         window.FreeIPTV.Events.on(window.FreeIPTV.Constants.EVENTS.PLAYLIST_ACTIVE_CHANGED, function () {
+          var input = document.getElementById('movies-category-search-input');
+          if (input) input.value = '';
+          self.categorySearchQuery = '';
           self.loadActiveMovies();
         });
         window.FreeIPTV.Events.on(window.FreeIPTV.Constants.EVENTS.PLAYLIST_UPDATED, function () {
@@ -93,47 +106,76 @@
 
       PlaylistManager.loadMovies(activePlaylist.id).then(function (result) {
         allMovies = result.movies || [];
-        self.renderCategories(result.categories || []);
+        rawCategories = result.categories || [];
+        self.renderCategories(rawCategories);
         self.applyFilter();
       }).catch(function (err) {
         self.renderEmptyState('Unable to load movies: ' + (err.message || 'Error'));
       });
     },
 
+    categorySearchQuery: '',
+
+    /**
+     * Update category search query and filter categories.
+     * @param {string} query
+     */
+    setCategorySearchQuery: function (query) {
+      this.categorySearchQuery = (query || '').trim().toLowerCase();
+      this.renderCategories();
+    },
+
     /**
      * Render the categories column.
-     * @param {Array<string>} categories
+     * @param {Array<string>} [categories]
      */
     renderCategories: function (categories) {
       var container = document.getElementById('movies-categories-list');
       if (!container) return;
 
+      if (categories && Array.isArray(categories)) {
+        rawCategories = categories;
+      }
+      var cats = rawCategories || [];
+
       container.innerHTML = '';
       var self = this;
+      var q = (this.categorySearchQuery || '').trim().toLowerCase();
 
-      // 1. "All Movies" Category
-      var allItem = document.createElement('button');
-      allItem.className = 'category-item focusable' + (activeCategory === 'all' ? ' active' : '');
-      allItem.setAttribute('data-nav-zone', 'movies_categories');
-      allItem.setAttribute('data-category', 'all');
+      // 1. "All Movies" Category (shown when no search query or when 'all' matches)
+      if (!q || 'all movies'.indexOf(q) !== -1 || 'all'.indexOf(q) !== -1) {
+        var allItem = document.createElement('button');
+        allItem.className = 'category-item focusable' + (activeCategory === 'all' ? ' active' : '');
+        allItem.setAttribute('data-nav-zone', 'movies_categories');
+        allItem.setAttribute('data-category', 'all');
 
-      var allLabel = document.createElement('span');
-      allLabel.textContent = window.FreeIPTV.I18n ? window.FreeIPTV.I18n.t('movies.all_movies') : 'All Movies';
-      var allCount = document.createElement('span');
-      allCount.className = 'category-count';
-      allCount.textContent = String(allMovies.length);
+        var allLabel = document.createElement('span');
+        allLabel.textContent = window.FreeIPTV.I18n ? window.FreeIPTV.I18n.t('movies.all_movies') : 'All Movies';
+        var allCount = document.createElement('span');
+        allCount.className = 'category-count';
+        allCount.textContent = String(allMovies.length);
 
-      allItem.appendChild(allLabel);
-      allItem.appendChild(allCount);
+        allItem.appendChild(allLabel);
+        allItem.appendChild(allCount);
 
-      allItem.addEventListener('click', function () {
-        self.selectCategory('all', allItem);
-      });
-      container.appendChild(allItem);
+        allItem.addEventListener('click', function () {
+          self.selectCategory('all', allItem);
+        });
+        container.appendChild(allItem);
+      }
 
-      // 2. Provider categories
-      for (var i = 0; i < categories.length; i++) {
-        var catName = categories[i];
+      // 2. Provider categories filtered by category quick filter
+      var filteredCats = cats;
+      if (q) {
+        filteredCats = cats.filter(function (cat) {
+          var name = typeof cat === 'object' ? (cat.category_name || cat.name || '') : String(cat || '');
+          return name.toLowerCase().indexOf(q) !== -1;
+        });
+      }
+
+      for (var i = 0; i < filteredCats.length; i++) {
+        var cat = filteredCats[i];
+        var catName = typeof cat === 'object' ? (cat.category_name || cat.name || '') : String(cat || '');
         var catItem = document.createElement('button');
         catItem.className = 'category-item focusable' + (activeCategory === catName ? ' active' : '');
         catItem.setAttribute('data-nav-zone', 'movies_categories');
@@ -202,7 +244,10 @@
 
       var countLabel = document.getElementById('movies-count-label');
       if (countLabel) {
-        var tmpl = window.FreeIPTV.I18n ? window.FreeIPTV.I18n.t('movies.movie_count') : '{count} Movies';
+        var tmpl = window.FreeIPTV.I18n ? window.FreeIPTV.I18n.t('movies.movie_count') : '';
+        if (!tmpl || tmpl === 'movies.movie_count' || tmpl.indexOf('{count}') === -1) {
+          tmpl = '{count} Movies';
+        }
         countLabel.textContent = tmpl.replace('{count}', filteredMovies.length);
       }
 
@@ -259,18 +304,19 @@
 
       // Poster Container
       var posterBox = document.createElement('div');
-      posterBox.className = 'movie-poster-box';
+      posterBox.className = 'movie-poster-wrap movie-poster-box';
 
       var fallbackSvg = document.createElement('div');
       fallbackSvg.className = 'poster-fallback-icon';
       fallbackSvg.innerHTML = '<svg viewBox="0 0 24 24"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/></svg>';
 
-      if (movie.posterUrl) {
+      var posterUrl = movie.posterUrl || movie.poster || movie.streamIcon || movie.cover || '';
+      if (posterUrl) {
         var img = document.createElement('img');
         img.className = 'movie-poster-img';
         img.alt = '';
         img.loading = 'lazy';
-        img.src = movie.posterUrl;
+        img.src = posterUrl;
 
         img.onerror = function () {
           this.style.display = 'none';
@@ -291,36 +337,13 @@
         posterBox.appendChild(ratingBadge);
       }
 
-      // Title & Year info
-      var titleBox = document.createElement('div');
-      titleBox.className = 'movie-info-box';
-
+      // Title overlay on cover (clean name only)
       var title = document.createElement('div');
-      title.className = 'movie-title';
-      title.textContent = movie.name;
-      titleBox.appendChild(title);
-
-      var subRow = document.createElement('div');
-      subRow.className = 'movie-sub-row';
-
-      if (movie.releaseDate) {
-        var yearSpan = document.createElement('span');
-        yearSpan.className = 'movie-year';
-        yearSpan.textContent = String(movie.releaseDate).slice(0, 4);
-        subRow.appendChild(yearSpan);
-      }
-
-      if (movie.categoryName) {
-        var catSpan = document.createElement('span');
-        catSpan.className = 'movie-cat';
-        catSpan.textContent = movie.categoryName;
-        subRow.appendChild(catSpan);
-      }
-
-      titleBox.appendChild(subRow);
+      title.className = 'poster-title-overlay';
+      title.textContent = (window.FreeIPTV.cleanTitle ? window.FreeIPTV.cleanTitle(movie.name) : movie.name);
+      posterBox.appendChild(title);
 
       card.appendChild(posterBox);
-      card.appendChild(titleBox);
 
       card.addEventListener('click', function () {
         self.openMovieDetails(movie);
@@ -346,43 +369,43 @@
     // ==========================================
 
     /**
-     * Bind click and key events for movie details modal.
+     * Bind click and key events for movie details page.
      */
     bindDetailsModalEvents: function () {
       var self = this;
 
-      var btnPlay = document.getElementById('btn-movie-play');
+      var btnPlay = document.getElementById('btn-movie-play') || document.getElementById('movie-btn-play');
       if (btnPlay) {
         btnPlay.addEventListener('click', function () {
           if (selectedMovie && window.FreeIPTV.Player) {
-            self.closeMovieDetails();
             window.FreeIPTV.Player.playMovie(selectedMovie, 0);
           }
         });
       }
 
-      var btnResume = document.getElementById('btn-movie-resume');
+      var btnResume = document.getElementById('btn-movie-resume') || document.getElementById('movie-btn-resume');
       if (btnResume) {
         btnResume.addEventListener('click', function () {
           if (selectedMovie && window.FreeIPTV.Player) {
             var progress = window.FreeIPTV.PlaylistManager ? window.FreeIPTV.PlaylistManager.getPlaybackProgress(selectedMovie.id) : null;
             var pos = progress ? progress.positionSeconds : 0;
-            self.closeMovieDetails();
             window.FreeIPTV.Player.playMovie(selectedMovie, pos);
           }
         });
       }
 
-      var btnFav = document.getElementById('btn-movie-fav');
+      var btnFav = document.getElementById('btn-movie-fav') || document.getElementById('movie-btn-fav');
       if (btnFav) {
         btnFav.addEventListener('click', function () {
           if (selectedMovie && window.FreeIPTV.PlaylistManager) {
+            var posterUrl = selectedMovie.posterUrl || selectedMovie.poster || selectedMovie.streamIcon || selectedMovie.cover || '';
             var isFav = window.FreeIPTV.PlaylistManager.toggleFavoriteItem({
               providerId: selectedMovie.providerId,
               contentType: 'movie',
               contentId: selectedMovie.id,
               title: selectedMovie.name,
-              posterUrl: selectedMovie.posterUrl,
+              posterUrl: posterUrl,
+              poster: posterUrl,
               streamUrl: selectedMovie.streamUrl,
               categoryName: selectedMovie.categoryName
             });
@@ -391,33 +414,45 @@
         });
       }
 
-      var btnBack = document.getElementById('btn-movie-back');
-      if (btnBack) {
-        btnBack.addEventListener('click', function () {
-          self.closeMovieDetails();
-        });
+      var backBtns = [
+        document.getElementById('btn-movie-page-back'),
+        document.getElementById('btn-movie-back'),
+        document.getElementById('movie-btn-back')
+      ];
+      for (var b = 0; b < backBtns.length; b++) {
+        if (backBtns[b]) {
+          backBtns[b].addEventListener('click', function () {
+            self.closeMovieDetails();
+          });
+        }
       }
     },
 
     /**
-     * Open detailed view for a movie.
+     * Open detailed full-page view for a movie.
      * @param {Object} movie
+     * @param {string} [fromRoute] Origin route (movies, favorites, search, home)
      */
-    openMovieDetails: function (movie) {
+    openMovieDetails: function (movie, fromRoute) {
       if (!movie) return;
       selectedMovie = movie;
       isDetailsOpen = true;
+      originRoute = fromRoute || (window.FreeIPTV.Navigation && window.FreeIPTV.Navigation.getCurrentRoute ? window.FreeIPTV.Navigation.getCurrentRoute() : 'movies');
+      if (originRoute === 'movie_details') originRoute = 'movies';
       previousFocusedElement = window.FreeIPTV.Navigation ? window.FreeIPTV.Navigation.getCurrent() : null;
-
-      var modal = document.getElementById('movie-details-modal');
-      if (!modal) return;
 
       var self = this;
 
       // Populate basic info immediately
       this.populateDetailsUI(movie);
 
-      modal.classList.remove('hidden');
+      // Switch to full-page movie details view
+      if (window.FreeIPTV.Home && window.FreeIPTV.Home.switchView) {
+        window.FreeIPTV.Home.switchView('movie_details');
+      } else {
+        var view = document.getElementById('view-movie_details');
+        if (view) view.classList.remove('hidden');
+      }
 
       // Register Back key
       if (window.FreeIPTV.Remote) {
@@ -497,9 +532,10 @@
       }
 
       var posterEl = document.getElementById('movie-details-poster');
+      var moviePoster = movie.posterUrl || movie.poster || movie.streamIcon || movie.cover || '';
       if (posterEl) {
-        if (movie.posterUrl) {
-          posterEl.src = movie.posterUrl;
+        if (moviePoster) {
+          posterEl.src = moviePoster;
           posterEl.style.display = 'block';
         } else {
           posterEl.style.display = 'none';
@@ -508,7 +544,7 @@
 
       var backdropEl = document.getElementById('movie-details-backdrop');
       if (backdropEl) {
-        var bgUrl = movie.backdropUrl || movie.posterUrl || '';
+        var bgUrl = movie.backdropUrl || moviePoster || '';
         if (bgUrl) {
           backdropEl.style.backgroundImage = 'linear-gradient(to top, rgba(10,14,23,0.95) 20%, rgba(10,14,23,0.6) 80%), url("' + bgUrl + '")';
         } else {
@@ -566,16 +602,21 @@
     },
 
     /**
-     * Close movie details dialog and restore focus.
+     * Close movie details view and restore focus to previous screen.
      */
     closeMovieDetails: function () {
       if (!isDetailsOpen) return;
       isDetailsOpen = false;
+      var targetRoute = originRoute || 'movies';
       selectedMovie = null;
 
-      var modal = document.getElementById('movie-details-modal');
-      if (modal) {
-        modal.classList.add('hidden');
+      if (window.FreeIPTV.Home && window.FreeIPTV.Home.switchView) {
+        window.FreeIPTV.Home.switchView(targetRoute);
+      } else {
+        var view = document.getElementById('view-movie_details');
+        if (view) view.classList.add('hidden');
+        var originView = document.getElementById('view-' + targetRoute);
+        if (originView) originView.classList.remove('hidden');
       }
 
       if (window.FreeIPTV.Remote) {
@@ -584,6 +625,10 @@
 
       if (window.FreeIPTV.Navigation && previousFocusedElement && document.body.contains(previousFocusedElement)) {
         window.FreeIPTV.Navigation.focus(previousFocusedElement);
+      } else if (window.FreeIPTV.Navigation) {
+        var fallback = document.querySelector('#view-' + targetRoute + ' .focusable.active') ||
+                       document.querySelector('#view-' + targetRoute + ' .focusable');
+        if (fallback) window.FreeIPTV.Navigation.focus(fallback);
       }
     },
 

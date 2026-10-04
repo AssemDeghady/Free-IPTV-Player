@@ -1,16 +1,18 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
+
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Free IPTV Player</title>
-  
+
   <link rel="stylesheet" href="css/app.css">
   <link rel="stylesheet" href="css/layout.css">
   <link rel="stylesheet" href="css/navigation.css">
   <link rel="stylesheet" href="css/live-epg.css">
 </head>
+
 <body>
   <div class="app-root">
     <!-- HEADER -->
@@ -18,16 +20,17 @@
       <div class="brand-section">
         <div class="brand-logo-icon">
           <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12zM9.5 8v8l6.5-4z"/>
+            <path
+              d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12zM9.5 8v8l6.5-4z" />
           </svg>
         </div>
         <h1 class="brand-title" data-i18n="app.name">Free IPTV Player</h1>
-        <span class="brand-badge" data-i18n="app.badge">Player</span>
       </div>
 
       <div class="header-actions">
         <!-- Active Playlist Quick Indicator -->
-        <button id="header-active-playlist" class="header-button header-playlist-pill focusable" data-nav-zone="header" aria-label="Active Playlist">
+        <button id="header-active-playlist" class="header-button header-playlist-pill focusable" data-nav-zone="header"
+          aria-label="Active Playlist">
           <span class="active-dot">●</span>
           <span id="header-playlist-name" class="active-playlist-text">No Playlist</span>
           <span class="dropdown-chevron">&#9662;</span>
@@ -36,7 +39,8 @@
         <!-- Search button -->
         <button id="btn-header-search" class="header-button focusable" data-nav-zone="header" aria-label="Search">
           <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+            <path
+              d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
           </svg>
           <span data-i18n="header.search">Search</span>
         </button>
@@ -44,7 +48,8 @@
         <!-- Settings button -->
         <button id="btn-header-settings" class="header-button focusable" data-nav-zone="header" aria-label="Settings">
           <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+            <path
+              d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" />
           </svg>
           <span data-i18n="header.settings">Settings</span>
         </button>
@@ -53,97 +58,45 @@
 
     <!-- APP BODY -->
     <div class="app-body">
-      <!-- SIDEBAR NAVIGATION -->
-      <aside class="app-sidebar" aria-label="Main Navigation">
-        <ul class="nav-menu" role="menu">
-          <li class="nav-item" role="none">
-            <button class="nav-link focusable active" data-nav-zone="sidebar" data-route="home" data-initial-focus="true" role="menuitem">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
-              </svg>
-              <span data-i18n="nav.home">Home</span>
-            </button>
-          </li>
-          <li class="nav-item" role="none">
-            <button class="nav-link focusable" data-nav-zone="sidebar" data-route="live_tv" role="menuitem">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z"/>
-              </svg>
-              <span data-i18n="nav.live_tv">Live TV</span>
-            </button>
-          </li>
-          <li class="nav-item" role="none">
-            <button class="nav-link focusable" data-nav-zone="sidebar" data-route="movies" role="menuitem">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/>
-              </svg>
-              <span data-i18n="nav.movies">Movies</span>
-            </button>
-          </li>
-          <li class="nav-item" role="none">
-            <button class="nav-link focusable" data-nav-zone="sidebar" data-route="series" role="menuitem">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/>
-              </svg>
-              <span data-i18n="nav.series">Series</span>
-            </button>
-          </li>
-          <li class="nav-item" role="none">
-            <button class="nav-link focusable" data-nav-zone="sidebar" data-route="favorites" role="menuitem">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
-              </svg>
-              <span data-i18n="nav.favorites">Favorites</span>
-            </button>
-          </li>
-          <li class="nav-item" role="none">
-            <button class="nav-link focusable" data-nav-zone="sidebar" data-route="playlists" role="menuitem">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12zm-7-2h2v-4h4V8h-4V4h-2v4H9v2h4v4z"/>
-              </svg>
-              <span data-i18n="nav.playlists">Playlists</span>
-            </button>
-          </li>
-        </ul>
-      </aside>
-
       <!-- MAIN CONTENT -->
       <main class="app-content" role="region" aria-label="Content Area">
-        
+
         <!-- 1. HOME VIEW SCREEN -->
         <section id="view-home" class="view-screen">
           <div class="view-container">
-            <div class="welcome-section">
-              <h2 class="welcome-title" data-i18n="home.welcome">Welcome to Free IPTV Player</h2>
-              <p class="welcome-subtitle" data-i18n="home.subtitle">Add your IPTV playlist to get started.</p>
-            </div>
-
-            <!-- Empty-State Card (Shown when no active provider) -->
-            <div id="home-empty-card" class="empty-state-card" role="status">
-              <div class="cta-actions">
-                <button id="btn-add-playlist" class="btn-primary focusable" data-nav-zone="main">
+            <!-- First-Run Onboarding Area (Shown when no active provider) -->
+            <div id="home-onboarding-area" class="home-onboarding-area">
+              <!-- Empty-State Card (Shown when no active provider) -->
+              <div id="home-empty-card" class="empty-state-card" role="status">
+                <div class="empty-state-icon">
                   <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                    <path
+                      d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12zM9.5 8v8l6.5-4z" />
                   </svg>
-                  <span data-i18n="playlist.add">Add Playlist</span>
-                </button>
-              </div>
-
-              <div class="empty-state-icon">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
-                </svg>
-              </div>
-              <div class="empty-state-text-group">
-                <h3 class="empty-state-headline" data-i18n="home.empty_title">No playlist has been configured yet.</h3>
-                <p class="empty-state-description" data-i18n="home.empty_desc">
-                  Free IPTV Player is an independent media player and does not provide, host, or bundle any channels or streams. Please add your authorized M3U or IPTV provider URL to begin.
-                </p>
+                </div>
+                <div class="empty-state-text-group">
+                  <h3 class="empty-state-headline">Your TV library starts here.</h3>
+                  <p class="empty-state-description">
+                    Add your IPTV playlist to access Live TV, Movies, Series, EPG, and Favorites.
+                  </p>
+                </div>
+                <div class="cta-actions">
+                  <button id="btn-add-playlist" class="btn-primary focusable" data-nav-zone="main">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+                    </svg>
+                    <span data-i18n="playlist.add">Add Playlist</span>
+                  </button>
+                  <button id="btn-learn-more" class="btn-secondary focusable" data-nav-zone="main">
+                    <span>Learn More / About</span>
+                  </button>
+                </div>
               </div>
             </div>
 
             <!-- Active Dashboard Content (Shown when provider is active) -->
             <div id="home-dashboard-content" class="home-dashboard-content hidden">
+              <div id="home-quick-access-section" class="home-quick-access-section"></div>
               <div id="home-provider-banner" class="home-provider-banner"></div>
               <div id="home-continue-watching-section" class="home-row-section"></div>
               <div id="home-recent-section" class="home-row-section"></div>
@@ -157,11 +110,11 @@
           <div class="live-tv-header-bar">
             <div class="live-tv-title-group">
               <h2 class="live-screen-title" data-i18n="live.title">Live TV</h2>
-              <span id="live-tv-playlist-badge" class="playlist-badge">No Playlist</span>
               <span id="live-channel-count-label" class="channel-count-badge">0 Channels</span>
             </div>
             <div class="live-search-box">
-              <input type="text" id="live-search-input" class="live-search-input focusable" data-nav-zone="live_search" data-i18n-title="live.search_placeholder" placeholder="Search channels..." autocomplete="off">
+              <input type="text" id="live-search-input" class="live-search-input focusable" data-nav-zone="live_search"
+                data-i18n-title="live.search_placeholder" placeholder="Search channels..." autocomplete="off">
             </div>
           </div>
 
@@ -169,6 +122,11 @@
             <!-- Categories Pane -->
             <div class="categories-pane">
               <div class="pane-header" data-i18n="live.categories">Categories</div>
+              <div class="category-search-box">
+                <input type="text" id="live-category-search-input" class="category-search-input focusable"
+                  data-nav-zone="live_category_search" data-i18n-placeholder="categories.search_placeholder"
+                  placeholder="Search categories..." autocomplete="off">
+              </div>
               <div id="live-categories-list" class="categories-scroll-list" role="tablist">
                 <!-- Injected dynamically -->
               </div>
@@ -192,7 +150,8 @@
                       <span class="preview-muted-tag" data-i18n="live.preview_muted">&#128263; Muted</span>
                     </div>
                     <div id="live-preview-spinner" class="preview-spinner hidden"></div>
-                    <div id="live-preview-status" class="preview-status" data-i18n="live.preview_idle">Focus a channel to preview</div>
+                    <div id="live-preview-status" class="preview-status" data-i18n="live.preview_idle">Focus a channel
+                      to preview</div>
                   </div>
                   <!-- HTML5 / browser video element fallback -->
                   <video id="live-preview-video" class="live-preview-video hidden" muted playsinline autoplay></video>
@@ -212,7 +171,6 @@
           <div class="live-tv-header-bar">
             <div class="live-tv-title-group">
               <h2 class="live-screen-title" data-i18n="movies.title">Movies</h2>
-              <span id="movies-playlist-badge" class="playlist-badge">No Provider</span>
               <span id="movies-count-label" class="channel-count-badge">0 Movies</span>
             </div>
           </div>
@@ -220,6 +178,11 @@
           <div class="live-tv-panes">
             <div class="categories-pane">
               <div class="pane-header" data-i18n="movies.categories">Categories</div>
+              <div class="category-search-box">
+                <input type="text" id="movies-category-search-input" class="category-search-input focusable"
+                  data-nav-zone="movies_category_search" data-i18n-placeholder="categories.search_placeholder"
+                  placeholder="Search categories..." autocomplete="off">
+              </div>
               <div id="movies-categories-list" class="categories-scroll-list" role="tablist"></div>
             </div>
             <div class="channels-pane">
@@ -233,7 +196,6 @@
           <div class="live-tv-header-bar">
             <div class="live-tv-title-group">
               <h2 class="live-screen-title" data-i18n="series.title">Series</h2>
-              <span id="series-playlist-badge" class="playlist-badge">No Provider</span>
               <span id="series-count-label" class="channel-count-badge">0 Series</span>
             </div>
           </div>
@@ -241,6 +203,11 @@
           <div class="live-tv-panes">
             <div class="categories-pane">
               <div class="pane-header" data-i18n="series.categories">Categories</div>
+              <div class="category-search-box">
+                <input type="text" id="series-category-search-input" class="category-search-input focusable"
+                  data-nav-zone="series_category_search" data-i18n-placeholder="categories.search_placeholder"
+                  placeholder="Search categories..." autocomplete="off">
+              </div>
               <div id="series-categories-list" class="categories-scroll-list" role="tablist"></div>
             </div>
             <div class="channels-pane">
@@ -253,9 +220,15 @@
         <section id="view-search" class="view-screen hidden">
           <div class="search-header-bar">
             <div class="search-input-wrap">
-              <svg viewBox="0 0 24 24" class="search-box-icon"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-              <input type="text" id="global-search-input" class="global-search-input focusable" data-nav-zone="search_input" data-i18n-placeholder="search.input_placeholder" placeholder="Search Live Channels, Movies, Series..." autocomplete="off">
-              <button id="global-search-clear" class="search-clear-btn" style="display: none;" title="Clear">&times;</button>
+              <svg viewBox="0 0 24 24" class="search-box-icon">
+                <path
+                  d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
+              </svg>
+              <input type="text" id="global-search-input" class="global-search-input focusable"
+                data-nav-zone="search_input" data-i18n-placeholder="search.input_placeholder"
+                placeholder="Search Live Channels, Movies, Series..." autocomplete="off">
+              <button id="global-search-clear" class="search-clear-btn" style="display: none;"
+                title="Clear">&times;</button>
             </div>
           </div>
           <div id="global-search-results" class="search-results-area"></div>
@@ -268,10 +241,14 @@
               <h2 class="live-screen-title" data-i18n="favorites.title">Favorites</h2>
             </div>
             <div id="favorites-tabs-row" class="favorites-tabs-row">
-              <button class="favorites-tab-btn focusable active" data-tab="all" data-nav-zone="favorites_tabs" data-i18n="favorites.tab_all">All</button>
-              <button class="favorites-tab-btn focusable" data-tab="live" data-nav-zone="favorites_tabs" data-i18n="favorites.tab_live">Live TV</button>
-              <button class="favorites-tab-btn focusable" data-tab="movie" data-nav-zone="favorites_tabs" data-i18n="favorites.tab_movies">Movies</button>
-              <button class="favorites-tab-btn focusable" data-tab="series" data-nav-zone="favorites_tabs" data-i18n="favorites.tab_series">Series</button>
+              <button class="favorites-tab-btn focusable active" data-tab="all" data-nav-zone="favorites_tabs"
+                data-i18n="favorites.tab_all">All</button>
+              <button class="favorites-tab-btn focusable" data-tab="live" data-nav-zone="favorites_tabs"
+                data-i18n="favorites.tab_live">Live TV</button>
+              <button class="favorites-tab-btn focusable" data-tab="movie" data-nav-zone="favorites_tabs"
+                data-i18n="favorites.tab_movies">Movies</button>
+              <button class="favorites-tab-btn focusable" data-tab="series" data-nav-zone="favorites_tabs"
+                data-i18n="favorites.tab_series">Series</button>
             </div>
           </div>
           <div class="favorites-content-area">
@@ -289,7 +266,7 @@
             <div class="playlists-header-actions">
               <button id="btn-playlists-add" class="btn-primary focusable" data-nav-zone="playlists_actions">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                  <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
                 </svg>
                 <span data-i18n="playlist.add">Add Playlist</span>
               </button>
@@ -320,7 +297,8 @@
           <div class="settings-section">
             <div class="settings-section-header">
               <h2 class="settings-section-title" data-i18n="settings.playlists_title">Configured IPTV Playlists</h2>
-              <button id="settings-btn-add-playlist" class="btn-primary focusable" data-nav-zone="settings_actions" data-i18n="playlist.add">Add Playlist</button>
+              <button id="settings-btn-add-playlist" class="btn-primary focusable" data-nav-zone="settings_actions"
+                data-i18n="playlist.add">Add Playlist</button>
             </div>
             <div id="settings-playlists-container" class="settings-playlists-list">
               <!-- Injected dynamically -->
@@ -334,11 +312,13 @@
             <div class="settings-toggles-list">
               <label class="settings-toggle-item">
                 <span data-i18n="settings.auto_resume">Auto-resume playback from last position</span>
-                <input type="checkbox" id="toggle-auto-resume" class="focusable" data-nav-zone="settings_actions" checked>
+                <input type="checkbox" id="toggle-auto-resume" class="focusable" data-nav-zone="settings_actions"
+                  checked>
               </label>
               <label class="settings-toggle-item">
                 <span data-i18n="settings.auto_next_ep">Auto-play next episode in series</span>
-                <input type="checkbox" id="toggle-auto-next-ep" class="focusable" data-nav-zone="settings_actions" checked>
+                <input type="checkbox" id="toggle-auto-next-ep" class="focusable" data-nav-zone="settings_actions"
+                  checked>
               </label>
             </div>
           </div>
@@ -348,9 +328,11 @@
               <h2 class="settings-section-title" data-i18n="settings.cache_title">EPG &amp; Storage Controls</h2>
             </div>
             <div class="settings-actions-row">
-              <button id="btn-clear-epg-cache" class="btn-secondary focusable" data-nav-zone="settings_actions" data-i18n="settings.btn_clear_epg">Clear EPG Cache</button>
+              <button id="btn-clear-epg-cache" class="btn-secondary focusable" data-nav-zone="settings_actions"
+                data-i18n="settings.btn_clear_epg">Clear EPG Cache</button>
               <span id="epg-cache-status" class="settings-status-text"></span>
-              <button id="btn-clear-history" class="btn-secondary btn-danger focusable" data-nav-zone="settings_actions" data-i18n="settings.btn_clear_history">Clear Watch History</button>
+              <button id="btn-clear-history" class="btn-secondary btn-danger focusable" data-nav-zone="settings_actions"
+                data-i18n="settings.btn_clear_history">Clear Watch History</button>
               <span id="history-status" class="settings-status-text"></span>
             </div>
           </div>
@@ -360,15 +342,19 @@
               <h2 class="settings-section-title" data-i18n="settings.language_title">Language</h2>
             </div>
             <div class="language-switch-group">
-              <button id="btn-lang-en" class="btn-lang-toggle focusable active" data-nav-zone="settings_actions" data-i18n="settings.lang_en">English</button>
-              <button id="btn-lang-ar" class="btn-lang-toggle focusable" data-nav-zone="settings_actions" data-i18n="settings.lang_ar">العربية (Arabic)</button>
+              <button id="btn-lang-en" class="btn-lang-toggle focusable active" data-nav-zone="settings_actions"
+                data-i18n="settings.lang_en">English</button>
+              <button id="btn-lang-ar" class="btn-lang-toggle focusable" data-nav-zone="settings_actions"
+                data-i18n="settings.lang_ar">العربية (Arabic)</button>
             </div>
           </div>
 
           <div class="settings-section" id="settings-diagnostics-panel">
             <div class="settings-section-header">
-              <h2 class="settings-section-title" data-i18n="settings.diagnostics_title">Provider &amp; Stream Diagnostics</h2>
-              <button id="btn-refresh-diagnostics" class="btn-secondary focusable" data-nav-zone="settings_actions" data-i18n="settings.diag_refresh">Refresh Content</button>
+              <h2 class="settings-section-title" data-i18n="settings.diagnostics_title">Provider &amp; Stream
+                Diagnostics</h2>
+              <button id="btn-refresh-diagnostics" class="btn-secondary focusable" data-nav-zone="settings_actions"
+                data-i18n="settings.diag_refresh">Refresh Content</button>
             </div>
             <div id="diagnostics-metrics-grid" class="diagnostics-metrics-grid">
               <!-- Rendered dynamically -->
@@ -382,11 +368,301 @@
             <div class="settings-about-box">
               <p><strong>Free IPTV Player</strong> — v1.0.0 (Samsung Tizen Smart TV Edition)</p>
               <p class="settings-about-sub" data-i18n="settings.about_stats">
-                Saved Favorites: <span id="settings-stat-favorites">0</span> &bull; Watch History: <span id="settings-stat-history">0</span>
+                Saved Favorites: <span id="settings-stat-favorites">0</span> &bull; Watch History: <span
+                  id="settings-stat-history">0</span>
               </p>
               <p class="settings-about-disclaimer" data-i18n="settings.about_disclaimer">
-                Free IPTV Player is an independent media player client. It does not provide, host, or sell any IPTV subscriptions, channels, or copyrighted media streams. Users are solely responsible for their playlist sources.
+                Free IPTV Player is an independent media player client. It does not provide, host, or sell any IPTV
+                subscriptions, channels, or copyrighted media streams. Users are solely responsible for their playlist
+                sources.
               </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- 9. MOVIE DETAILS VIEW SCREEN -->
+        <section id="view-movie_details" class="view-screen details-view-screen hidden" role="region"
+            aria-label="Movie Details">
+            <div class="details-view-container">
+              <div id="movie-details-backdrop" class="details-page-backdrop"></div>
+
+              <!-- Top Back Bar -->
+              <div class="details-top-bar">
+                <button id="btn-movie-page-back" class="btn-page-back focusable" data-nav-zone="movie_details"
+                  data-i18n="details.back" aria-label="Back">
+                  <span class="back-arrow">&larr;</span>
+                  <span data-i18n="details.back">Back</span>
+                </button>
+                <div class="details-top-title-group">
+                  <span class="details-top-badge" data-i18n="nav.movies">Movies</span>
+                </div>
+              </div>
+
+              <!-- Main Content Layout -->
+              <div class="details-main-layout">
+                <div class="details-poster-column">
+                  <div class="details-poster-frame">
+                    <img id="movie-details-poster" class="details-poster-image" alt="" style="display: none;">
+                    <img id="movie-modal-poster" class="details-poster-image-alias hidden" alt=""
+                      style="display: none;">
+                  </div>
+                </div>
+
+                <div class="details-info-column">
+                  <h1 id="movie-details-title" class="details-headline">Movie Title</h1>
+                  <h2 id="movie-modal-title" class="hidden"></h2>
+
+                  <div id="movie-details-meta" class="details-badges-row"></div>
+                  <div id="movie-modal-meta" class="hidden"></div>
+
+                  <div class="details-actions-bar">
+                    <button id="btn-movie-play" class="btn-primary btn-action-lg focusable"
+                      data-nav-zone="movie_details">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                      <span data-i18n="details.play">PLAY</span>
+                    </button>
+                    <button id="movie-btn-play" class="hidden" tabindex="-1"></button>
+
+                    <button id="btn-movie-resume" class="btn-secondary btn-action-lg focusable hidden"
+                      data-nav-zone="movie_details">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path
+                          d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0 0 20 12c0-4.42-3.58-8-8-8zm-1.5 6.5v5l4-2.5-4-2.5z" />
+                      </svg>
+                      <span data-i18n="details.resume">RESUME</span>
+                    </button>
+                    <button id="movie-btn-resume" class="hidden" tabindex="-1"></button>
+
+                    <button id="btn-movie-fav" class="btn-secondary btn-action-lg focusable"
+                      data-nav-zone="movie_details">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path
+                          d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                      </svg>
+                      <span id="movie-fav-label" data-i18n="details.favorite">Favorite</span>
+                    </button>
+                    <button id="movie-btn-fav" class="hidden" tabindex="-1"></button>
+
+                    <button id="btn-movie-back" class="btn-secondary btn-action-lg focusable"
+                      data-nav-zone="movie_details" data-i18n="details.back">
+                      <span data-i18n="details.back">Back</span>
+                    </button>
+                    <button id="movie-btn-back" class="hidden" tabindex="-1"></button>
+                  </div>
+
+                  <div class="details-synopsis-box">
+                    <h3 class="details-section-heading" data-i18n="movies.overview">Overview</h3>
+                    <p id="movie-details-desc" class="details-synopsis-text"></p>
+                    <p id="movie-modal-plot" class="hidden"></p>
+                  </div>
+
+                  <div id="movie-details-cast" class="details-credits-text"></div>
+                  <div id="movie-modal-cast" class="hidden"></div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 10. SERIES DETAILS VIEW SCREEN -->
+          <section id="view-series_details" class="view-screen details-view-screen hidden" role="region"
+            aria-label="Series Details">
+            <div class="details-view-container">
+              <div id="series-details-backdrop" class="details-page-backdrop"></div>
+
+              <!-- Top Back Bar -->
+              <div class="details-top-bar">
+                <button id="btn-series-page-back" class="btn-page-back focusable" data-nav-zone="series_details"
+                  data-i18n="details.back" aria-label="Back">
+                  <span class="back-arrow">&larr;</span>
+                  <span data-i18n="details.back">Back</span>
+                </button>
+                <div class="details-top-title-group">
+                  <span class="details-top-badge" data-i18n="nav.series">Series</span>
+                </div>
+              </div>
+
+              <!-- Series Hero / Header Layout -->
+              <div class="details-main-layout series-main-layout">
+                <div class="details-poster-column">
+                  <div class="details-poster-frame">
+                    <img id="series-details-poster" class="details-poster-image" alt="" style="display: none;">
+                    <img id="series-modal-poster" class="details-poster-image-alias hidden" alt=""
+                      style="display: none;">
+                  </div>
+                </div>
+
+                <div class="details-info-column">
+                  <h1 id="series-details-title" class="details-headline">Series Title</h1>
+                  <h2 id="series-modal-title" class="hidden"></h2>
+
+                  <div id="series-details-meta" class="details-badges-row"></div>
+                  <div id="series-modal-meta" class="hidden"></div>
+
+                  <div class="details-actions-bar">
+                    <button id="btn-series-fav" class="btn-secondary btn-action-lg focusable"
+                      data-nav-zone="series_details">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path
+                          d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                      </svg>
+                      <span id="series-fav-label" data-i18n="details.favorite">Favorite</span>
+                    </button>
+                    <button id="series-btn-fav" class="hidden" tabindex="-1"></button>
+
+                    <button id="btn-series-back" class="btn-secondary btn-action-lg focusable"
+                      data-nav-zone="series_details" data-i18n="details.back">
+                      <span data-i18n="details.back">Back</span>
+                    </button>
+                    <button id="series-btn-back" class="hidden" tabindex="-1"></button>
+                  </div>
+
+                  <div class="details-synopsis-box">
+                    <p id="series-details-desc" class="details-synopsis-text"></p>
+                    <p id="series-modal-plot" class="hidden"></p>
+                  </div>
+
+                  <div id="series-details-cast" class="details-credits-text"></div>
+                </div>
+              </div>
+
+              <!-- Seasons Selector & Episodes List -->
+              <div class="series-episodes-section">
+                <!-- Season Dropdown Selector Group -->
+                <div class="series-season-selector-group">
+                  <div class="series-section-label" data-i18n="series.season_label">SEASON</div>
+                  <div class="season-dropdown-wrapper">
+                    <button id="btn-season-selector" class="season-select-btn focusable" data-nav-zone="series_details" aria-haspopup="listbox" aria-expanded="false" aria-label="Select Season">
+                      <span id="season-selector-label">Season 1</span>
+                      <span class="dropdown-arrow" aria-hidden="true">&#9660;</span>
+                    </button>
+                    <div id="season-dropdown-list" class="season-dropdown-menu hidden" role="listbox" aria-label="Seasons"></div>
+                  </div>
+                </div>
+
+                <div class="series-episodes-heading-row">
+                  <h3 class="series-episodes-heading" data-i18n="series.episodes_label">Episodes</h3>
+                </div>
+
+                <div class="series-episodes-wrap">
+                  <div id="series-episodes-list" class="series-episodes-list"></div>
+                  <!-- Backwards compatibility containers for tests -->
+                  <div id="series-episodes-container" class="series-episodes-container hidden" style="display: none;"></div>
+                  <div id="series-seasons-tabs" class="series-seasons-tabs hidden" style="display: none;" role="tablist"></div>
+                </div>
+              </div>
+          </div>
+        </section>
+
+        <!-- 11. ADD PLAYLIST VIEW SCREEN -->
+        <section id="view-add_playlist" class="view-screen add-playlist-view-screen hidden" role="region" aria-label="Add Playlist">
+          <div class="view-container add-playlist-container">
+            <div class="details-top-bar">
+              <button id="btn-add-playlist-back" class="btn-page-back focusable" data-nav-zone="modal" data-i18n="details.back" aria-label="Back">
+                <span class="back-arrow">&larr;</span>
+                <span data-i18n="details.back">Back</span>
+              </button>
+              <div class="details-top-title-group">
+                <h2 class="view-screen-title" data-i18n="modal.add_playlist.title">Add IPTV Playlist</h2>
+              </div>
+            </div>
+
+            <div class="add-playlist-card">
+              <!-- Provider Type Tabs -->
+              <div class="provider-tabs" role="tablist">
+                <button id="modal-tab-m3u" class="provider-tab-btn focusable active" role="tab" aria-selected="true"
+                  data-provider="m3u" data-nav-zone="modal">
+                  <span data-i18n="modal.tab_m3u">M3U / M3U8</span>
+                </button>
+                <button id="modal-tab-xtream" class="provider-tab-btn focusable" role="tab" aria-selected="false"
+                  data-provider="xtream" data-nav-zone="modal">
+                  <span data-i18n="modal.tab_xtream">XTREAM CODES</span>
+                </button>
+              </div>
+
+              <!-- Form State -->
+              <div id="modal-state-form">
+                <!-- M3U Panel -->
+                <div id="modal-panel-m3u" class="modal-provider-panel">
+                  <div class="form-group">
+                    <label for="input-playlist-name" class="form-label" data-i18n="modal.playlist_name">Playlist Name</label>
+                    <input type="text" id="input-playlist-name" class="form-input focusable" data-nav-zone="modal"
+                      data-i18n-placeholder="modal.playlist_name_placeholder" placeholder="e.g. My IPTV" autocomplete="off">
+                  </div>
+                  <div class="form-group">
+                    <label for="input-playlist-url" class="form-label" data-i18n="modal.playlist_url">Playlist URL</label>
+                    <input type="url" id="input-playlist-url" class="form-input focusable ltr-input" dir="ltr"
+                      data-nav-zone="modal" data-i18n-placeholder="modal.playlist_url_placeholder"
+                      placeholder="https://example.com/playlist.m3u" autocomplete="off">
+                  </div>
+                  <div class="modal-actions">
+                    <button id="modal-btn-cancel" class="btn-secondary focusable" data-nav-zone="modal"
+                      data-i18n="modal.btn_cancel">Cancel</button>
+                    <button id="modal-btn-submit" class="btn-primary focusable" data-nav-zone="modal"
+                      data-i18n="modal.btn_add">Add Playlist</button>
+                  </div>
+                </div>
+
+                <!-- Xtream Codes Panel -->
+                <div id="modal-panel-xtream" class="modal-provider-panel hidden">
+                  <div class="form-group">
+                    <label for="input-xtream-name" class="form-label" data-i18n="modal.playlist_name">Playlist Name</label>
+                    <input type="text" id="input-xtream-name" class="form-input focusable" data-nav-zone="modal"
+                      data-i18n-placeholder="modal.playlist_name_placeholder" placeholder="e.g. My Xtream (Optional)"
+                      autocomplete="off">
+                  </div>
+                  <div class="form-group">
+                    <label for="input-xtream-server" class="form-label" data-i18n="modal.xtream_server">Server / Host</label>
+                    <input type="text" id="input-xtream-server" class="form-input focusable ltr-input" dir="ltr"
+                      data-nav-zone="modal" data-i18n-placeholder="modal.xtream_server_placeholder"
+                      placeholder="Enter server URL" autocomplete="off">
+                  </div>
+                  <div class="form-group">
+                    <label for="input-xtream-username" class="form-label" data-i18n="modal.xtream_username">Username</label>
+                    <input type="text" id="input-xtream-username" class="form-input focusable ltr-input" dir="ltr"
+                      data-nav-zone="modal" data-i18n-placeholder="modal.xtream_username_placeholder" placeholder="Username"
+                      autocomplete="off">
+                  </div>
+                  <div class="form-group">
+                    <label for="input-xtream-password" class="form-label" data-i18n="modal.xtream_password">Password</label>
+                    <input type="password" id="input-xtream-password" class="form-input focusable ltr-input" dir="ltr"
+                      data-nav-zone="modal" data-i18n-placeholder="modal.xtream_password_placeholder" placeholder="Password"
+                      autocomplete="off">
+                  </div>
+                  <div class="modal-actions">
+                    <button id="modal-btn-xtream-cancel" class="btn-secondary focusable" data-nav-zone="modal"
+                      data-i18n="modal.btn_cancel">Cancel</button>
+                    <button id="modal-btn-xtream-login" class="btn-primary focusable" data-nav-zone="modal"
+                      data-i18n="modal.btn_login">LOGIN</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Loading State -->
+              <div id="modal-state-loading" class="modal-status-box hidden">
+                <div class="loading-spinner"></div>
+                <div class="status-title" data-i18n="modal.loading">Downloading &amp; Parsing Playlist...</div>
+                <div class="status-desc" data-i18n="modal.loading_sub">Please wait while channels are loaded</div>
+              </div>
+
+              <!-- Error State -->
+              <div id="modal-state-error" class="modal-status-box hidden">
+                <div class="error-icon">
+                  <svg viewBox="0 0 24 24">
+                    <path
+                      d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+                  </svg>
+                </div>
+                <h3 class="status-title" data-i18n="modal.error_title">Unable to Load Playlist</h3>
+                <div id="modal-error-message" class="status-desc"></div>
+                <div class="modal-actions" style="margin-top: 16px;">
+                  <button id="modal-btn-error-cancel" class="btn-secondary focusable" data-nav-zone="modal"
+                    data-i18n="modal.btn_cancel">Cancel</button>
+                  <button id="modal-btn-retry" class="btn-primary focusable" data-nav-zone="modal"
+                    data-i18n="modal.btn_retry">Retry</button>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -404,7 +680,8 @@
               <img id="player-channel-logo" class="player-logo-img" alt="" style="display: none;">
               <div id="player-fallback-logo" class="player-fallback-icon">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z"/>
+                  <path
+                    d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z" />
                 </svg>
               </div>
             </div>
@@ -436,49 +713,81 @@
           </div>
 
           <div class="player-controls-row">
-            <button id="player-btn-rewind" class="btn-player-control focusable hidden" data-nav-zone="player_controls" title="Rewind 15s">
-              <svg viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/></svg>
+            <button id="player-btn-rewind" class="btn-player-control focusable hidden" data-nav-zone="player_controls"
+              title="Rewind 15s">
+              <svg viewBox="0 0 24 24">
+                <path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z" />
+              </svg>
               <span>-15s</span>
             </button>
 
-            <button id="player-btn-prev" class="btn-player-control focusable" data-nav-zone="player_controls" title="Previous Channel">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+            <button id="player-btn-prev" class="btn-player-control focusable" data-nav-zone="player_controls"
+              title="Previous Channel">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
+              </svg>
               <span data-i18n="player.previous">Previous</span>
             </button>
 
-            <button id="player-btn-play-pause" class="btn-player-control btn-player-primary focusable" data-nav-zone="player_controls" title="Play / Pause">
-              <svg id="player-icon-play" viewBox="0 0 24 24" aria-hidden="true" style="display: none;"><path d="M8 5v14l11-7z"/></svg>
-              <svg id="player-icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+            <button id="player-btn-play-pause" class="btn-player-control btn-player-primary focusable"
+              data-nav-zone="player_controls" title="Play / Pause">
+              <svg id="player-icon-play" viewBox="0 0 24 24" aria-hidden="true" style="display: none;">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+              <svg id="player-icon-pause" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+              </svg>
               <span data-i18n="player.pause">Pause</span>
             </button>
 
-            <button id="player-btn-next" class="btn-player-control focusable" data-nav-zone="player_controls" title="Next Channel">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+            <button id="player-btn-next" class="btn-player-control focusable" data-nav-zone="player_controls"
+              title="Next Channel">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" />
+              </svg>
               <span data-i18n="player.next">Next</span>
             </button>
 
-            <button id="player-btn-forward" class="btn-player-control focusable hidden" data-nav-zone="player_controls" title="Forward 15s">
-              <svg viewBox="0 0 24 24"><path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/></svg>
+            <button id="player-btn-forward" class="btn-player-control focusable hidden" data-nav-zone="player_controls"
+              title="Forward 15s">
+              <svg viewBox="0 0 24 24">
+                <path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z" />
+              </svg>
               <span>+15s</span>
             </button>
 
-            <button id="player-btn-audio" class="btn-player-control focusable" data-nav-zone="player_controls" title="Audio Track">
-              <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+            <button id="player-btn-audio" class="btn-player-control focusable" data-nav-zone="player_controls"
+              title="Audio Track">
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
+              </svg>
               <span data-i18n="player.audio">Audio</span>
             </button>
 
-            <button id="player-btn-sub" class="btn-player-control focusable" data-nav-zone="player_controls" title="Subtitles">
-              <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-10 7H8.5v-.5h-2v3h2V13H10v1c0 .55-.45 1-1 1H6c-.55 0-1-.45-1-1v-4c0-.55.45-1 1-1h3c.55 0 1 .45 1 1v1zm8 0h-1.5v-.5h-2v3h2V13H18v1c0 .55-.45 1-1 1h-3c-.55 0-1-.45-1-1v-4c0-.55.45-1 1-1h3c.55 0 1 .45 1 1v1z"/></svg>
+            <button id="player-btn-sub" class="btn-player-control focusable" data-nav-zone="player_controls"
+              title="Subtitles">
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-10 7H8.5v-.5h-2v3h2V13H10v1c0 .55-.45 1-1 1H6c-.55 0-1-.45-1-1v-4c0-.55.45-1 1-1h3c.55 0 1 .45 1 1v1zm8 0h-1.5v-.5h-2v3h2V13H18v1c0 .55-.45 1-1 1h-3c-.55 0-1-.45-1-1v-4c0-.55.45-1 1-1h3c.55 0 1 .45 1 1v1z" />
+              </svg>
               <span data-i18n="player.subtitles">Subs</span>
             </button>
 
-            <button id="player-btn-aspect" class="btn-player-control focusable" data-nav-zone="player_controls" title="Aspect Ratio">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12h-2v3h-3v2h5v-5zM7 9h3V7H5v5h2V9zm14-6H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16.01H3V4.99h18v14.02z"/></svg>
+            <button id="player-btn-aspect" class="btn-player-control focusable" data-nav-zone="player_controls"
+              title="Aspect Ratio">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M19 12h-2v3h-3v2h5v-5zM7 9h3V7H5v5h2V9zm14-6H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16.01H3V4.99h18v14.02z" />
+              </svg>
               <span data-i18n="player.aspect">Aspect</span>: <strong id="player-aspect-label">FIT</strong>
             </button>
 
-            <button id="player-btn-back" class="btn-player-control focusable" data-nav-zone="player_controls" title="Back">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+            <button id="player-btn-back" class="btn-player-control focusable" data-nav-zone="player_controls"
+              title="Back">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
+              </svg>
               <span data-i18n="player.back">Back</span>
             </button>
           </div>
@@ -502,167 +811,28 @@
         <div class="player-error-card">
           <div class="error-icon">
             <svg viewBox="0 0 24 24" width="48" height="48" fill="#ef4444" aria-hidden="true">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+              <path
+                d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
             </svg>
           </div>
           <h3 class="player-error-title" data-i18n="player.error_title">Unable to play this stream.</h3>
           <p class="player-error-desc" data-i18n="player.error_desc">The stream may be unavailable or unsupported.</p>
           <div class="player-error-actions">
-            <button id="player-error-retry" class="btn-player-control focusable" data-nav-zone="player_error" data-i18n="player.retry">Retry</button>
-            <button id="player-error-prev" class="btn-player-control focusable" data-nav-zone="player_error" data-i18n="player.previous">Previous</button>
-            <button id="player-error-next" class="btn-player-control focusable" data-nav-zone="player_error" data-i18n="player.next">Next</button>
-            <button id="player-error-back" class="btn-player-control focusable" data-nav-zone="player_error" data-i18n="player.back">Back</button>
+            <button id="player-error-retry" class="btn-player-control focusable" data-nav-zone="player_error"
+              data-i18n="player.retry">Retry</button>
+            <button id="player-error-prev" class="btn-player-control focusable" data-nav-zone="player_error"
+              data-i18n="player.previous">Previous</button>
+            <button id="player-error-next" class="btn-player-control focusable" data-nav-zone="player_error"
+              data-i18n="player.next">Next</button>
+            <button id="player-error-back" class="btn-player-control focusable" data-nav-zone="player_error"
+              data-i18n="player.back">Back</button>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- 10. MODAL: MOVIE DETAILS -->
-    <div id="movie-details-modal" class="details-modal-overlay hidden" role="dialog" aria-modal="true">
-      <div class="details-modal-dialog">
-        <div id="movie-modal-backdrop" class="details-backdrop"></div>
-        <div class="details-content-wrap">
-          <div class="details-poster-box">
-            <img id="movie-modal-poster" class="details-poster-img" alt="">
-          </div>
-          <div class="details-info-box">
-            <h2 id="movie-modal-title" class="details-title">Movie Title</h2>
-            <div id="movie-modal-meta" class="details-meta-row"></div>
-            <p id="movie-modal-plot" class="details-plot"></p>
-            <div id="movie-modal-cast" class="details-cast"></div>
-            <div class="details-actions-row">
-              <button id="movie-btn-play" class="btn-primary focusable" data-nav-zone="movie_details">
-                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                <span data-i18n="details.play">PLAY</span>
-              </button>
-              <button id="movie-btn-resume" class="btn-secondary focusable hidden" data-nav-zone="movie_details">
-                <svg viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0 0 20 12c0-4.42-3.58-8-8-8zm-1.5 6.5v5l4-2.5-4-2.5z"/></svg>
-                <span data-i18n="details.resume">RESUME</span>
-              </button>
-              <button id="movie-btn-fav" class="btn-secondary focusable" data-nav-zone="movie_details">
-                <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                <span id="movie-fav-label" data-i18n="details.favorite">Favorite</span>
-              </button>
-              <button id="movie-btn-back" class="btn-secondary focusable" data-nav-zone="movie_details" data-i18n="details.back">Back</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 11. MODAL: SERIES DETAILS -->
-    <div id="series-details-modal" class="details-modal-overlay hidden" role="dialog" aria-modal="true">
-      <div class="details-modal-dialog series-dialog-extended">
-        <div id="series-modal-backdrop" class="details-backdrop"></div>
-        <div class="details-content-wrap">
-          <div class="details-poster-box">
-            <img id="series-modal-poster" class="details-poster-img" alt="">
-          </div>
-          <div class="details-info-box">
-            <h2 id="series-modal-title" class="details-title">Series Title</h2>
-            <div id="series-modal-meta" class="details-meta-row"></div>
-            <p id="series-modal-plot" class="details-plot"></p>
-            <div class="details-actions-row series-details-actions">
-              <button id="series-btn-fav" class="btn-secondary focusable" data-nav-zone="series_details">
-                <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                <span id="series-fav-label" data-i18n="details.favorite">Favorite</span>
-              </button>
-              <button id="series-btn-back" class="btn-secondary focusable" data-nav-zone="series_details" data-i18n="details.back">Back</button>
-            </div>
-            <!-- Seasons Selector -->
-            <div class="series-seasons-row">
-              <span class="series-section-label" data-i18n="series.seasons">Seasons:</span>
-              <div id="series-seasons-tabs" class="series-seasons-tabs"></div>
-            </div>
-            <!-- Episodes List -->
-            <div class="series-episodes-wrap">
-              <div id="series-episodes-list" class="series-episodes-list"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 12. MODAL OVERLAY: ADD PLAYLIST -->
-    <div id="modal-overlay" class="modal-overlay hidden" role="dialog" aria-modal="true">
-      <div class="modal-dialog">
-        <!-- Form State -->
-        <div id="modal-state-form">
-          <div class="modal-header">
-            <h2 class="modal-title" data-i18n="modal.add_playlist.title">Add IPTV Playlist</h2>
-            <!-- Provider Type Tabs -->
-            <div class="provider-tabs" role="tablist">
-              <button id="modal-tab-m3u" class="provider-tab-btn focusable active" role="tab" aria-selected="true" data-provider="m3u" data-nav-zone="modal">
-                <span data-i18n="modal.tab_m3u">M3U / M3U8</span>
-              </button>
-              <button id="modal-tab-xtream" class="provider-tab-btn focusable" role="tab" aria-selected="false" data-provider="xtream" data-nav-zone="modal">
-                <span data-i18n="modal.tab_xtream">XTREAM CODES</span>
-              </button>
-            </div>
-          </div>
-
-          <div class="modal-body">
-            <!-- M3U Panel -->
-            <div id="modal-panel-m3u" class="modal-provider-panel">
-              <div class="form-group">
-                <label for="input-playlist-name" class="form-label" data-i18n="modal.playlist_name">Playlist Name</label>
-                <input type="text" id="input-playlist-name" class="form-input focusable" data-nav-zone="modal" data-i18n-placeholder="modal.playlist_name_placeholder" placeholder="e.g. My IPTV" autocomplete="off">
-              </div>
-              <div class="form-group">
-                <label for="input-playlist-url" class="form-label" data-i18n="modal.playlist_url">Playlist URL</label>
-                <input type="url" id="input-playlist-url" class="form-input focusable ltr-input" dir="ltr" data-nav-zone="modal" data-i18n-placeholder="modal.playlist_url_placeholder" placeholder="https://example.com/playlist.m3u" autocomplete="off">
-              </div>
-              <div class="modal-actions">
-                <button id="modal-btn-cancel" class="btn-secondary focusable" data-nav-zone="modal" data-i18n="modal.btn_cancel">Cancel</button>
-                <button id="modal-btn-submit" class="btn-primary focusable" data-nav-zone="modal" data-i18n="modal.btn_add">Add Playlist</button>
-              </div>
-            </div>
-
-            <!-- Xtream Codes Panel -->
-            <div id="modal-panel-xtream" class="modal-provider-panel hidden">
-              <div class="form-group">
-                <label for="input-xtream-server" class="form-label" data-i18n="modal.xtream_server">Server / Host</label>
-                <input type="text" id="input-xtream-server" class="form-input focusable ltr-input" dir="ltr" data-nav-zone="modal" data-i18n-placeholder="modal.xtream_server_placeholder" placeholder="Enter server URL" autocomplete="off">
-              </div>
-              <div class="form-group">
-                <label for="input-xtream-username" class="form-label" data-i18n="modal.xtream_username">Username</label>
-                <input type="text" id="input-xtream-username" class="form-input focusable ltr-input" dir="ltr" data-nav-zone="modal" data-i18n-placeholder="modal.xtream_username_placeholder" placeholder="Username" autocomplete="off">
-              </div>
-              <div class="form-group">
-                <label for="input-xtream-password" class="form-label" data-i18n="modal.xtream_password">Password</label>
-                <input type="password" id="input-xtream-password" class="form-input focusable ltr-input" dir="ltr" data-nav-zone="modal" data-i18n-placeholder="modal.xtream_password_placeholder" placeholder="Password" autocomplete="off">
-              </div>
-              <div class="modal-actions">
-                <button id="modal-btn-xtream-cancel" class="btn-secondary focusable" data-nav-zone="modal" data-i18n="modal.btn_cancel">Cancel</button>
-                <button id="modal-btn-xtream-login" class="btn-primary focusable" data-nav-zone="modal" data-i18n="modal.btn_login">LOGIN</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Loading State -->
-        <div id="modal-state-loading" class="modal-status-box hidden">
-          <div class="loading-spinner"></div>
-          <div class="status-title" data-i18n="modal.loading">Downloading &amp; Parsing Playlist...</div>
-          <div class="status-desc" data-i18n="modal.loading_sub">Please wait while channels are loaded</div>
-        </div>
-
-        <!-- Error State -->
-        <div id="modal-state-error" class="modal-status-box hidden">
-          <div class="error-icon">
-            <svg viewBox="0 0 24 24">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
-            </svg>
-          </div>
-          <h3 class="status-title" data-i18n="modal.error_title">Unable to Load Playlist</h3>
-          <div id="modal-error-message" class="status-desc"></div>
-          <div class="modal-actions" style="margin-top: 16px;">
-            <button id="modal-btn-error-cancel" class="btn-secondary focusable" data-nav-zone="modal" data-i18n="modal.btn_cancel">Cancel</button>
-            <button id="modal-btn-retry" class="btn-primary focusable" data-nav-zone="modal" data-i18n="modal.btn_retry">Retry</button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- Add Playlist Overlay / Compatibility Stub -->
+    <div id="modal-overlay" class="modal-overlay hidden" style="display:none !important;" aria-hidden="true"></div>
   </div>
 
   <!-- Samsung Tizen Webapis (Hardware TV Runtime) -->
@@ -694,4 +864,5 @@
   <script src="js/ui/home.js"></script>
   <script src="js/app.js"></script>
 </body>
+
 </html>

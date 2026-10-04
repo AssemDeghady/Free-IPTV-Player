@@ -139,7 +139,12 @@
       var mediaWrap = document.createElement('div');
       mediaWrap.className = 'favorite-card-media';
 
-      var posterUrl = item.poster || item.logoUrl;
+      var fallback = document.createElement('div');
+      fallback.className = 'favorite-card-fallback';
+      var svgIcon = '<svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>';
+      fallback.innerHTML = svgIcon;
+
+      var posterUrl = item.posterUrl || item.poster || item.cover || item.logoUrl || item.streamIcon || '';
       if (posterUrl) {
         var img = document.createElement('img');
         img.src = posterUrl;
@@ -147,15 +152,12 @@
         img.loading = 'lazy';
         img.onerror = function () {
           this.style.display = 'none';
+          fallback.style.display = 'flex';
         };
         mediaWrap.appendChild(img);
-      } else {
-        var fallback = document.createElement('div');
-        fallback.className = 'favorite-card-fallback';
-        var svgIcon = '<svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>';
-        fallback.innerHTML = svgIcon;
-        mediaWrap.appendChild(fallback);
+        fallback.style.display = 'none';
       }
+      mediaWrap.appendChild(fallback);
 
       // Type Badge (LIVE, MOVIE, SERIES)
       var badge = document.createElement('div');
@@ -169,7 +171,7 @@
 
       var title = document.createElement('div');
       title.className = 'favorite-card-title';
-      title.textContent = item.name || item.title || 'Untitled';
+      title.textContent = item.title || item.name || 'Untitled';
 
       var sub = document.createElement('div');
       sub.className = 'favorite-card-sub';
@@ -198,9 +200,9 @@
           // Find full channel if possible
           var channel = {
             id: item.contentId,
-            name: item.name,
+            name: item.title || item.name,
             streamUrl: item.streamUrl,
-            logoUrl: item.logoUrl,
+            logoUrl: item.posterUrl || item.poster || item.logoUrl,
             groupTitle: item.groupTitle
           };
           window.FreeIPTV.Player.playChannel(channel, [channel]);
@@ -208,25 +210,32 @@
       } else if (item.contentType === 'movie') {
         if (window.FreeIPTV.Movies) {
           var movieObj = {
+            id: item.contentId,
             streamId: item.contentId,
-            name: item.name,
-            poster: item.poster,
+            name: item.title || item.name,
+            posterUrl: item.posterUrl || item.poster || item.cover || '',
+            poster: item.posterUrl || item.poster || item.cover || '',
+            streamUrl: item.streamUrl,
+            categoryName: item.categoryName,
             rating: item.rating,
             year: item.year,
             containerExtension: item.containerExtension || 'mp4'
           };
-          window.FreeIPTV.Movies.openMovieDetails(movieObj);
+          window.FreeIPTV.Movies.openMovieDetails(movieObj, 'favorites');
         }
       } else if (item.contentType === 'series') {
         if (window.FreeIPTV.Series) {
           var seriesObj = {
+            id: item.contentId,
             seriesId: item.contentId,
-            name: item.name,
-            poster: item.poster,
+            name: item.title || item.name,
+            posterUrl: item.posterUrl || item.poster || item.cover || '',
+            poster: item.posterUrl || item.poster || item.cover || '',
+            cover: item.posterUrl || item.poster || item.cover || '',
             rating: item.rating,
             releaseDate: item.releaseDate
           };
-          window.FreeIPTV.Series.openSeriesDetails(seriesObj);
+          window.FreeIPTV.Series.openSeriesDetails(seriesObj, 'favorites');
         }
       }
     },

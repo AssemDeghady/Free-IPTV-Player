@@ -72,6 +72,7 @@
     'home.stat_channels': 'Channels',
     'home.stat_movies': 'Movies',
     'home.stat_series': 'Series',
+    'home.quick_access': 'Quick Access',
 
     'hints.navigate': 'Navigate',
     'hints.select': 'Select',
@@ -129,12 +130,26 @@
     'movies.all_movies': 'All Movies',
     'movies.no_movies': 'No movies found',
     'movies.count': '{count} Movies',
+    'movies.movie_count': '{count} Movies',
+    'movies.no_movies_sub': 'Try selecting another category or changing your search query.',
+    'movies.resume_from': 'Resume from {time}',
+    'movies.no_description': 'No overview available.',
+    'movies.cast_label': 'Cast: ',
+    'movies.remove_favorite': 'Remove Favorite',
+    'movies.add_favorite': 'Favorite',
 
     'series.title': 'Series',
     'series.categories': 'Categories',
     'series.all_series': 'All Series',
     'series.no_series': 'No series found',
     'series.count': '{count} Series',
+    'series.series_count': '{count} Series',
+    'series.no_series_sub': 'Try selecting another category or changing your search query.',
+    'series.loading_episodes': 'Loading seasons and episodes...',
+    'series.no_description': 'No overview available.',
+    'series.no_episodes': 'No episodes found for this season.',
+    'series.remove_favorite': 'Remove Favorite',
+    'series.add_favorite': 'Favorite',
     'series.seasons': 'Seasons:',
     'series.season': 'Season {num}',
     'series.episode': 'Episode {num}',
@@ -227,7 +242,8 @@
     'player.retry': 'Retry',
     'player.dev_notice': 'Samsung AVPlay is unavailable in this environment (Running in development/mock mode)',
     'player.no_extra_audio': 'Default Audio',
-    'player.no_subtitles': 'No Subtitles Available'
+    'player.no_subtitles': 'No Subtitles Available',
+    'categories.search_placeholder': 'Search categories...'
   };
 
   // Built-in Arabic translation bundle (zero-latency bootstrap and offline-safe)
@@ -290,6 +306,7 @@
     'home.stat_channels': 'قناة',
     'home.stat_movies': 'فيلم',
     'home.stat_series': 'مسلسل',
+    'home.quick_access': 'الوصول السريع',
 
     'hints.navigate': 'تنقل',
     'hints.select': 'اختيار',
@@ -347,12 +364,26 @@
     'movies.all_movies': 'جميع الأفلام',
     'movies.no_movies': 'لم يتم العثور على أفلام',
     'movies.count': '{count} فيلم',
+    'movies.movie_count': '{count} فيلم',
+    'movies.no_movies_sub': 'حاول اختيار فئة أخرى أو تغيير عبارة البحث.',
+    'movies.resume_from': 'استئناف من {time}',
+    'movies.no_description': 'لا يتوفر وصف.',
+    'movies.cast_label': 'طاقم العمل: ',
+    'movies.remove_favorite': 'إزالة من المفضلة',
+    'movies.add_favorite': 'إضافة للمفضلة',
 
     'series.title': 'المسلسلات',
     'series.categories': 'الفئات',
     'series.all_series': 'جميع المسلسلات',
     'series.no_series': 'لم يتم العثور على مسلسلات',
     'series.count': '{count} مسلسل',
+    'series.series_count': '{count} مسلسل',
+    'series.no_series_sub': 'حاول اختيار فئة أخرى أو تغيير عبارة البحث.',
+    'series.loading_episodes': 'جارٍ تحميل المواسم والحلقات...',
+    'series.no_description': 'لا يتوفر وصف.',
+    'series.no_episodes': 'لا توجد حلقات لهذا الموسم.',
+    'series.remove_favorite': 'إزالة من المفضلة',
+    'series.add_favorite': 'إضافة للمفضلة',
     'series.seasons': 'المواسم:',
     'series.season': 'الموسم {num}',
     'series.episode': 'الحلقة {num}',
@@ -445,7 +476,8 @@
     'player.retry': 'إعادة المحاولة',
     'player.dev_notice': 'مشغل Samsung AVPlay غير متوفر في هذه البيئة (يعمل في وضع التطوير الافتراضي)',
     'player.no_extra_audio': 'الصوت الافتراضي',
-    'player.no_subtitles': 'لا توجد ترجمة متاحة'
+    'player.no_subtitles': 'لا توجد ترجمة متاحة',
+    'categories.search_placeholder': 'البحث في الأقسام...'
   };
 
   /**

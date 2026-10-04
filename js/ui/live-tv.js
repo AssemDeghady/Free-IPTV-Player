@@ -56,6 +56,13 @@
         });
       }
 
+      var catSearchInput = document.getElementById('live-category-search-input');
+      if (catSearchInput) {
+        catSearchInput.addEventListener('input', function (e) {
+          self.setCategorySearchQuery(e.target.value);
+        });
+      }
+
       // Re-load when active playlist changes or playlists are updated
       if (window.FreeIPTV.Events && window.FreeIPTV.Constants) {
         window.FreeIPTV.Events.on(window.FreeIPTV.Constants.EVENTS.PLAYLIST_ACTIVE_CHANGED, function () {
@@ -212,6 +219,17 @@
       this.loadActivePlaylist(true);
     },
 
+    categorySearchQuery: '',
+
+    /**
+     * Update category search query and filter categories.
+     * @param {string} query
+     */
+    setCategorySearchQuery: function (query) {
+      this.categorySearchQuery = (query || '').trim().toLowerCase();
+      this.renderCategories();
+    },
+
     /**
      * Render the categories column for the current drill-down level.
      */
@@ -244,6 +262,7 @@
         allInParent.setAttribute('data-nav-zone', 'live_categories');
 
         var allInLabel = document.createElement('span');
+        allInLabel.className = 'category-name';
         allInLabel.textContent = (I18n ? I18n.t('live.all_channels') : 'All Channels') + ' (' + currentParent.name + ')';
         var allInCount = document.createElement('span');
         allInCount.className = 'category-count';
@@ -256,8 +275,8 @@
           self.selectCategoryNode(currentParent, allInParent);
         });
         container.appendChild(allInParent);
-      } else {
-        // Root Level: Render "All Channels" & "Favorites"
+      } else if (!this.categorySearchQuery) {
+        // Root Level: Render "All Channels" & "Favorites" (when not searching)
         // A. "All Channels"
         var allItem = document.createElement('button');
         allItem.className = 'category-item focusable' + (activeCategory === 'all' ? ' active' : '');
@@ -265,6 +284,7 @@
         allItem.setAttribute('data-category', 'all');
 
         var allLabel = document.createElement('span');
+        allLabel.className = 'category-name';
         allLabel.textContent = I18n ? I18n.t('live.all_channels') : 'All Channels';
         var allCount = document.createElement('span');
         allCount.className = 'category-count';
@@ -289,6 +309,7 @@
         favItem.setAttribute('data-category', 'favorites');
 
         var favLabel = document.createElement('span');
+        favLabel.className = 'category-name';
         favLabel.textContent = I18n ? I18n.t('live.favorites_category') : 'Favorites';
         var favCount = document.createElement('span');
         favCount.className = 'category-count';
@@ -316,6 +337,13 @@
         }
       }
 
+      if (this.categorySearchQuery) {
+        var q = this.categorySearchQuery;
+        nodes = nodes.filter(function (n) {
+          return n.name && n.name.toLowerCase().indexOf(q) !== -1;
+        });
+      }
+
       for (var i = 0; i < nodes.length; i++) {
         var node = nodes[i];
         var itemEl = document.createElement('button');
@@ -325,6 +353,7 @@
         itemEl.setAttribute('data-category', node.name);
 
         var nameSpan = document.createElement('span');
+        nameSpan.className = 'category-name';
         nameSpan.textContent = node.name;
 
         var rightGroup = document.createElement('span');

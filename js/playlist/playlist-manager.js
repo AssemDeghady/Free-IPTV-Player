@@ -177,7 +177,25 @@
      */
     getActivePlaylist: function () {
       var id = this.getActivePlaylistId();
-      return id ? this.getPlaylist(id) : null;
+      var pl = id ? this.getPlaylist(id) : null;
+      if (pl && pl.username && pl.name === 'Xtream (' + pl.username + ')') {
+        pl.name = 'Xtream IPTV';
+      }
+      return pl;
+    },
+
+    /**
+     * Get a human-readable display name for a playlist, ensuring technical usernames are not exposed.
+     * @param {Object} playlist
+     * @returns {string}
+     */
+    getDisplayName: function (playlist) {
+      if (!playlist) return 'No Playlist';
+      var name = (playlist.name || '').trim();
+      if (playlist.username && name === 'Xtream (' + playlist.username + ')') {
+        return 'Xtream IPTV';
+      }
+      return name || 'IPTV Playlist';
     },
 
     /**
@@ -946,7 +964,12 @@
     getMovieDetails: function (playlistId, movie) {
       if (!movie) return Promise.resolve({});
       var channelStore = window.FreeIPTV.ChannelStore;
-      var streamId = (movie.metadata && movie.metadata.streamId) || movie.id;
+      var rawStreamId = (movie.metadata && movie.metadata.streamId) || movie.streamId || movie.stream_id || movie.id;
+      var streamId = rawStreamId;
+      if (typeof streamId === 'string' && streamId.indexOf('movie_') === 0) {
+        var parts = streamId.split('_');
+        streamId = parts[parts.length - 1];
+      }
 
       if (channelStore) {
         return channelStore.getVodDetails(playlistId, streamId).then(function (cached) {
@@ -986,7 +1009,12 @@
     getSeriesDetails: function (playlistId, series) {
       if (!series) return Promise.resolve({ seasons: [], episodesBySeason: {}, allEpisodes: [] });
       var channelStore = window.FreeIPTV.ChannelStore;
-      var seriesId = (series.metadata && series.metadata.seriesId) || series.id;
+      var rawSeriesId = (series.metadata && series.metadata.seriesId) || series.seriesId || series.series_id || series.id;
+      var seriesId = rawSeriesId;
+      if (typeof seriesId === 'string' && seriesId.indexOf('series_') === 0) {
+        var sParts = seriesId.split('_');
+        seriesId = sParts[sParts.length - 1];
+      }
 
       if (channelStore) {
         return channelStore.getSeriesDetails(playlistId, seriesId).then(function (cached) {
@@ -1566,12 +1594,14 @@
 
       var newState = false;
       if (foundIndex === -1) {
+        var resolvedFavPoster = item.posterUrl || item.poster || item.logoUrl || item.cover || item.streamIcon || '';
         var favRecord = {
           providerId: item.providerId || this.getActivePlaylistId() || '',
           contentType: item.contentType || 'live',
           contentId: item.contentId,
           title: item.title || item.name || '',
-          posterUrl: item.posterUrl || item.logoUrl || '',
+          posterUrl: resolvedFavPoster,
+          poster: resolvedFavPoster,
           streamUrl: item.streamUrl || '',
           categoryName: item.categoryName || item.groupTitle || '',
           createdAt: Date.now()
@@ -1631,12 +1661,14 @@
         return !(h.contentId === item.contentId && h.contentType === item.contentType);
       });
 
+      var resolvedHistPoster = item.posterUrl || item.poster || item.logoUrl || item.thumbnailUrl || item.cover || item.streamIcon || '';
       var record = {
         providerId: item.providerId || this.getActivePlaylistId() || '',
         contentType: item.contentType || 'live',
         contentId: item.contentId,
         title: item.title || item.name || '',
-        posterUrl: item.posterUrl || item.logoUrl || item.thumbnailUrl || '',
+        posterUrl: resolvedHistPoster,
+        poster: resolvedHistPoster,
         streamUrl: item.streamUrl || '',
         lastWatchedAt: now,
         positionSeconds: item.positionSeconds || 0,
@@ -1720,12 +1752,14 @@
 
       // Also record in watch history
       if (metadata) {
+        var resolvedMetaPoster = metadata.posterUrl || metadata.poster || metadata.logoUrl || metadata.thumbnailUrl || metadata.cover || metadata.streamIcon || '';
         this.recordWatchHistory({
           providerId: metadata.providerId,
           contentType: type,
           contentId: contentId,
           title: metadata.title || metadata.name,
-          posterUrl: metadata.posterUrl || metadata.poster,
+          posterUrl: resolvedMetaPoster,
+          poster: resolvedMetaPoster,
           positionSeconds: Math.round(pos || 0),
           durationSeconds: Math.round(dur || 0),
           streamUrl: metadata.streamUrl,

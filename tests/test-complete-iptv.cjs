@@ -519,24 +519,23 @@ async function runTests() {
     assert(cwB.length === 0, 'Secondary Provider has 0 continue watching items (Strict cache isolation)');
   }
 
-  // --- 13. Phase 5.3 Navigation Architecture & Footer Elimination ---
-  console.log('\n--- 13. Phase 5.3 Navigation Architecture & Footer Elimination ---');
+  // --- 13. Phase 6.2 Home-Centered Navigation & Full-Page Content UX ---
+  console.log('\n--- 13. Phase 6.2 Home-Centered Navigation & Full-Page Content UX ---');
   {
     const htmlContent = fs.readFileSync(path.resolve(__dirname, '../index.html'), 'utf8');
 
-    // Sidebar routes check
-    const sidebarMatch = htmlContent.match(/<aside class="app-sidebar"[\s\S]*?<\/aside>/);
-    assert(sidebarMatch !== null, 'Sidebar exists in index.html');
-    const sidebarHtml = sidebarMatch[0];
+    // Sidebar elimination check
+    assert(!htmlContent.includes('<aside class="app-sidebar"'), 'Permanent sidebar .app-sidebar is completely eliminated');
+    assert(!htmlContent.includes('class="app-sidebar"'), 'No app-sidebar elements exist in index.html');
 
-    const expectedRoutes = ['home', 'live_tv', 'movies', 'series', 'favorites', 'playlists'];
-    for (const route of expectedRoutes) {
-      assert(sidebarHtml.includes(`data-route="${route}"`), `Sidebar contains required route: ${route}`);
-    }
+    // Home Quick Access section check
+    assert(htmlContent.includes('id="home-quick-access-section"'), 'index.html contains #home-quick-access-section on Home screen');
 
-    assert(!sidebarHtml.includes('data-route="search"'), 'Sidebar does NOT contain Search (moved to header)');
-    assert(!sidebarHtml.includes('data-route="settings"'), 'Sidebar does NOT contain Settings (moved to header)');
-    assert(!sidebarHtml.includes('data-route="guide"'), 'Sidebar does NOT contain TV Guide');
+    // Full-page Details views check (no modal popups)
+    assert(htmlContent.includes('id="view-movie_details"'), 'index.html contains full-page #view-movie_details view');
+    assert(htmlContent.includes('id="view-series_details"'), 'index.html contains full-page #view-series_details view');
+    assert(!htmlContent.includes('id="movie-details-modal"'), 'Modal popup #movie-details-modal completely eliminated');
+    assert(!htmlContent.includes('id="series-details-modal"'), 'Modal popup #series-details-modal completely eliminated');
 
     // Header buttons
     assert(htmlContent.includes('id="btn-header-search"'), 'Header contains search button #btn-header-search');

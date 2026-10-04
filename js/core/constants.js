@@ -8,6 +8,17 @@
 
   window.FreeIPTV = window.FreeIPTV || {};
 
+  /** Strip prefixes, tags, years and bracketed extras from a VOD/series title. */
+  window.FreeIPTV.cleanTitle = function (raw) {
+    var s = String(raw || '');
+    s = s.replace(/^\s*(\|[^|]{1,12}\||\[[^\]]{1,12}\]|[A-Za-z]{2,3}\s*[-:|]\s+)/, '');
+    s = s.replace(/\[[^\]]*\]|\([^)]*\)|\{[^}]*\}/g, ' ');
+    s = s.replace(/\b(19|20)\d{2}\b/g, ' ');
+    s = s.replace(/\b(4K|UHD|FHD|HD|SD|HDR|1080p|720p|2160p|480p|BluRay|WEB-?DL|WEBRip|HDRip|x264|x265|HEVC|MULTI|DUBBED|SUBBED|S\d{1,2}\s*E\d{1,2})\b/gi, ' ');
+    s = s.replace(/\s*[-–|:]\s*$/, '').replace(/\s+/g, ' ').trim();
+    return s || String(raw || '').trim();
+  };
+
   window.FreeIPTV.Constants = {
     APP: {
       NAME: 'Free IPTV Player',
@@ -55,6 +66,7 @@
       SERIES_CATEGORIES: 'series_categories',
       SERIES_GRID: 'series_grid',
       SERIES_DETAILS: 'series_details',
+      SERIES_SEASON_DROPDOWN: 'series_season_dropdown',
       LIVE_EPG: 'live_epg',
       GUIDE_CHANNELS: 'guide_channels',
       GUIDE_PROGRAMS: 'guide_programs',
@@ -66,7 +78,28 @@
       SETTINGS_DIAGNOSTICS: 'settings_diagnostics',
       PLAYER_CONTROLS: 'player_controls',
       PLAYER_ERROR: 'player_error',
-      MODAL: 'modal'
+      MODAL: 'modal',
+      HOME_QUICK_ACCESS: 'home_quick_access',
+      ADD_PLAYLIST: 'add_playlist',
+      LIVE_CATEGORY_SEARCH: 'live_category_search',
+      MOVIES_CATEGORY_SEARCH: 'movies_category_search',
+      SERIES_CATEGORY_SEARCH: 'series_category_search'
+    },
+
+    // Application Navigation Routes
+    ROUTES: {
+      HOME: 'home',
+      LIVE_TV: 'live_tv',
+      MOVIES: 'movies',
+      SERIES: 'series',
+      FAVORITES: 'favorites',
+      PLAYLISTS: 'playlists',
+      ADD_PLAYLIST: 'add_playlist',
+      SEARCH: 'search',
+      SETTINGS: 'settings',
+      MOVIE_DETAILS: 'movie_details',
+      SERIES_DETAILS: 'series_details',
+      PLAYER: 'player'
     },
 
     // Content Types

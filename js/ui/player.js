@@ -63,20 +63,20 @@
         btnPrev.addEventListener('click', function () {
           if (currentMedia && currentMedia.type === 'live') {
             self.zapPrevious();
-          } else {
-            self.seek(-10);
+          } else if (currentMedia && currentMedia.type === 'episode') {
+            self.playAdjacentEpisode(-1);
           }
         });
       }
 
-      // Next channel button
+      // Next channel / episode button
       var btnNext = document.getElementById('player-btn-next');
       if (btnNext) {
         btnNext.addEventListener('click', function () {
           if (currentMedia && currentMedia.type === 'live') {
             self.zapNext();
-          } else {
-            self.seek(10);
+          } else if (currentMedia && currentMedia.type === 'episode') {
+            self.playAdjacentEpisode(1);
           }
         });
       }
@@ -258,13 +258,16 @@
         }
       }
 
+      var moviePoster = movie.posterUrl || movie.poster || movie.streamIcon || '';
       currentMedia = {
         type: 'movie',
-        id: movie.streamId,
+        id: movie.streamId || movie.id,
         title: movie.name || movie.title || 'Movie',
         subtitle: (movie.year ? String(movie.year) + ' • ' : '') + 'Movie',
         streamUrl: streamUrl,
-        logoUrl: movie.poster,
+        logoUrl: moviePoster,
+        posterUrl: moviePoster,
+        poster: moviePoster,
         duration: (movie.durationSecs || 0) * 1000,
         position: startPositionMs || 0,
         rawItem: movie
@@ -280,8 +283,25 @@
      * @param {Object} episode
      * @param {number} [startPositionMs]
      */
-    playEpisode: function (series, seasonNum, episode, startPositionMs) {
+    playAdjacentEpisode: function (delta) {
+      var q = this._episodeQueue || [];
+      var cur = currentMedia && currentMedia.id;
+      var idx = -1;
+      for (var i = 0; i < q.length; i++) {
+        if (String(q[i].id) === String(cur)) { idx = i; break; }
+      }
+      var target = idx === -1 ? null : q[idx + delta];
+      if (!target) return;
+      this.playEpisode(this._episodeSeries, this._episodeSeason, target, 0, q);
+    },
+
+    playEpisode: function (series, seasonNum, episode, startPositionMs, episodeList) {
       if (!episode) return;
+      if (episodeList) {
+        this._episodeQueue = episodeList;
+        this._episodeSeries = series;
+        this._episodeSeason = seasonNum;
+      }
 
       var streamUrl = episode.streamUrl;
       if (!streamUrl && window.FreeIPTV.PlaylistManager) {
@@ -297,14 +317,18 @@
         }
       }
 
+      var epPoster = (episode && (episode.posterUrl || episode.poster || episode.cover)) ||
+                     (series && (series.posterUrl || series.poster || series.cover)) || '';
       currentMedia = {
         type: 'episode',
         id: episode.id,
-        seriesId: series.seriesId,
+        seriesId: series.seriesId || series.id,
         title: (series.name || 'Series') + ' - S' + seasonNum + 'E' + (episode.episodeNum || 1),
         subtitle: episode.title || ('Episode ' + (episode.episodeNum || 1)),
         streamUrl: streamUrl,
-        logoUrl: episode.poster || series.poster,
+        logoUrl: epPoster,
+        posterUrl: epPoster,
+        poster: epPoster,
         duration: (episode.durationSecs || 0) * 1000,
         position: startPositionMs || 0,
         rawItem: episode,
@@ -356,12 +380,14 @@
 
       // 4. Record history
       if (window.FreeIPTV.PlaylistManager && window.FreeIPTV.PlaylistManager.recordWatchHistory) {
+        var histPoster = media.posterUrl || media.poster || media.logoUrl || '';
         window.FreeIPTV.PlaylistManager.recordWatchHistory({
           contentType: media.type,
           contentId: media.id,
           title: media.title,
           subtitle: media.subtitle,
-          poster: media.logoUrl,
+          poster: histPoster,
+          posterUrl: histPoster,
           streamUrl: media.streamUrl
         });
       }
@@ -661,8 +687,8 @@
       } else {
         // VOD Movie or Episode
         if (progressContainer) progressContainer.classList.remove('hidden');
-        if (btnPrev) btnPrev.classList.add('hidden');
-        if (btnNext) btnNext.classList.add('hidden');
+        if (btnPrev) btnPrev.classList.toggle('hidden', type !== 'episode');
+        if (btnNext) btnNext.classList.toggle('hidden', type !== 'episode');
         if (btnRewind) btnRewind.classList.remove('hidden');
         if (btnForward) btnForward.classList.remove('hidden');
         if (liveBadge) liveBadge.style.display = 'none';
@@ -843,13 +869,22 @@
           restoreEl = document.querySelector('[data-channel-id="' + (currentChannel ? currentChannel.id : '') + '"]') ||
                       document.querySelector('#live-channels-container .focusable');
         } else if (currentMedia && currentMedia.type === 'movie') {
-          restoreEl = document.querySelector('#movie-btn-play') || document.querySelector('.movies-grid-container .focusable');
+          restoreEl = document.getElementById('btn-movie-resume') ||
+                      document.getElementById('btn-movie-play') ||
+                      document.getElementById('movie-btn-play') ||
+                      document.querySelector('#view-movie_details .focusable') ||
+                      document.querySelector('#movies-grid-container .focusable');
         } else if (currentMedia && currentMedia.type === 'episode') {
-          restoreEl = document.querySelector('.episode-item.focused') || document.querySelector('#series-episodes-list .focusable');
+          restoreEl = document.querySelector('.series-episode-card.focused') ||
+                      document.querySelector('.series-episode-card.active') ||
+                      document.querySelector('#series-episodes-list .focusable') ||
+                      document.querySelector('#view-series_details .focusable');
         }
 
         if (!restoreEl) {
-          restoreEl = document.querySelector('.app-sidebar .focusable.active') || document.querySelector('.focusable');
+          restoreEl = document.querySelector('.view-screen:not(.hidden) .focusable') ||
+                      document.querySelector('#home-quick-access-section .focusable') ||
+                      document.querySelector('.focusable');
         }
         if (restoreEl) {
           window.FreeIPTV.Navigation.focus(restoreEl);
