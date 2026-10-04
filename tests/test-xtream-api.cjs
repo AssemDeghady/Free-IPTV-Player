@@ -355,6 +355,31 @@ async function runTests() {
     assert(refreshResult.playlist.type === 'xtream', 'Refreshed playlist remains type xtream');
     assert(refreshResult.playlist.channelCount === 3, 'Refreshed playlist channel count verified');
 
+    console.log('\n--- 17. Associative Object Normalization (VOD & Series) ---');
+    const assocVod = {
+      "0": { stream_id: "101", name: "Inception", category_id: "1", container_extension: "mp4" },
+      "1": { stream_id: "102", name: "Interstellar", category_id: "1", container_extension: "mkv" }
+    };
+    const assocVodCats = {
+      "0": { id: "1", name: "Sci-Fi" }
+    };
+    const normVodResult = XtreamApi.normalizeVodStreams(assocVod, assocVodCats, 'http://test.com', 'user', 'pass', 'pl_test');
+    assert(normVodResult.movies.length === 2, 'Associative VOD object normalized to 2 movies');
+    assert(normVodResult.movies[0].name === 'Inception', 'First movie name normalized correctly');
+    assert(normVodResult.movies[0].categoryName === 'Sci-Fi', 'VOD category mapped from associative categories object');
+
+    const assocSeries = {
+      "0": { series_id: "201", name: "Breaking Bad", category_id: "5" },
+      "1": { series_id: "202", name: "Better Call Saul", category_id: "5" }
+    };
+    const assocSeriesCats = {
+      "0": { id: "5", name: "Drama" }
+    };
+    const normSeriesResult = XtreamApi.normalizeSeriesList(assocSeries, assocSeriesCats, 'http://test.com', 'user', 'pass', 'pl_test');
+    assert(normSeriesResult.series.length === 2, 'Associative Series object normalized to 2 series');
+    assert(normSeriesResult.series[1].name === 'Better Call Saul', 'Second series name normalized correctly');
+    assert(normSeriesResult.series[0].categoryName === 'Drama', 'Series category mapped from associative categories object');
+
     // Cleanup
     Http.get = originalHttpGet;
 

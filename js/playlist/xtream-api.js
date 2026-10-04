@@ -712,6 +712,13 @@
       var pId = playlistId || 'pl_' + Date.now();
       var normServer = normalizeServerUrl(server);
 
+      if (!Array.isArray(rawVod) && rawVod && typeof rawVod === 'object') {
+        rawVod = Object.values(rawVod);
+      }
+      if (!Array.isArray(categories) && categories && typeof categories === 'object') {
+        categories = Object.values(categories);
+      }
+
       var categoryMap = {};
       if (Array.isArray(categories)) {
         for (var c = 0; c < categories.length; c++) {
@@ -935,6 +942,13 @@
      */
     normalizeSeriesList: function (rawSeries, categories, server, username, password, playlistId) {
       var pId = playlistId || 'pl_' + Date.now();
+
+      if (!Array.isArray(rawSeries) && rawSeries && typeof rawSeries === 'object') {
+        rawSeries = Object.values(rawSeries);
+      }
+      if (!Array.isArray(categories) && categories && typeof categories === 'object') {
+        categories = Object.values(categories);
+      }
 
       var categoryMap = {};
       if (Array.isArray(categories)) {
