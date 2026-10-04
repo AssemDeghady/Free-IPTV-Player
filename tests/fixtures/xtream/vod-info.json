@@ -1,0 +1,41 @@
+{
+  "info": {
+    "kinopoisk_url": "",
+    "tmdb_id": "157336",
+    "name": "Interstellar",
+    "o_name": "Interstellar",
+    "cover_big": "https://example.com/posters/interstellar_big.jpg",
+    "movie_image": "https://example.com/posters/interstellar.jpg",
+    "release_date": "2014-11-05",
+    "episode_run_time": "169",
+    "youtube_trailer": "zSWdZVtXT7E",
+    "director": "Christopher Nolan",
+    "actors": "Matthew McConaughey, Anne Hathaway, Jessica Chastain",
+    "cast": "Matthew McConaughey, Anne Hathaway, Jessica Chastain",
+    "description": "When Earth becomes uninhabitable in the future, a farmer and ex-NASA pilot, Joseph Cooper, is tasked to pilot a spacecraft, along with a team of researchers, to find a new planet for humans.",
+    "plot": "When Earth becomes uninhabitable in the future...",
+    "age": "PG-13",
+    "country": "United States",
+    "genre": "Adventure, Drama, Sci-Fi",
+    "backdrop_path": [
+      "https://example.com/backdrops/interstellar.jpg"
+    ],
+    "duration_secs": 10140,
+    "duration": "02:49:00",
+    "video": {},
+    "audio": {},
+    "bitrate": 4500,
+    "rating": "8.7"
+  },
+  "movie_data": {
+    "stream_id": 1001,
+    "name": "Interstellar (2014)",
+    "title": "Interstellar",
+    "year": "2014",
+    "added": "1610000000",
+    "category_id": "20",
+    "container_extension": "mp4",
+    "custom_sid": "",
+    "direct_source": ""
+  }
+}

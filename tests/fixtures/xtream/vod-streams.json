@@ -1,0 +1,30 @@
+[
+  {
+    "num": 1,
+    "name": "Interstellar (2014)",
+    "stream_type": "movie",
+    "stream_id": 1001,
+    "stream_icon": "https://example.com/posters/interstellar.jpg",
+    "rating": "8.7",
+    "rating_5based": 4.35,
+    "added": "1610000000",
+    "category_id": "20",
+    "container_extension": "mp4",
+    "custom_sid": "",
+    "direct_source": ""
+  },
+  {
+    "num": 2,
+    "name": "Gladiator (2000)",
+    "stream_type": "movie",
+    "stream_id": 1002,
+    "stream_icon": "https://example.com/posters/gladiator.jpg",
+    "rating": "8.5",
+    "rating_5based": 4.25,
+    "added": "1610000100",
+    "category_id": "10",
+    "container_extension": "mkv",
+    "custom_sid": "",
+    "direct_source": ""
+  }
+]

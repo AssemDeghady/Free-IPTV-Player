@@ -1,0 +1,90 @@
+# Project type [web_app, test_runner]
+project_type: web_app
+
+# Default profile, Tizen API version
+profile: tv-samsung
+api_version: ""
+
+# Build type [Debug/ Release/ Test]
+build_type: Debug
+
+# Output name for application
+output_name: FreeIPTVPlayer
+
+# Output path for build
+output_path: ""
+
+# Enable size optimization of wgt for web workspace
+opt: false
+
+# Signing profile to be used for Tizen package signing
+# If value is empty: "", active signing profile will be used
+# Else If value is ".", default signing profile will be used
+signing_profile: ""
+
+# list of certs in web project (.trust-anchor)
+trust_anchor: []
+
+# list of files in web project (.html,.css etc) and resources
+files:
+  - assets/icons/icon-117.png
+  - assets/icons/icon-512.png
+  - css/app.css
+  - css/layout.css
+  - css/navigation.css
+  - icon.png
+  - index.html
+  - js/app.js
+  - js/core/constants.js
+  - js/core/events.js
+  - js/core/http.js
+  - js/core/logger.js
+  - js/i18n/ar.json
+  - js/i18n/en.json
+  - js/i18n/i18n.js
+  - js/player/avplay-engine.js
+  - js/playlist/m3u-parser.js
+  - js/playlist/playlist-manager.js
+  - js/storage/channel-store.js
+  - js/storage/storage.js
+  - js/tv/remote.js
+  - js/ui/home.js
+  - js/ui/live-tv.js
+  - js/ui/modal.js
+  - js/ui/navigation.js
+  - js/ui/player.js
+  - js/ui/settings.js
+
+# list of files to exclude based on the matched patterns
+excludes:
+  - .tizenproject
+  - \.tizen-rds/.*
+  - README.md
+  - tests/*
+  - tests/**
+  - Build/*
+  - Debug/*
+  - Directory.Build.targets
+  - Release/*
+  - Test/*
+  - \.Build/.*
+  - \.buildResult/.*
+  - \.csproj
+  - \.externalToolBuilders/.*
+  - \.gn
+  - \.obj/.*
+  - \.package/.*
+  - \.project
+  - \.rds_delta
+  - \.sdk_delta.info
+  - \.settings/.*
+  - \.sign/.*
+  - \.tizen-ui-builder-tool.xml
+  - \.tproject
+  - \.wgt
+  - tizen_web_project.yaml
+  - webUnitTest/*
+
+# project dependencies
+deps: []
+

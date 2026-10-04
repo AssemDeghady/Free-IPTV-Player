@@ -1,0 +1,22 @@
+[
+  {
+    "num": 1,
+    "name": "Breaking Bad",
+    "series_id": 2001,
+    "cover": "https://example.com/posters/breaking_bad.jpg",
+    "plot": "A chemistry teacher diagnosed with terminal lung cancer teams up with a former student to manufacture and sell crystal meth.",
+    "cast": "Bryan Cranston, Aaron Paul, Anna Gunn",
+    "director": "Vince Gilligan",
+    "genre": "Crime, Drama, Thriller",
+    "releaseDate": "2008-01-20",
+    "last_modified": "1610000200",
+    "rating": "9.5",
+    "rating_5based": 4.75,
+    "backdrop_path": [
+      "https://example.com/backdrops/breaking_bad.jpg"
+    ],
+    "youtube_trailer": "",
+    "episode_run_time": "49",
+    "category_id": "30"
+  }
+]

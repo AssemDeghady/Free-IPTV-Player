@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<widget xmlns="http://www.w3.org/ns/widgets" 
+        xmlns:tizen="http://tizen.org/ns/widgets" 
+        id="http://freeiptvplayer.org/FreeIPTVPlayer" 
+        version="1.0.0" 
+        viewmodes="maximized">
+    <tizen:application id="fiptv00001.FreeIPTVPlayer" 
+                       package="fiptv00001" 
+                       required_version="3.0" 
+                       exec="index.html" 
+                       screen-orientation="landscape" 
+                       context-menu="disable" 
+                       background-support="disable" 
+                       encryption="disable" 
+                       install-location="auto" 
+                       restart-strategy="stateful" 
+                       standard-full-screen="enable"/>
+    <tizen:profile name="tv-samsung"/>
+    <name>Free IPTV Player</name>
+    <description>Free IPTV Player for Samsung Tizen Smart TVs. A clean, independent media player application.</description>
+    <author href="https://github.com/free-iptv-player" email="support@freeiptvplayer.org">Free IPTV Player Team</author>
+    <icon src="icon.png"/>
+    <content src="index.html"/>
+    <feature name="http://tizen.org/feature/screen.size.all"/>
+    <tizen:privilege name="http://tizen.org/privilege/application.launch"/>
+    <tizen:privilege name="http://tizen.org/privilege/tv.inputdevice"/>
+    <tizen:privilege name="http://tizen.org/privilege/internet"/>
+    <tizen:privilege name="http://developer.samsung.com/privilege/avplay"/>
+    <tizen:privilege name="http://developer.samsung.com/privilege/productinfo"/>
+    <tizen:privilege name="http://developer.samsung.com/privilege/network.public"/>
+    <tizen:setting screen-orientation="landscape" 
+                   context-menu="disable" 
+                   background-support="disable" 
+                   encryption="disable" 
+                   install-location="auto" 
+                   restart-strategy="stateful"/>
+    <access origin="*" subdomains="true"/>
+    <tizen:content-security-policy>default-src 'self' 'unsafe-inline' data:; connect-src *; img-src * data:; media-src *;</tizen:content-security-policy>
+    <tizen:metadata key="http://samsung.com/tv/metadata/use.developer.mode" value="true"/>
+    <tizen:metadata key="http://samsung.com/tv/metadata/prelaunch.support" value="false"/>
+</widget>

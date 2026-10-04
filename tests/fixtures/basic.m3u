@@ -1,0 +1,15 @@
+#EXTM3U
+#EXTINF:-1 tvg-id="bbc.news" tvg-name="BBC News" tvg-logo="https://example.com/logos/bbc.png" tvg-country="UK" tvg-language="English" tvg-chno="101" group-title="News",BBC News
+https://example.com/streams/bbc_news.m3u8
+
+#EXTINF:-1 tvg-id="cnn.us" tvg-name="CNN" tvg-logo="https://example.com/logos/cnn.png" tvg-country="US" tvg-language="English" tvg-chno="102" group-title="News",CNN International
+https://example.com/streams/cnn.m3u8
+
+#EXTINF:-1 tvg-id="espn.sports" tvg-name="ESPN" tvg-logo="https://example.com/logos/espn.png" group-title="Sports",ESPN HD
+https://example.com/streams/espn.m3u8?token=xyz123&auth=true
+
+#EXTINF:-1 tvg-id="discovery.doc" tvg-name="Discovery" group-title="Documentary",Discovery Channel
+https://example.com/streams/discovery.m3u8
+
+#EXTINF:-1,Euronews
+https://example.com/streams/euronews.m3u8

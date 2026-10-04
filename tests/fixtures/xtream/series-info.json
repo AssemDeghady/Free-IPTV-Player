@@ -1,0 +1,54 @@
+{
+  "seasons": [
+    {
+      "air_date": "2008-01-20",
+      "episode_count": 7,
+      "id": 3572,
+      "name": "Season 1",
+      "overview": "",
+      "season_number": 1,
+      "cover": "https://example.com/posters/bb_s1.jpg"
+    }
+  ],
+  "info": {
+    "name": "Breaking Bad",
+    "cover": "https://example.com/posters/breaking_bad.jpg",
+    "plot": "A chemistry teacher diagnosed with terminal lung cancer...",
+    "cast": "Bryan Cranston, Aaron Paul",
+    "director": "Vince Gilligan",
+    "genre": "Crime, Drama",
+    "releaseDate": "2008-01-20",
+    "rating": "9.5",
+    "backdrop_path": [
+      "https://example.com/backdrops/breaking_bad.jpg"
+    ]
+  },
+  "episodes": {
+    "1": [
+      {
+        "id": "5001",
+        "episode_num": 1,
+        "title": "Pilot",
+        "container_extension": "mp4",
+        "info": {
+          "duration_secs": 3480,
+          "duration": "00:58:00",
+          "movie_image": "https://example.com/episodes/bb_s1e1.jpg",
+          "plot": "Walter White, a high school chemistry teacher, discovers that he has lung cancer."
+        }
+      },
+      {
+        "id": "5002",
+        "episode_num": 2,
+        "title": "Cat's in the Bag...",
+        "container_extension": "mp4",
+        "info": {
+          "duration_secs": 2880,
+          "duration": "00:48:00",
+          "movie_image": "https://example.com/episodes/bb_s1e2.jpg",
+          "plot": "Walt and Jesse try to dispose of the two bodies."
+        }
+      }
+    ]
+  }
+}

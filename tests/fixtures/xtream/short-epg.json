@@ -1,0 +1,28 @@
+{
+  "epg_listings": [
+    {
+      "id": "9001",
+      "epg_id": "bbc1.uk",
+      "title": "TmV3cyBhdCBUZW4=",
+      "lang": "en",
+      "start": "2026-10-03 21:00:00",
+      "end": "2026-10-03 22:00:00",
+      "description": "TGF0ZXN0IG5hdGlvbmFsIGFuZCBpbnRlcm5hdGlvbmFsIG5ld3Mu",
+      "channel_id": "bbc_one",
+      "start_timestamp": "1759514400",
+      "stop_timestamp": "1759518000"
+    },
+    {
+      "id": "9002",
+      "epg_id": "bbc1.uk",
+      "title": "Weather Outlook",
+      "lang": "en",
+      "start": "2026-10-03 22:00:00",
+      "end": "2026-10-03 22:30:00",
+      "description": "Weather forecast for the week ahead.",
+      "channel_id": "bbc_one",
+      "start_timestamp": "1759518000",
+      "stop_timestamp": "1759519800"
+    }
+  ]
+}

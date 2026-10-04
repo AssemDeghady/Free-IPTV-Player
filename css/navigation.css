@@ -1,0 +1,351 @@
+/**
+ * Free IPTV Player — TV Remote Focus & Navigation Styles
+ * High contrast, visible at 10 feet, remote-friendly, RTL-ready.
+ */
+
+.focusable {
+  outline: none;
+  cursor: none;
+  transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast);
+}
+
+/* Sidebar item focus — Subtle scale without horizontal jitter */
+.nav-link.focused,
+.nav-link:focus-visible {
+  background-color: var(--focus-bg-color);
+  color: #ffffff;
+  border-color: var(--focus-border-color);
+  box-shadow: var(--focus-glow);
+  transform: scale(1.02);
+}
+
+/* Header button focus */
+.header-button.focused,
+.header-button:focus-visible {
+  background-color: var(--focus-bg-color);
+  color: #ffffff;
+  border-color: var(--focus-border-color);
+  box-shadow: var(--focus-glow);
+  transform: translateY(-2px);
+}
+
+/* Primary CTA button focus */
+.btn-primary.focused,
+.btn-primary:focus-visible {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 4px rgba(147, 197, 253, 0.7), 0 12px 32px rgba(37, 99, 235, 0.6);
+  transform: scale(1.03);
+}
+
+/* Input field focus */
+.form-input.focused,
+.form-input:focus,
+.live-search-input.focused,
+.live-search-input:focus {
+  background-color: var(--bg-surface-active);
+  border-color: var(--focus-border-color);
+  box-shadow: var(--focus-glow);
+  color: #ffffff;
+}
+
+/* Secondary Button focus */
+.btn-secondary.focused,
+.btn-secondary:focus-visible {
+  background-color: var(--focus-bg-color);
+  color: #ffffff;
+  border-color: var(--focus-border-color);
+  box-shadow: var(--focus-glow);
+  transform: scale(1.02);
+}
+
+/* Category item focus — Solid highlight without layout shift */
+.category-item.focused,
+.category-item:focus-visible {
+  background-color: var(--focus-bg-color);
+  color: #ffffff;
+  border-color: var(--focus-border-color);
+  box-shadow: var(--focus-glow);
+}
+
+/* Channel Card focus */
+.channel-card.focused,
+.channel-card:focus-visible {
+  background-color: #1e293b;
+  border-color: var(--focus-border-color);
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.65), 0 8px 24px rgba(0, 0, 0, 0.6);
+  transform: scale(1.02);
+  z-index: 10;
+}
+
+.channel-card.focused .channel-name {
+  color: #60a5fa;
+}
+
+/* Movie & Series Cards focus */
+.movie-card.focused,
+.movie-card:focus-visible,
+.series-card.focused,
+.series-card:focus-visible {
+  border-color: var(--focus-border-color);
+  box-shadow: var(--focus-glow);
+  transform: scale(1.02);
+  z-index: 10;
+}
+
+.movie-card.focused .movie-card-title,
+.series-card.focused .series-card-title {
+  color: var(--accent-hover);
+}
+
+.movie-card.focused .movie-poster-img,
+.series-card.focused .series-poster-img {
+  transform: scale(1.03);
+}
+
+/* Playlist Items & Actions focus */
+.playlist-item-card.focused,
+.playlist-item-card:focus-visible {
+  border-color: var(--focus-border-color);
+  box-shadow: var(--focus-glow);
+  transform: scale(1.02);
+  z-index: 5;
+}
+
+.btn-card-activate.focused,
+.btn-card-activate:focus-visible,
+.btn-card-action.focused,
+.btn-card-action:focus-visible,
+.btn-playlist-action.focused,
+.btn-playlist-action:focus-visible {
+  background-color: var(--focus-bg-color);
+  color: #ffffff;
+  border-color: var(--focus-border-color);
+  box-shadow: var(--focus-glow);
+  transform: scale(1.03);
+}
+
+/* Home & Favorites Cards focus */
+.home-media-card.focused,
+.home-media-card:focus-visible,
+.home-action-btn.focused,
+.home-action-btn:focus-visible {
+  border-color: var(--focus-border-color);
+  box-shadow: var(--focus-glow);
+  transform: scale(1.02);
+  z-index: 10;
+}
+
+.home-media-card.focused .home-card-title {
+  color: var(--accent-hover);
+}
+
+.favorite-card.focused,
+.favorite-card:focus-visible {
+  border-color: var(--focus-border-color);
+  box-shadow: var(--focus-glow);
+  transform: scale(1.02);
+  z-index: 10;
+}
+
+.favorite-card.focused .favorite-card-title {
+  color: var(--accent-hover);
+}
+
+.favorites-tab-btn.focused,
+.favorites-tab-btn:focus-visible,
+.provider-tab-btn.focused,
+.provider-tab-btn:focus-visible {
+  background-color: var(--focus-bg-color);
+  color: #ffffff;
+  border-color: var(--focus-border-color);
+  box-shadow: var(--focus-glow);
+  transform: scale(1.02);
+}
+
+/* Series Season & Episode focus */
+.series-season-tab.focused,
+.series-season-tab:focus-visible {
+  border-color: var(--focus-border-color);
+  box-shadow: var(--focus-glow);
+  color: #ffffff;
+  transform: scale(1.04);
+}
+
+.series-episode-card.focused,
+.series-episode-card:focus-visible {
+  background-color: var(--focus-bg-color);
+  border-color: var(--focus-border-color);
+  box-shadow: var(--focus-glow);
+  color: #ffffff;
+  transform: scale(1.01);
+}
+
+.live-epg-schedule-item.focused,
+.live-epg-schedule-item:focus-visible {
+  background-color: var(--focus-bg-color);
+  border-color: var(--focus-border-color);
+  box-shadow: var(--focus-glow);
+  transform: scale(1.01);
+}
+
+/* Settings actions focus */
+.btn-settings-action.focused,
+.btn-settings-action:focus-visible,
+.btn-settings-add.focused,
+.btn-settings-add:focus-visible,
+.btn-lang-toggle.focused,
+.btn-lang-toggle:focus-visible {
+  background-color: var(--focus-bg-color);
+  color: #ffffff;
+  border-color: var(--focus-border-color);
+  box-shadow: var(--focus-glow);
+  transform: scale(1.03);
+}
+
+/* ============================================================
+   RTL (RIGHT-TO-LEFT) LOCALIZATION SUPPORT (Arabic)
+   ============================================================ */
+
+/* Text Alignment and Document Flow */
+html[dir="rtl"] .welcome-section,
+html[dir="rtl"] .empty-state-text-group,
+html[dir="rtl"] .empty-state-card,
+html[dir="rtl"] .live-screen-title,
+html[dir="rtl"] .pane-header,
+html[dir="rtl"] .category-item,
+html[dir="rtl"] .channel-info-group,
+html[dir="rtl"] .channel-name,
+html[dir="rtl"] .channel-category-tag,
+html[dir="rtl"] .settings-section-title,
+html[dir="rtl"] .settings-section-header,
+html[dir="rtl"] .playlist-card-info,
+html[dir="rtl"] .playlist-card-title,
+html[dir="rtl"] .playlist-item-card,
+html[dir="rtl"] .active-card,
+html[dir="rtl"] .modal-header,
+html[dir="rtl"] .modal-title,
+html[dir="rtl"] .form-group,
+html[dir="rtl"] .form-label,
+html[dir="rtl"] .player-title-col {
+  text-align: right;
+}
+
+html[dir="rtl"] .nav-link {
+  text-align: right;
+}
+
+/* Sidebar Active Indicator & Focus in RTL */
+html[dir="rtl"] .nav-link.focused,
+html[dir="rtl"] .nav-link:focus-visible {
+  transform: scale(1.02);
+}
+
+html[dir="rtl"] .nav-link.active::before {
+  left: auto;
+  right: 0;
+  border-radius: 4px 0 0 4px;
+}
+
+/* Category Item Focus in RTL */
+html[dir="rtl"] .category-item.focused,
+html[dir="rtl"] .category-item:focus-visible {
+  transform: none;
+}
+
+/* Search Input in RTL */
+html[dir="rtl"] .live-search-input {
+  text-align: right;
+  direction: rtl;
+}
+
+/* Non-Technical Form Inputs in RTL */
+html[dir="rtl"] .form-input:not(.ltr-input):not([type="url"]):not([type="password"]):not(#input-playlist-url):not(#input-xtream-server):not(#input-xtream-username):not(#input-xtream-password) {
+  text-align: right;
+  direction: rtl;
+}
+
+/* Technical Inputs Must ALWAYS Remain LTR (URLs, Hostnames, Usernames, Passwords) */
+.ltr-input,
+input[type="url"],
+input[type="password"],
+#input-playlist-url,
+#input-xtream-server,
+#input-xtream-username,
+#input-xtream-password {
+  direction: ltr !important;
+  text-align: left !important;
+  unicode-bidi: plaintext;
+}
+
+/* Player Focus Styles (Native AVPlay Video Coordinates Untouched) */
+.btn-player-control.focused,
+.btn-player-control:focus-visible {
+  background-color: #1e293b;
+  border-color: var(--focus-border-color);
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.7), 0 8px 24px rgba(0, 0, 0, 0.8);
+  transform: scale(1.08);
+}
+
+.btn-player-primary.focused,
+.btn-player-primary:focus-visible {
+  background: linear-gradient(135deg, #3b82f6, #60a5fa);
+  border-color: #ffffff;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.8), 0 12px 32px rgba(37, 99, 235, 0.8);
+  transform: scale(1.12);
+}
+
+/* Phase 5 RTL Alignment and Mirroring */
+html[dir="rtl"] .movie-card,
+html[dir="rtl"] .series-card,
+html[dir="rtl"] .details-info-box,
+html[dir="rtl"] .details-plot,
+html[dir="rtl"] .details-cast,
+html[dir="rtl"] .guide-channel-item,
+html[dir="rtl"] .guide-now-card,
+html[dir="rtl"] .guide-details-pane,
+html[dir="rtl"] .search-card,
+html[dir="rtl"] .favorite-card,
+html[dir="rtl"] .home-media-card,
+html[dir="rtl"] .home-action-btn,
+html[dir="rtl"] .settings-about-box {
+  text-align: right;
+}
+
+html[dir="rtl"] .search-box-icon {
+  left: auto;
+  right: 16px;
+}
+
+html[dir="rtl"] .search-clear-btn {
+  right: auto;
+  left: 14px;
+}
+
+html[dir="rtl"] .global-search-input {
+  padding: 0 52px 0 48px;
+  text-align: right;
+  direction: rtl;
+}
+
+html[dir="rtl"] .settings-status-text,
+html[dir="rtl"] .provider-type-badge {
+  margin-left: 0;
+  margin-right: 8px;
+}
+
+html[dir="rtl"] .player-osd-toast {
+  right: auto;
+  left: 48px;
+}
+
+html[dir="rtl"] .movie-badge-rating,
+html[dir="rtl"] .series-badge-rating {
+  right: auto;
+  left: 8px;
+}
+
+html[dir="rtl"] .favorite-type-badge {
+  left: auto;
+  right: 8px;
+}

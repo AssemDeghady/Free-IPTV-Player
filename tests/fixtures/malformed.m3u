@@ -1,0 +1,33 @@
+#EXTM3U
+# This is a general playlist comment
+
+   
+#EXTINF:-1 tvg-id="valid.1" group-title="News",Valid Channel 1
+https://example.com/streams/valid1.m3u8
+
+# Malformed: No stream URL follows this EXTINF, followed immediately by another EXTINF
+#EXTINF:-1 group-title="Ghost",Orphan Channel
+
+#EXTINF:-1 tvg-id="valid.2" group-title="Sports",Valid Channel 2
+https://example.com/streams/valid2.m3u8
+
+# Malformed: completely corrupted EXTINF line
+#EXTINF:NOT_A_NUMBER invalid tags
+#EXTINF:-1 group-title="Music",Valid Channel 3
+https://example.com/streams/valid3.m3u8
+
+# Channel with missing group and logo (should default to "Other")
+#EXTINF:-1,Channel Without Metadata
+https://example.com/streams/no_meta.m3u8
+
+# Duplicate of channel 1
+#EXTINF:-1 tvg-id="valid.1" group-title="News",Valid Channel 1 Duplicate
+https://example.com/streams/valid1.m3u8
+
+# URL with no preceding EXTINF
+https://example.com/streams/lonely_url.m3u8
+
+# Empty lines and trailing whitespace
+   
+#EXTINF:-1 tvg-id="arabic.1" tvg-name="قناة الجزيرة" group-title="أخبار",الجزيرة الإخبارية
+https://example.com/streams/aljazeera.m3u8

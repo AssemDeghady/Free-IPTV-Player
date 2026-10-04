@@ -1,0 +1,92 @@
+# ============================================================
+# Free IPTV Player — .gitignore
+# ============================================================
+
+# Tizen build & packaging artifacts
+.buildResult/
+Debug/
+Release/
+Build/
+Test/
+.Build/
+.package/
+.sign/
+.tizen-rds/
+.rds_delta
+.sdk_delta.info
+.tizen-ui-builder-tool.xml
+*.wgt
+*.tpk
+*.apk
+
+# Node dependencies & logs
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Test & coverage artifacts
+coverage/
+.nyc_output/
+test-results/
+playwright-report/
+
+# IDE & Editor local configurations
+.idea/
+*.iml
+.vscode/
+.settings/
+.externalToolBuilders/
+.project
+.tproject
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Operating System files
+.DS_Store
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# Logs, scratch files & temporary data
+*.log
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~
+scratch/
+.tmp_app_data/
+
+# Environment configurations & local overrides
+.env
+.env.*
+!.env.example
+
+# Signing credentials, keys & certificates
+*.p12
+*.pfx
+*.pem
+*.key
+*.jks
+*.keystore
+author.p12
+distributor.p12
+certificate.p12
+certificates/
+cert/
+keys/
+profiles.xml
+
+# Local emulator and device artifacts
+emulator/
+sdb/
+device/
+
+# AI coding-agent & assistant local state
+.gemini/
+.antigravity/

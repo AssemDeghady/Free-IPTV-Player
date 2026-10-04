@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<projectConfiguration>
+    <version>2</version>
+    <platform>
+        <name>tv-samsung</name>
+    </platform>
+    <package>
+        <type>wgt</type>
+    </package>
+</projectConfiguration>
