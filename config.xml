@@ -36,6 +36,5 @@
                    restart-strategy="stateful"/>
     <access origin="*" subdomains="true"/>
     <tizen:content-security-policy>default-src 'self' 'unsafe-inline' data:; connect-src *; img-src * data:; media-src *;</tizen:content-security-policy>
-    <tizen:metadata key="http://samsung.com/tv/metadata/use.developer.mode" value="true"/>
     <tizen:metadata key="http://samsung.com/tv/metadata/prelaunch.support" value="false"/>
 </widget>

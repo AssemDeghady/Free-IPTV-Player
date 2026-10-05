@@ -6,7 +6,7 @@ profile: tv-samsung
 api_version: ""
 
 # Build type [Debug/ Release/ Test]
-build_type: Debug
+build_type: Release
 
 # Output name for application
 output_name: FreeIPTVPlayer
@@ -20,7 +20,7 @@ opt: false
 # Signing profile to be used for Tizen package signing
 # If value is empty: "", active signing profile will be used
 # Else If value is ".", default signing profile will be used
-signing_profile: ""
+signing_profile: "FreeIPTVPlayerProfile"
 
 # list of certs in web project (.trust-anchor)
 trust_anchor: []
@@ -29,8 +29,10 @@ trust_anchor: []
 files:
   - assets/icons/icon-117.png
   - assets/icons/icon-512.png
+  - assets/images/logo.png
   - css/app.css
   - css/layout.css
+  - css/live-epg.css
   - css/navigation.css
   - icon.png
   - index.html
@@ -45,14 +47,21 @@ files:
   - js/player/avplay-engine.js
   - js/playlist/m3u-parser.js
   - js/playlist/playlist-manager.js
+  - js/playlist/xtream-api.js
   - js/storage/channel-store.js
   - js/storage/storage.js
   - js/tv/remote.js
+  - js/ui/favorites.js
+  - js/ui/guide.js
   - js/ui/home.js
   - js/ui/live-tv.js
   - js/ui/modal.js
+  - js/ui/movies.js
   - js/ui/navigation.js
   - js/ui/player.js
+  - js/ui/playlists.js
+  - js/ui/search.js
+  - js/ui/series.js
   - js/ui/settings.js
 
 # list of files to exclude based on the matched patterns
@@ -82,6 +91,13 @@ excludes:
   - \.tizen-ui-builder-tool.xml
   - \.tproject
   - \.wgt
+  - *.wgt
+  - author-signature.xml
+  - signature1.xml
+  - .git/*
+  - .git/**
+  - .gitignore
+  - .gitattributes
   - tizen_web_project.yaml
   - webUnitTest/*
 

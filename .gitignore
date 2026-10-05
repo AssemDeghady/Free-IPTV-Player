@@ -18,6 +18,8 @@ Test/
 *.wgt
 *.tpk
 *.apk
+author-signature.xml
+signature1.xml
 
 # Node dependencies & logs
 node_modules/

@@ -82,6 +82,8 @@ const expectedFiles = [
   'tests/test-tv-interaction.cjs',
   'tests/test-xtream-api.cjs',
   'tests/test-localization-rtl.cjs',
+  'tests/test-category-quick-filter.cjs',
+  'tests/test-series-season-selector.cjs',
   'tests/test-complete-iptv.cjs',
   'tests/test-phase-6-4.cjs'
 ];
@@ -154,6 +156,8 @@ const suites = [
   'test-tv-interaction.cjs',
   'test-xtream-api.cjs',
   'test-localization-rtl.cjs',
+  'test-category-quick-filter.cjs',
+  'test-series-season-selector.cjs',
   'test-complete-iptv.cjs',
   'test-phase-6-4.cjs'
 ];
