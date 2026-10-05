@@ -186,7 +186,7 @@ const sampleMovieCategories = ['Action', 'Comedy', 'Drama', 'Horror', 'Sci-Fi', 
 Movies.renderCategories(sampleMovieCategories);
 
 const moviesList = getElementById('movies-categories-list');
-assert(moviesList.children.length === 7, `Initial Movies categories rendered (All Movies + 6 categories = 7 items, actual: ${moviesList.children.length})`);
+assert(moviesList.children.length === 10, `Initial Movies categories rendered (Recently Added + All Movies + Favorites + Continue Watching + 6 categories = 10 items, actual: ${moviesList.children.length})`);
 
 // Filter by "act"
 Movies.setCategorySearchQuery('act');
@@ -200,7 +200,7 @@ assert(moviesList.children[0].getAttribute('data-category') === 'Documentary', '
 
 // Clear search query
 Movies.setCategorySearchQuery('');
-assert(moviesList.children.length === 7, `Clearing category query restored all 7 items (actual: ${moviesList.children.length})`);
+assert(moviesList.children.length === 10, `Clearing category query restored all 10 items (actual: ${moviesList.children.length})`);
 
 // 5. Validate Series Category Quick Filtering
 console.log('\n--- 5. Series Category Quick Filtering Logic ---');
@@ -214,7 +214,7 @@ const sampleSeriesCategories = ['Animation', 'Crime', 'Drama', 'Mystery', 'Sci-F
 Series.renderCategories(sampleSeriesCategories);
 
 const seriesList = getElementById('series-categories-list');
-assert(seriesList.children.length === 6, `Initial Series categories rendered (All Series + 5 categories = 6 items, actual: ${seriesList.children.length})`);
+assert(seriesList.children.length === 9, `Initial Series categories rendered (Recently Added + All Series + Favorites + Continue Watching + 5 categories = 9 items, actual: ${seriesList.children.length})`);
 
 // Filter by "crim"
 Series.setCategorySearchQuery('crim');
@@ -228,7 +228,7 @@ assert(seriesList.children[0].getAttribute('data-category') === 'Sci-Fi & Fantas
 
 // Clear series search query
 Series.setCategorySearchQuery('');
-assert(seriesList.children.length === 6, `Clearing series category query restored all 6 items (actual: ${seriesList.children.length})`);
+assert(seriesList.children.length === 9, `Clearing series category query restored all 9 items (actual: ${seriesList.children.length})`);
 
 // 6. Validate Navigation Zone Handlers
 console.log('\n--- 6. Remote Navigation Zone Handlers ---');

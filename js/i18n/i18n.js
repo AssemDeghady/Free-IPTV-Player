@@ -251,7 +251,15 @@
     'player.dev_notice': 'Samsung AVPlay is unavailable in this environment (Running in development/mock mode)',
     'player.no_extra_audio': 'Default Audio',
     'player.no_subtitles': 'No Subtitles Available',
-    'categories.search_placeholder': 'Search categories...'
+    'categories.search_placeholder': 'Search categories...',
+    'movies.recently_added': 'Recently Added',
+    'series.recently_added': 'Recently Added',
+    'movies.search_placeholder': 'Search Movies...',
+    'series.search_placeholder': 'Search Series...',
+    'movies.favorites': 'Favorites',
+    'movies.continue_watching': 'Continue Watching',
+    'series.favorites': 'Favorites',
+    'series.continue_watching': 'Continue Watching'
   };
 
   // Built-in Arabic translation bundle (zero-latency bootstrap and offline-safe)
@@ -493,7 +501,15 @@
     'player.dev_notice': 'مشغل Samsung AVPlay غير متوفر في هذه البيئة (يعمل في وضع التطوير الافتراضي)',
     'player.no_extra_audio': 'الصوت الافتراضي',
     'player.no_subtitles': 'لا توجد ترجمة متاحة',
-    'categories.search_placeholder': 'البحث في الأقسام...'
+    'categories.search_placeholder': 'البحث في الأقسام...',
+    'movies.recently_added': 'أضيف حديثاً',
+    'series.recently_added': 'أضيف حديثاً',
+    'movies.search_placeholder': 'البحث في الأفلام...',
+    'series.search_placeholder': 'البحث في المسلسلات...',
+    'movies.favorites': 'المفضلة',
+    'movies.continue_watching': 'متابعة المشاهدة',
+    'series.favorites': 'المفضلة',
+    'series.continue_watching': 'متابعة المشاهدة'
   };
 
   /**

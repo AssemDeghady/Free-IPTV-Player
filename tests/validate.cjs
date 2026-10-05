@@ -34,6 +34,7 @@ const expectedFiles = [
   'css/navigation.css',
   'js/core/constants.js',
   'js/core/logger.js',
+  'js/core/diagnostics.js',
   'js/core/events.js',
   'js/core/http.js',
   'js/storage/storage.js',
@@ -159,7 +160,10 @@ const suites = [
   'test-category-quick-filter.cjs',
   'test-series-season-selector.cjs',
   'test-complete-iptv.cjs',
-  'test-phase-6-4.cjs'
+  'test-phase-6-4.cjs',
+  'test-tizen-5-5-compatibility.cjs',
+  'test-phase-7-stabilization.cjs',
+  'test-xtream-series-seasons.cjs'
 ];
 
 suites.forEach(suite => {

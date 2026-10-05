@@ -8,18 +8,103 @@
 
   window.FreeIPTV = window.FreeIPTV || {};
 
-  var activeCategory = 'all';
+  /**
+   * Derive poster height (2:3) from the real card width and expose it as --poster-h.
+   * Done with one layout read per render/resize; CSS stays aspect-ratio free for Tizen 5.5 (M69).
+   */
+  /** Pre-normalized, cached searchable text (computed once per item). */
+  function searchText(item) {
+    if (item._s === undefined) {
+      item._s = ((item.name || '') + ' ' + (item.genre || '') + ' ' + (item.cast || '')).toLowerCase();
+    }
+    return item._s;
+  }
+
+  var searchTimer = null;
+  var pendingEntryFocus = false;
+
+  function applyPosterHeight(container) {
+    if (!container) return;
+    var cols = 5;
+    var gap = 24;
+    var w = container.clientWidth;
+    if (!w) return;
+    var cardW = (w - 24 - gap * (cols - 1)) / cols;
+    if (cardW > 40) {
+      container.style.setProperty('--poster-h', Math.round(cardW * 1.5) + 'px');
+    }
+  }
+
+  function parseTimestamp(val) {
+    if (!val) return 0;
+    if (typeof val === 'number') return val;
+    var n = parseInt(val, 10);
+    if (!isNaN(n) && n > 0) return n;
+    var d = Date.parse(val);
+    return isNaN(d) ? 0 : d;
+  }
+
+  function loadNearbyImages(container, focusIdx) {
+    if (!container) return;
+    var minIdx = Math.max(0, focusIdx - 10);
+    var maxIdx = focusIdx + 15;
+    var cards = container.children;
+    for (var i = 0; i < cards.length; i++) {
+      var card = cards[i];
+      var idx = parseInt(card.getAttribute('data-index'), 10);
+      if (!isNaN(idx) && idx >= minIdx && idx <= maxIdx) {
+        var img = card.querySelector('img[data-src]');
+        if (img) {
+          var src = img.getAttribute('data-src');
+          if (src) {
+            img.src = src;
+            img.removeAttribute('data-src');
+          }
+        }
+      }
+    }
+  }
+
+  var activeCategory = 'recently_added';
   var allMovies = [];
   var filteredMovies = [];
+  var precomputedRecentlyAdded = [];
+  var categoryIndex = {};
   var currentSearchQuery = '';
   var categorySearchQuery = '';
   var rawCategories = [];
   var renderedCount = 0;
-  var CHUNK_SIZE = 30; // Batch size for TV performance
+  var CHUNK_SIZE = 20; // 4 rows of 5 cards (visible + buffer)
+  var MAX_DOM_CARDS = 50; // Max DOM cards on screen to prevent TV OOM
   var selectedMovie = null;
   var isDetailsOpen = false;
   var originRoute = 'movies';
   var previousFocusedElement = null;
+
+  function buildCatalogIndexes(movies) {
+    precomputedRecentlyAdded = [];
+    categoryIndex = {};
+    if (!movies || !movies.length) return;
+
+    for (var i = 0; i < movies.length; i++) {
+      var m = movies[i];
+      if (m._s === undefined) {
+        m._s = ((m.name || '') + ' ' + (m.genre || '') + ' ' + (m.cast || '')).toLowerCase();
+      }
+      if (m._ts === undefined) {
+        var t = m.added || (m.metadata && m.metadata.added) || m.created_at || m.addedAt || 0;
+        m._ts = parseTimestamp(t);
+      }
+      var cat = m.categoryName || 'Other';
+      if (!categoryIndex[cat]) categoryIndex[cat] = [];
+      categoryIndex[cat].push(m);
+    }
+
+    var sorted = movies.slice().sort(function (a, b) {
+      return b._ts - a._ts;
+    });
+    precomputedRecentlyAdded = sorted.slice(0, 20);
+  }
 
   var Movies = {
     /**
@@ -39,6 +124,11 @@
      */
     bindEvents: function () {
       var self = this;
+      if (typeof window.addEventListener === 'function') {
+        window.addEventListener('resize', function () {
+          applyPosterHeight(document.getElementById('movies-grid-container'));
+        });
+      }
 
       var searchInput = document.getElementById('movies-search-input');
       if (searchInput) {
@@ -82,6 +172,25 @@
      * Called when user enters Movies screen.
      */
     onEnterView: function () {
+      pendingEntryFocus = true;
+      activeCategory = 'recently_added';
+      var ci = document.getElementById('movies-category-search-input');
+      if (ci) {
+        ci.value = '';
+        if (document.activeElement === ci) ci.blur();
+      }
+      var si = document.getElementById('movies-search-input');
+      if (si) {
+        si.value = '';
+        if (document.activeElement === si) si.blur();
+      }
+      currentSearchQuery = '';
+
+      // Park initial resting focus on screen title so keyboard never opens
+      var titleEl = document.getElementById('movies-screen-title');
+      if (titleEl && window.FreeIPTV.Navigation) {
+        window.FreeIPTV.Navigation.focus(titleEl);
+      }
       this.loadActiveMovies();
     },
 
@@ -107,6 +216,7 @@
       PlaylistManager.loadMovies(activePlaylist.id).then(function (result) {
         allMovies = result.movies || [];
         rawCategories = result.categories || [];
+        buildCatalogIndexes(allMovies);
         self.renderCategories(rawCategories);
         self.applyFilter();
       }).catch(function (err) {
@@ -142,7 +252,30 @@
       var self = this;
       var q = (this.categorySearchQuery || '').trim().toLowerCase();
 
-      // 1. "All Movies" Category (shown when no search query or when 'all' matches)
+      // 1. "Recently Added" Category (shown when no search query or matches 'recent')
+      if (!q || 'recently added'.indexOf(q) !== -1 || 'recent'.indexOf(q) !== -1) {
+        var recentItem = document.createElement('button');
+        recentItem.className = 'category-item focusable' + (activeCategory === 'recently_added' ? ' active' : '');
+        recentItem.setAttribute('data-nav-zone', 'movies_categories');
+        recentItem.setAttribute('data-category', 'recently_added');
+
+        var recentLabel = document.createElement('span');
+        recentLabel.setAttribute('data-i18n', 'movies.recently_added');
+        recentLabel.textContent = window.FreeIPTV.I18n ? window.FreeIPTV.I18n.t('movies.recently_added') : 'Recently Added';
+        var recentCount = document.createElement('span');
+        recentCount.className = 'category-count';
+        recentCount.textContent = String(Math.min(allMovies.length, 20));
+
+        recentItem.appendChild(recentLabel);
+        recentItem.appendChild(recentCount);
+
+        recentItem.addEventListener('click', function () {
+          self.selectCategory('recently_added', recentItem);
+        });
+        container.appendChild(recentItem);
+      }
+
+      // 1b. "All Movies" Category (shown when no search query or when 'all' matches)
       if (!q || 'all movies'.indexOf(q) !== -1 || 'all'.indexOf(q) !== -1) {
         var allItem = document.createElement('button');
         allItem.className = 'category-item focusable' + (activeCategory === 'all' ? ' active' : '');
@@ -150,6 +283,7 @@
         allItem.setAttribute('data-category', 'all');
 
         var allLabel = document.createElement('span');
+        allLabel.setAttribute('data-i18n', 'movies.all_movies');
         allLabel.textContent = window.FreeIPTV.I18n ? window.FreeIPTV.I18n.t('movies.all_movies') : 'All Movies';
         var allCount = document.createElement('span');
         allCount.className = 'category-count';
@@ -162,6 +296,66 @@
           self.selectCategory('all', allItem);
         });
         container.appendChild(allItem);
+      }
+
+      // 1c. "Favorites" Category
+      if (!q || 'favorites'.indexOf(q) !== -1) {
+        var favItem = document.createElement('button');
+        favItem.className = 'category-item focusable' + (activeCategory === 'favorites' ? ' active' : '');
+        favItem.setAttribute('data-nav-zone', 'movies_categories');
+        favItem.setAttribute('data-category', 'favorites');
+
+        var favLabel = document.createElement('span');
+        favLabel.setAttribute('data-i18n', 'movies.favorites');
+        favLabel.textContent = window.FreeIPTV.I18n ? window.FreeIPTV.I18n.t('movies.favorites') : 'Favorites';
+        var favCount = document.createElement('span');
+        favCount.className = 'category-count';
+        var favCountNum = 0;
+        if (window.FreeIPTV.PlaylistManager && typeof window.FreeIPTV.PlaylistManager.isFavoriteItem === 'function') {
+          favCountNum = allMovies.filter(function (m) {
+            return window.FreeIPTV.PlaylistManager.isFavoriteItem(m.id, 'movie');
+          }).length;
+        }
+        favCount.textContent = String(favCountNum);
+
+        favItem.appendChild(favLabel);
+        favItem.appendChild(favCount);
+
+        favItem.addEventListener('click', function () {
+          self.selectCategory('favorites', favItem);
+        });
+        container.appendChild(favItem);
+      }
+
+      // 1d. "Continue Watching" Category
+      if (!q || 'continue watching'.indexOf(q) !== -1 || 'continue'.indexOf(q) !== -1) {
+        var cwItem = document.createElement('button');
+        cwItem.className = 'category-item focusable' + (activeCategory === 'continue_watching' ? ' active' : '');
+        cwItem.setAttribute('data-nav-zone', 'movies_categories');
+        cwItem.setAttribute('data-category', 'continue_watching');
+
+        var cwLabel = document.createElement('span');
+        cwLabel.setAttribute('data-i18n', 'movies.continue_watching');
+        cwLabel.textContent = window.FreeIPTV.I18n ? window.FreeIPTV.I18n.t('movies.continue_watching') : 'Continue Watching';
+        var cwCount = document.createElement('span');
+        cwCount.className = 'category-count';
+        var cwCountNum = 0;
+        if (window.FreeIPTV.PlaylistManager && typeof window.FreeIPTV.PlaylistManager.getContinueWatching === 'function') {
+          var activePlaylist = window.FreeIPTV.PlaylistManager.getActivePlaylist ? window.FreeIPTV.PlaylistManager.getActivePlaylist() : null;
+          var cwList = window.FreeIPTV.PlaylistManager.getContinueWatching(null, activePlaylist ? activePlaylist.id : null).filter(function (item) {
+            return item.contentType === 'movie';
+          });
+          cwCountNum = cwList.length;
+        }
+        cwCount.textContent = String(cwCountNum);
+
+        cwItem.appendChild(cwLabel);
+        cwItem.appendChild(cwCount);
+
+        cwItem.addEventListener('click', function () {
+          self.selectCategory('continue_watching', cwItem);
+        });
+        container.appendChild(cwItem);
       }
 
       // 2. Provider categories filtered by category quick filter
@@ -195,17 +389,27 @@
         container.appendChild(catItem);
       }
 
-      // If on Movies screen and focus is not yet placed on a category or is on search input, focus first category
-      if (window.FreeIPTV.Navigation && window.FreeIPTV.Navigation.getCurrentRoute() === 'movies') {
-        var cur = window.FreeIPTV.Navigation.getCurrent();
-        var isSearch = cur && cur.id === 'movies-category-search-input';
-        var isOutside = !cur || !document.body.contains(cur) || !cur.closest('#view-movies');
-        if (isSearch || isOutside) {
-          var firstCat = container.querySelector('.category-item.active') || container.querySelector('.category-item');
+      // If on Movies screen and entry focus is pending, focus Recently Added category
+      if (window.FreeIPTV.Navigation && (window.FreeIPTV.Navigation.getCurrentRoute() === 'movies' || pendingEntryFocus)) {
+        if (pendingEntryFocus) {
+          pendingEntryFocus = false;
+          var firstCat = container.querySelector('.category-item[data-category="recently_added"]') ||
+                         container.querySelector('.category-item[data-category="all"]') ||
+                         container.querySelector('.category-item');
           if (firstCat) {
             window.FreeIPTV.Navigation.focus(firstCat);
           }
         }
+      }
+    },
+
+    /**
+     * Update favorites state and refresh view if in favorites category.
+     */
+    updateFavoritesState: function () {
+      this.renderCategories();
+      if (activeCategory === 'favorites') {
+        this.applyFilter();
       }
     },
 
@@ -216,6 +420,13 @@
      */
     selectCategory: function (category, itemEl) {
       activeCategory = category;
+
+      // Clear search input on category change so user views all items in the new category
+      var searchInput = document.getElementById('movies-search-input');
+      if (searchInput && searchInput.value) {
+        searchInput.value = '';
+      }
+      currentSearchQuery = '';
 
       var items = document.querySelectorAll('#movies-categories-list .category-item');
       for (var i = 0; i < items.length; i++) {
@@ -233,8 +444,13 @@
      * @param {string} query
      */
     setSearchQuery: function (query) {
+      var self = this;
       currentSearchQuery = query || '';
-      this.applyFilter();
+      if (searchTimer) clearTimeout(searchTimer);
+      searchTimer = setTimeout(function () {
+        searchTimer = null;
+        self.applyFilter();
+      }, 200);
     },
 
     /**
@@ -244,16 +460,76 @@
       var q = currentSearchQuery.trim().toLowerCase();
       var cat = activeCategory;
 
-      filteredMovies = allMovies.filter(function (m) {
-        if (cat !== 'all' && m.categoryName !== cat) {
-          return false;
+      if (cat === 'recently_added') {
+        if (!q) {
+          filteredMovies = precomputedRecentlyAdded;
+        } else {
+          filteredMovies = precomputedRecentlyAdded.filter(function (m) {
+            return (m._s || searchText(m)).indexOf(q) !== -1;
+          });
         }
-        if (!q) return true;
-        var nameMatch = m.name && m.name.toLowerCase().indexOf(q) !== -1;
-        var genreMatch = m.genre && m.genre.toLowerCase().indexOf(q) !== -1;
-        var castMatch = m.cast && m.cast.toLowerCase().indexOf(q) !== -1;
-        return nameMatch || genreMatch || castMatch;
-      });
+      } else if (cat === 'favorites') {
+        var PlaylistManager = window.FreeIPTV.PlaylistManager;
+        var hasFavFn = PlaylistManager && typeof PlaylistManager.isFavoriteItem === 'function';
+        filteredMovies = allMovies.filter(function (m) {
+          if (!hasFavFn || !PlaylistManager.isFavoriteItem(m.id, 'movie')) {
+            return false;
+          }
+          if (!q) return true;
+          return (m._s || searchText(m)).indexOf(q) !== -1;
+        });
+      } else if (cat === 'continue_watching') {
+        var PlaylistManager = window.FreeIPTV.PlaylistManager;
+        var activePlaylist = (PlaylistManager && PlaylistManager.getActivePlaylist) ? PlaylistManager.getActivePlaylist() : null;
+        var cwItems = (PlaylistManager && typeof PlaylistManager.getContinueWatching === 'function')
+          ? PlaylistManager.getContinueWatching(null, activePlaylist ? activePlaylist.id : null).filter(function (item) {
+            return item.contentType === 'movie';
+          }) : [];
+
+        var movieMap = {};
+        for (var mi = 0; mi < allMovies.length; mi++) {
+          movieMap[allMovies[mi].id] = allMovies[mi];
+        }
+
+        var cwMovies = [];
+        for (var ci = 0; ci < cwItems.length; ci++) {
+          var cw = cwItems[ci];
+          var existing = movieMap[cw.contentId];
+          if (existing) {
+            cwMovies.push(existing);
+          } else {
+            cwMovies.push({
+              id: cw.contentId,
+              name: cw.title,
+              posterUrl: cw.posterUrl,
+              streamUrl: cw.streamUrl,
+              categoryName: 'Continue Watching'
+            });
+          }
+        }
+
+        filteredMovies = cwMovies.filter(function (m) {
+          if (!q) return true;
+          return (m._s || searchText(m)).indexOf(q) !== -1;
+        });
+      } else if (cat === 'all') {
+        if (!q) {
+          filteredMovies = allMovies;
+        } else {
+          filteredMovies = allMovies.filter(function (m) {
+            return (m._s || searchText(m)).indexOf(q) !== -1;
+          });
+        }
+      } else {
+        var pool = categoryIndex[cat] || [];
+        if (!q) {
+          filteredMovies = pool;
+        } else {
+          filteredMovies = pool.filter(function (m) {
+            return (m._s || searchText(m)).indexOf(q) !== -1;
+          });
+        }
+      }
 
       var countLabel = document.getElementById('movies-count-label');
       if (countLabel) {
@@ -274,6 +550,7 @@
     renderGrid: function (reset) {
       var container = document.getElementById('movies-grid-container');
       if (!container) return;
+      applyPosterHeight(container);
 
       if (reset) {
         container.innerHTML = '';
@@ -290,7 +567,8 @@
       }
 
       var self = this;
-      var endIndex = Math.min(renderedCount + CHUNK_SIZE, filteredMovies.length);
+      var targetEnd = Math.min(renderedCount + CHUNK_SIZE, filteredMovies.length);
+      var endIndex = Math.min(targetEnd, MAX_DOM_CARDS);
 
       for (var i = renderedCount; i < endIndex; i++) {
         var movie = filteredMovies[i];
@@ -299,6 +577,12 @@
       }
 
       renderedCount = endIndex;
+
+      if (window.FreeIPTV && window.FreeIPTV.Diagnostics) {
+        setTimeout(function () {
+          window.FreeIPTV.Diagnostics.sendTelemetry('movies_grid_rendered');
+        }, 300);
+      }
     },
 
     /**
@@ -319,28 +603,32 @@
       var posterBox = document.createElement('div');
       posterBox.className = 'movie-poster-wrap movie-poster-box';
 
-      var fallbackSvg = document.createElement('div');
-      fallbackSvg.className = 'poster-fallback-icon';
-      fallbackSvg.innerHTML = '<svg viewBox="0 0 24 24"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/></svg>';
-
       var posterUrl = movie.posterUrl || movie.poster || movie.streamIcon || movie.cover || '';
       if (posterUrl) {
         var img = document.createElement('img');
         img.className = 'movie-poster-img';
         img.alt = '';
-        img.loading = 'lazy';
-        img.src = posterUrl;
+        if (index < 25) {
+          img.src = posterUrl;
+        } else {
+          img.setAttribute('data-src', posterUrl);
+        }
 
         img.onerror = function () {
           this.style.display = 'none';
-          fallbackSvg.style.display = 'flex';
+          var fallback = document.createElement('div');
+          fallback.className = 'poster-fallback-icon';
+          fallback.innerHTML = '<svg viewBox="0 0 24 24"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/></svg>';
+          posterBox.appendChild(fallback);
         };
 
         posterBox.appendChild(img);
-        fallbackSvg.style.display = 'none';
+      } else {
+        var fallbackSvg = document.createElement('div');
+        fallbackSvg.className = 'poster-fallback-icon';
+        fallbackSvg.innerHTML = '<svg viewBox="0 0 24 24"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/></svg>';
+        posterBox.appendChild(fallbackSvg);
       }
-
-      posterBox.appendChild(fallbackSvg);
 
       // Rating badge if available
       if (movie.rating && parseFloat(movie.rating) > 0) {
@@ -372,7 +660,11 @@
     checkLoadMore: function (focusedElement) {
       if (!focusedElement) return;
       var index = parseInt(focusedElement.getAttribute('data-index'), 10);
-      if (!isNaN(index) && index >= renderedCount - 8 && renderedCount < filteredMovies.length) {
+      var container = document.getElementById('movies-grid-container');
+      if (container && !isNaN(index)) {
+        loadNearbyImages(container, index);
+      }
+      if (!isNaN(index) && index >= renderedCount - 8 && renderedCount < filteredMovies.length && renderedCount < MAX_DOM_CARDS) {
         this.renderGrid(false);
       }
     },

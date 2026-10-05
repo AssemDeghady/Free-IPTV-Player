@@ -69,7 +69,7 @@
       var self = this;
       window.addEventListener('keydown', function (e) {
         self.handleKeyDown(e);
-      });
+      }, true);
     },
 
     /**
@@ -100,7 +100,25 @@
         }
 
         event.preventDefault();
+        if (event.stopPropagation) {
+          event.stopPropagation();
+        }
         this.handleBack();
+        return;
+      }
+
+      var activeEl = document.activeElement;
+      var targetEl = event.target;
+      var isInput = (targetEl && (targetEl.tagName === 'INPUT' || targetEl.tagName === 'TEXTAREA')) ||
+                    (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA'));
+      if (isInput && (keyCode === Constants.KEYS.UP || keyCode === Constants.KEYS.DOWN)) {
+        event.preventDefault();
+        if (event.stopPropagation) {
+          event.stopPropagation();
+        }
+        if (Navigation) {
+          Navigation.move(keyCode === Constants.KEYS.UP ? Constants.DIRECTIONS.UP : Constants.DIRECTIONS.DOWN);
+        }
         return;
       }
 
@@ -207,7 +225,9 @@
             break;
           case Constants.KEYS.ENTER:
             event.preventDefault();
-            event.stopPropagation();
+            if (event.stopPropagation) {
+              event.stopPropagation();
+            }
             handled = Navigation.triggerActive();
             break;
         }

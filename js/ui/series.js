@@ -8,14 +8,74 @@
 
   window.FreeIPTV = window.FreeIPTV || {};
 
-  var activeCategory = 'all';
+  /**
+   * Derive poster height (2:3) from the real card width and expose it as --poster-h.
+   * Done with one layout read per render/resize; CSS stays aspect-ratio free for Tizen 5.5 (M69).
+   */
+  /** Pre-normalized, cached searchable text (computed once per item). */
+  function searchText(item) {
+    if (item._s === undefined) {
+      item._s = ((item.name || '') + ' ' + (item.genre || '') + ' ' + (item.cast || '')).toLowerCase();
+    }
+    return item._s;
+  }
+
+  var searchTimer = null;
+  var pendingEntryFocus = false;
+
+  function applyPosterHeight(container) {
+    if (!container) return;
+    var cols = 5;
+    var gap = 24;
+    var w = container.clientWidth;
+    if (!w) return;
+    var cardW = (w - 24 - gap * (cols - 1)) / cols;
+    if (cardW > 40) {
+      container.style.setProperty('--poster-h', Math.round(cardW * 1.5) + 'px');
+    }
+  }
+
+  function parseTimestamp(val) {
+    if (!val) return 0;
+    if (typeof val === 'number') return val;
+    var n = parseInt(val, 10);
+    if (!isNaN(n) && n > 0) return n;
+    var d = Date.parse(val);
+    return isNaN(d) ? 0 : d;
+  }
+
+  function loadNearbyImages(container, focusIdx) {
+    if (!container) return;
+    var minIdx = Math.max(0, focusIdx - 10);
+    var maxIdx = focusIdx + 15;
+    var cards = container.children;
+    for (var i = 0; i < cards.length; i++) {
+      var card = cards[i];
+      var idx = parseInt(card.getAttribute('data-index'), 10);
+      if (!isNaN(idx) && idx >= minIdx && idx <= maxIdx) {
+        var img = card.querySelector('img[data-src]');
+        if (img) {
+          var src = img.getAttribute('data-src');
+          if (src) {
+            img.src = src;
+            img.removeAttribute('data-src');
+          }
+        }
+      }
+    }
+  }
+
+  var activeCategory = 'recently_added';
   var allSeries = [];
   var filteredSeries = [];
+  var precomputedRecentlyAdded = [];
+  var categoryIndex = {};
   var currentSearchQuery = '';
   var categorySearchQuery = '';
   var rawCategories = [];
   var renderedCount = 0;
-  var CHUNK_SIZE = 30; // Batch size for TV performance
+  var CHUNK_SIZE = 20; // 4 rows of 5 cards
+  var MAX_DOM_CARDS = 50; // Max DOM cards on screen to prevent TV OOM
   var selectedSeries = null;
   var activeSeasonNumber = 1;
   var currentSeriesDetails = null;
@@ -24,6 +84,37 @@
   var isDropdownOpen = false;
   var originRoute = 'series';
   var previousFocusedElement = null;
+
+  function buildCatalogIndexes(seriesList) {
+    precomputedRecentlyAdded = [];
+    categoryIndex = {};
+    if (!seriesList || !seriesList.length) return;
+
+    for (var i = 0; i < seriesList.length; i++) {
+      var s = seriesList[i];
+      if (s._s === undefined) {
+        s._s = ((s.name || '') + ' ' + (s.genre || '') + ' ' + (s.cast || '')).toLowerCase();
+      }
+      if (s._ts === undefined) {
+        var t = s.added || (s.metadata && s.metadata.added) || s.created_at;
+        if (!t) {
+          t = s.last_modified || s.lastModified || (s.metadata && (s.metadata.last_modified || s.metadata.lastModified));
+        }
+        if (!t) {
+          t = s.addedAt || 0;
+        }
+        s._ts = parseTimestamp(t);
+      }
+      var cat = s.categoryName || 'Other';
+      if (!categoryIndex[cat]) categoryIndex[cat] = [];
+      categoryIndex[cat].push(s);
+    }
+
+    var sorted = seriesList.slice().sort(function (a, b) {
+      return b._ts - a._ts;
+    });
+    precomputedRecentlyAdded = sorted.slice(0, 20);
+  }
 
   var Series = {
     /**
@@ -43,6 +134,11 @@
      */
     bindEvents: function () {
       var self = this;
+      if (typeof window.addEventListener === 'function') {
+        window.addEventListener('resize', function () {
+          applyPosterHeight(document.getElementById('series-grid-container'));
+        });
+      }
 
       var searchInput = document.getElementById('series-search-input');
       if (searchInput) {
@@ -86,6 +182,25 @@
      * Called when user enters Series screen.
      */
     onEnterView: function () {
+      pendingEntryFocus = true;
+      activeCategory = 'recently_added';
+      var ci = document.getElementById('series-category-search-input');
+      if (ci) {
+        ci.value = '';
+        if (document.activeElement === ci) ci.blur();
+      }
+      var si = document.getElementById('series-search-input');
+      if (si) {
+        si.value = '';
+        if (document.activeElement === si) si.blur();
+      }
+      currentSearchQuery = '';
+
+      // Park initial resting focus on screen title so keyboard never opens
+      var titleEl = document.getElementById('series-screen-title');
+      if (titleEl && window.FreeIPTV.Navigation) {
+        window.FreeIPTV.Navigation.focus(titleEl);
+      }
       this.loadActiveSeries();
     },
 
@@ -111,6 +226,7 @@
       PlaylistManager.loadSeries(activePlaylist.id).then(function (result) {
         allSeries = result.series || [];
         rawCategories = result.categories || [];
+        buildCatalogIndexes(allSeries);
         self.renderCategories(rawCategories);
         self.applyFilter();
       }).catch(function (err) {
@@ -146,7 +262,30 @@
       var self = this;
       var q = (this.categorySearchQuery || '').trim().toLowerCase();
 
-      // 1. "All Series" Category (shown when no search query or when 'all' matches)
+      // 1. "Recently Added" Category (shown when no search query or matches 'recent')
+      if (!q || 'recently added'.indexOf(q) !== -1 || 'recent'.indexOf(q) !== -1) {
+        var recentItem = document.createElement('button');
+        recentItem.className = 'category-item focusable' + (activeCategory === 'recently_added' ? ' active' : '');
+        recentItem.setAttribute('data-nav-zone', 'series_categories');
+        recentItem.setAttribute('data-category', 'recently_added');
+
+        var recentLabel = document.createElement('span');
+        recentLabel.setAttribute('data-i18n', 'series.recently_added');
+        recentLabel.textContent = window.FreeIPTV.I18n ? window.FreeIPTV.I18n.t('series.recently_added') : 'Recently Added';
+        var recentCount = document.createElement('span');
+        recentCount.className = 'category-count';
+        recentCount.textContent = String(Math.min(allSeries.length, 20));
+
+        recentItem.appendChild(recentLabel);
+        recentItem.appendChild(recentCount);
+
+        recentItem.addEventListener('click', function () {
+          self.selectCategory('recently_added', recentItem);
+        });
+        container.appendChild(recentItem);
+      }
+
+      // 1b. "All Series" Category (shown when no search query or when 'all' matches)
       if (!q || 'all series'.indexOf(q) !== -1 || 'all'.indexOf(q) !== -1) {
         var allItem = document.createElement('button');
         allItem.className = 'category-item focusable' + (activeCategory === 'all' ? ' active' : '');
@@ -154,6 +293,7 @@
         allItem.setAttribute('data-category', 'all');
 
         var allLabel = document.createElement('span');
+        allLabel.setAttribute('data-i18n', 'series.all_series');
         allLabel.textContent = window.FreeIPTV.I18n ? window.FreeIPTV.I18n.t('series.all_series') : 'All Series';
         var allCount = document.createElement('span');
         allCount.className = 'category-count';
@@ -166,6 +306,69 @@
           self.selectCategory('all', allItem);
         });
         container.appendChild(allItem);
+      }
+
+      // 1c. "Favorites" Category
+      if (!q || 'favorites'.indexOf(q) !== -1) {
+        var favItem = document.createElement('button');
+        favItem.className = 'category-item focusable' + (activeCategory === 'favorites' ? ' active' : '');
+        favItem.setAttribute('data-nav-zone', 'series_categories');
+        favItem.setAttribute('data-category', 'favorites');
+
+        var favLabel = document.createElement('span');
+        favLabel.setAttribute('data-i18n', 'series.favorites');
+        favLabel.textContent = window.FreeIPTV.I18n ? window.FreeIPTV.I18n.t('series.favorites') : 'Favorites';
+        var favCount = document.createElement('span');
+        favCount.className = 'category-count';
+        var favCountNum = 0;
+        if (window.FreeIPTV.PlaylistManager && typeof window.FreeIPTV.PlaylistManager.isFavoriteItem === 'function') {
+          favCountNum = allSeries.filter(function (s) {
+            return window.FreeIPTV.PlaylistManager.isFavoriteItem(s.id, 'series');
+          }).length;
+        }
+        favCount.textContent = String(favCountNum);
+
+        favItem.appendChild(favLabel);
+        favItem.appendChild(favCount);
+
+        favItem.addEventListener('click', function () {
+          self.selectCategory('favorites', favItem);
+        });
+        container.appendChild(favItem);
+      }
+
+      // 1d. "Continue Watching" Category
+      if (!q || 'continue watching'.indexOf(q) !== -1 || 'continue'.indexOf(q) !== -1) {
+        var cwItem = document.createElement('button');
+        cwItem.className = 'category-item focusable' + (activeCategory === 'continue_watching' ? ' active' : '');
+        cwItem.setAttribute('data-nav-zone', 'series_categories');
+        cwItem.setAttribute('data-category', 'continue_watching');
+
+        var cwLabel = document.createElement('span');
+        cwLabel.setAttribute('data-i18n', 'series.continue_watching');
+        cwLabel.textContent = window.FreeIPTV.I18n ? window.FreeIPTV.I18n.t('series.continue_watching') : 'Continue Watching';
+        var cwCount = document.createElement('span');
+        cwCount.className = 'category-count';
+        var cwSeriesMap = {};
+        if (window.FreeIPTV.PlaylistManager && typeof window.FreeIPTV.PlaylistManager.getContinueWatching === 'function') {
+          var activePlaylist = window.FreeIPTV.PlaylistManager.getActivePlaylist ? window.FreeIPTV.PlaylistManager.getActivePlaylist() : null;
+          var cwList = window.FreeIPTV.PlaylistManager.getContinueWatching(null, activePlaylist ? activePlaylist.id : null);
+          for (var cwi = 0; cwi < cwList.length; cwi++) {
+            if (cwList[cwi].contentType === 'episode' && cwList[cwi].seriesId) {
+              cwSeriesMap[cwList[cwi].seriesId] = true;
+            }
+          }
+        }
+        var cwSeriesCount = allSeries.filter(function (s) { return !!cwSeriesMap[s.id]; }).length;
+        cwCount.textContent = String(cwSeriesCount);
+
+        cwItem.appendChild(cwLabel);
+        cwItem.appendChild(cwCount);
+
+        cwItem.addEventListener('click', function () {
+          self.selectCategory('continue_watching', cwItem);
+        });
+        container.appendChild(cwItem);
       }
 
       // 2. Provider categories filtered by category quick filter
@@ -199,17 +402,27 @@
         container.appendChild(catItem);
       }
 
-      // If on Series screen and focus is not yet placed on a category or is on search input, focus first category
-      if (window.FreeIPTV.Navigation && window.FreeIPTV.Navigation.getCurrentRoute() === 'series') {
-        var cur = window.FreeIPTV.Navigation.getCurrent();
-        var isSearch = cur && cur.id === 'series-category-search-input';
-        var isOutside = !cur || !document.body.contains(cur) || !cur.closest('#view-series');
-        if (isSearch || isOutside) {
-          var firstCat = container.querySelector('.category-item.active') || container.querySelector('.category-item');
+      // If on Series screen and entry focus is pending, focus Recently Added category
+      if (window.FreeIPTV.Navigation && (window.FreeIPTV.Navigation.getCurrentRoute() === 'series' || pendingEntryFocus)) {
+        if (pendingEntryFocus) {
+          pendingEntryFocus = false;
+          var firstCat = container.querySelector('.category-item[data-category="recently_added"]') ||
+                         container.querySelector('.category-item[data-category="all"]') ||
+                         container.querySelector('.category-item');
           if (firstCat) {
             window.FreeIPTV.Navigation.focus(firstCat);
           }
         }
+      }
+    },
+
+    /**
+     * Update favorites state and refresh view if in favorites category.
+     */
+    updateFavoritesState: function () {
+      this.renderCategories();
+      if (activeCategory === 'favorites') {
+        this.applyFilter();
       }
     },
 
@@ -220,6 +433,13 @@
      */
     selectCategory: function (category, itemEl) {
       activeCategory = category;
+
+      // Clear search input on category change so user views all items in the new category
+      var searchInput = document.getElementById('series-search-input');
+      if (searchInput && searchInput.value) {
+        searchInput.value = '';
+      }
+      currentSearchQuery = '';
 
       var items = document.querySelectorAll('#series-categories-list .category-item');
       for (var i = 0; i < items.length; i++) {
@@ -237,8 +457,13 @@
      * @param {string} query
      */
     setSearchQuery: function (query) {
+      var self = this;
       currentSearchQuery = query || '';
-      this.applyFilter();
+      if (searchTimer) clearTimeout(searchTimer);
+      searchTimer = setTimeout(function () {
+        searchTimer = null;
+        self.applyFilter();
+      }, 200);
     },
 
     /**
@@ -248,16 +473,77 @@
       var q = currentSearchQuery.trim().toLowerCase();
       var cat = activeCategory;
 
-      filteredSeries = allSeries.filter(function (s) {
-        if (cat !== 'all' && s.categoryName !== cat) {
-          return false;
+      function parseTimestamp(val) {
+        if (!val) return 0;
+        if (typeof val === 'number') return val;
+        var n = parseInt(val, 10);
+        if (!isNaN(n) && n > 0) return n;
+        var d = Date.parse(val);
+        return isNaN(d) ? 0 : d;
+      }
+
+      function getSeriesAddedTime(s) {
+        if (!s) return 0;
+        var t = s.added || (s.metadata && s.metadata.added) || s.created_at;
+        if (!t) {
+          t = s.last_modified || s.lastModified || (s.metadata && (s.metadata.last_modified || s.metadata.lastModified));
         }
-        if (!q) return true;
-        var nameMatch = s.name && s.name.toLowerCase().indexOf(q) !== -1;
-        var genreMatch = s.genre && s.genre.toLowerCase().indexOf(q) !== -1;
-        var castMatch = s.cast && s.cast.toLowerCase().indexOf(q) !== -1;
-        return nameMatch || genreMatch || castMatch;
-      });
+        if (!t) {
+          t = s.addedAt;
+        }
+        return parseTimestamp(t);
+      }
+
+      if (cat === 'recently_added') {
+        if (!q) {
+          filteredSeries = precomputedRecentlyAdded;
+        } else {
+          var baseSeries = allSeries.filter(function (s) {
+            return searchText(s).indexOf(q) !== -1;
+          });
+          var sorted = baseSeries.slice().sort(function (a, b) {
+            return (b._ts || 0) - (a._ts || 0);
+          });
+          filteredSeries = sorted.slice(0, 20);
+        }
+      } else if (cat === 'favorites') {
+        var PlaylistManager = window.FreeIPTV.PlaylistManager;
+        var hasFavFn = PlaylistManager && typeof PlaylistManager.isFavoriteItem === 'function';
+        filteredSeries = allSeries.filter(function (s) {
+          if (!hasFavFn || !PlaylistManager.isFavoriteItem(s.id, 'series')) {
+            return false;
+          }
+          if (!q) return true;
+          return searchText(s).indexOf(q) !== -1;
+        });
+      } else if (cat === 'continue_watching') {
+        var PlaylistManager = window.FreeIPTV.PlaylistManager;
+        var activePlaylist = (PlaylistManager && PlaylistManager.getActivePlaylist) ? PlaylistManager.getActivePlaylist() : null;
+        var cwList = (PlaylistManager && typeof PlaylistManager.getContinueWatching === 'function')
+          ? PlaylistManager.getContinueWatching(null, activePlaylist ? activePlaylist.id : null) : [];
+        var cwSeriesMap = {};
+        for (var cwi = 0; cwi < cwList.length; cwi++) {
+          if (cwList[cwi].contentType === 'episode' && cwList[cwi].seriesId) {
+            cwSeriesMap[cwList[cwi].seriesId] = true;
+          }
+        }
+        filteredSeries = allSeries.filter(function (s) {
+          if (!cwSeriesMap[s.id]) {
+            return false;
+          }
+          if (!q) return true;
+          return searchText(s).indexOf(q) !== -1;
+        });
+      } else {
+        var pool = (cat === 'all') ? allSeries : (categoryIndex[cat] || []);
+        if (!q) {
+          filteredSeries = pool;
+        } else {
+          filteredSeries = pool.filter(function (s) {
+            return searchText(s).indexOf(q) !== -1;
+          });
+        }
+      }
 
       var countLabel = document.getElementById('series-count-label');
       if (countLabel) {
@@ -278,6 +564,7 @@
     renderGrid: function (reset) {
       var container = document.getElementById('series-grid-container');
       if (!container) return;
+      applyPosterHeight(container);
 
       if (reset) {
         container.innerHTML = '';
@@ -294,7 +581,8 @@
       }
 
       var self = this;
-      var endIndex = Math.min(renderedCount + CHUNK_SIZE, filteredSeries.length);
+      var targetEnd = Math.min(renderedCount + CHUNK_SIZE, filteredSeries.length);
+      var endIndex = Math.min(targetEnd, MAX_DOM_CARDS);
 
       for (var i = renderedCount; i < endIndex; i++) {
         var series = filteredSeries[i];
@@ -303,6 +591,12 @@
       }
 
       renderedCount = endIndex;
+
+      if (window.FreeIPTV && window.FreeIPTV.Diagnostics) {
+        setTimeout(function () {
+          window.FreeIPTV.Diagnostics.sendTelemetry('series_grid_rendered');
+        }, 300);
+      }
     },
 
     /**
@@ -323,28 +617,32 @@
       var posterBox = document.createElement('div');
       posterBox.className = 'series-poster-wrap series-poster-box';
 
-      var fallbackSvg = document.createElement('div');
-      fallbackSvg.className = 'poster-fallback-icon';
-      fallbackSvg.innerHTML = '<svg viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>';
-
       var posterUrl = series.posterUrl || series.poster || series.cover || series.streamIcon || '';
       if (posterUrl) {
         var img = document.createElement('img');
-        img.className = 'movie-poster-img';
+        img.className = 'series-poster-img';
         img.alt = '';
-        img.loading = 'lazy';
-        img.src = posterUrl;
+        if (index < 25) {
+          img.src = posterUrl;
+        } else {
+          img.setAttribute('data-src', posterUrl);
+        }
 
         img.onerror = function () {
           this.style.display = 'none';
-          fallbackSvg.style.display = 'flex';
+          var fallback = document.createElement('div');
+          fallback.className = 'poster-fallback-icon';
+          fallback.innerHTML = '<svg viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>';
+          posterBox.appendChild(fallback);
         };
 
         posterBox.appendChild(img);
-        fallbackSvg.style.display = 'none';
+      } else {
+        var fallbackSvg = document.createElement('div');
+        fallbackSvg.className = 'poster-fallback-icon';
+        fallbackSvg.innerHTML = '<svg viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>';
+        posterBox.appendChild(fallbackSvg);
       }
-
-      posterBox.appendChild(fallbackSvg);
 
       // Rating badge if available
       if (series.rating && parseFloat(series.rating) > 0) {
@@ -376,7 +674,11 @@
     checkLoadMore: function (focusedElement) {
       if (!focusedElement) return;
       var index = parseInt(focusedElement.getAttribute('data-index'), 10);
-      if (!isNaN(index) && index >= renderedCount - 8 && renderedCount < filteredSeries.length) {
+      var container = document.getElementById('series-grid-container');
+      if (container && !isNaN(index)) {
+        loadNearbyImages(container, index);
+      }
+      if (!isNaN(index) && index >= renderedCount - 8 && renderedCount < filteredSeries.length && renderedCount < MAX_DOM_CARDS) {
         this.renderGrid(false);
       }
     },

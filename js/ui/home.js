@@ -243,9 +243,16 @@
                            viewEl.querySelector('#' + catPrefix + '-categories-list .focusable');
         }
 
+        if (route === 'movies' || route === 'series') {
+          // If categories are already loaded, focus "Recently Added" then "All". Otherwise, focus the screen title as a neutral non-input resting anchor.
+          firstFocusable = viewEl.querySelector('#' + route + '-categories-list .category-item[data-category="recently_added"]') ||
+                           viewEl.querySelector('#' + route + '-categories-list .category-item[data-category="all"]') ||
+                           viewEl.querySelector('#' + route + '-screen-title');
+        }
+
         if (!firstFocusable) {
-          firstFocusable = viewEl.querySelector('.focusable.active') ||
-                           viewEl.querySelector('.focusable:not([tabindex="-1"])');
+          firstFocusable = viewEl.querySelector('.focusable.active:not(input)') ||
+                           viewEl.querySelector('.focusable:not([tabindex="-1"]):not(input)');
         }
 
         if (firstFocusable && window.FreeIPTV.Navigation) {
@@ -344,15 +351,20 @@
         var img = document.createElement('img');
         img.src = posterUrl;
         img.alt = '';
-        img.loading = 'lazy';
         img.onerror = function () {
           this.style.display = 'none';
-          fallback.style.display = 'flex';
+          var fb = document.createElement('div');
+          fb.className = 'home-card-fallback';
+          fb.innerHTML = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+          mediaBox.appendChild(fb);
         };
         mediaBox.appendChild(img);
-        fallback.style.display = 'none';
+      } else {
+        var fallback = document.createElement('div');
+        fallback.className = 'home-card-fallback';
+        fallback.innerHTML = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+        mediaBox.appendChild(fallback);
       }
-      mediaBox.appendChild(fallback);
 
       // Progress bar if requested
       if (showProgress && item.durationSec > 0 && item.positionSec > 0) {
@@ -531,12 +543,24 @@
      */
     switchView: function (route) {
       if (!route) return;
+
+      // Clean up obsolete focus from previous view
+      var oldFocused = document.querySelectorAll('.focused');
+      for (var f = 0; f < oldFocused.length; f++) {
+        oldFocused[f].classList.remove('focused');
+      }
+      if (document.activeElement && document.activeElement !== document.body) {
+        try {
+          document.activeElement.blur();
+        } catch (e) {}
+      }
+
       var views = document.querySelectorAll('.view-screen');
       for (var i = 0; i < views.length; i++) {
         views[i].classList.add('hidden');
         var inactives = views[i].querySelectorAll('.focusable');
-        for (var f = 0; f < inactives.length; f++) {
-          inactives[f].setAttribute('tabindex', '-1');
+        for (var idx = 0; idx < inactives.length; idx++) {
+          inactives[idx].setAttribute('tabindex', '-1');
         }
       }
 

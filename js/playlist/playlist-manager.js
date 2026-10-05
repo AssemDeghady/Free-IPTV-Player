@@ -1158,6 +1158,8 @@
       var rootNodes = [];
       var channelList = Array.isArray(channels) ? channels : [];
 
+      var categoryKeyOrder = [];
+
       // 1. Process category definitions
       if (Array.isArray(categories)) {
         for (var i = 0; i < categories.length; i++) {
@@ -1171,6 +1173,9 @@
             var pIdVal = item.parentId !== undefined ? item.parentId : (item.parent_id !== undefined ? item.parent_id : null);
             var parentId = (pIdVal && pIdVal !== 0 && pIdVal !== '0') ? String(pIdVal).trim() : null;
 
+            if (!nodeMap[catId]) {
+              categoryKeyOrder.push(catId);
+            }
             nodeMap[catId] = {
               id: catId,
               name: catName,
@@ -1188,6 +1193,7 @@
             if (parts.length > 1) {
               var parentKey = 'm3u_p_' + parts[0];
               if (!nodeMap[parentKey]) {
+                categoryKeyOrder.push(parentKey);
                 nodeMap[parentKey] = {
                   id: parentKey,
                   name: parts[0],
@@ -1199,6 +1205,9 @@
               }
 
               var childKey = 'm3u_c_' + rawStr;
+              if (!nodeMap[childKey]) {
+                categoryKeyOrder.push(childKey);
+              }
               nodeMap[childKey] = {
                 id: childKey,
                 name: parts.slice(1).join(' - '),
@@ -1210,6 +1219,9 @@
               };
             } else {
               var flatKey = 'm3u_' + rawStr;
+              if (!nodeMap[flatKey]) {
+                categoryKeyOrder.push(flatKey);
+              }
               nodeMap[flatKey] = {
                 id: flatKey,
                 name: rawStr,
@@ -1253,6 +1265,7 @@
             // Dynamic category creation if not predefined
             var dynKey = 'dyn_' + gt;
             if (!nodeMap[dynKey]) {
+              categoryKeyOrder.push(dynKey);
               nodeMap[dynKey] = {
                 id: dynKey,
                 name: gt,
@@ -1269,9 +1282,11 @@
         }
       }
 
-      // 3. Assemble tree hierarchy
-      for (var key in nodeMap) {
+      // 3. Assemble tree hierarchy in original category definition order
+      for (var ko = 0; ko < categoryKeyOrder.length; ko++) {
+        var key = categoryKeyOrder[ko];
         var node = nodeMap[key];
+        if (!node) continue;
         if (node.parentId && nodeMap[node.parentId] && node.parentId !== node.id) {
           nodeMap[node.parentId].children.push(node);
         } else {

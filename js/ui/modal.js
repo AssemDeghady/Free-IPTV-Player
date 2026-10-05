@@ -227,9 +227,7 @@
         var serverInput = document.getElementById('input-xtream-server');
         var targetToFocus = nameInputXtream || serverInput;
         if (targetToFocus && window.FreeIPTV.Navigation) {
-          setTimeout(function () {
-            window.FreeIPTV.Navigation.focus(targetToFocus);
-          }, 50);
+          window.FreeIPTV.Navigation.focus(targetToFocus);
         }
       } else {
         if (tabXtream) {
@@ -243,11 +241,11 @@
         if (panelXtream) panelXtream.classList.add('hidden');
         if (panelM3u) panelM3u.classList.remove('hidden');
 
-        var urlInput = document.getElementById('input-playlist-url');
-        if (urlInput && window.FreeIPTV.Navigation) {
-          setTimeout(function () {
-            window.FreeIPTV.Navigation.focus(urlInput);
-          }, 50);
+        var nameInputM3u = document.getElementById('input-playlist-name');
+        var urlInputM3u = document.getElementById('input-playlist-url');
+        var targetM3u = nameInputM3u || urlInputM3u;
+        if (targetM3u && window.FreeIPTV.Navigation) {
+          window.FreeIPTV.Navigation.focus(targetM3u);
         }
       }
     },
@@ -318,13 +316,6 @@
           }
           return false;
         });
-      }
-
-      // Focus first input field
-      if (window.FreeIPTV.Navigation && urlInput) {
-        setTimeout(function () {
-          window.FreeIPTV.Navigation.focus(urlInput);
-        }, 100);
       }
     },
 

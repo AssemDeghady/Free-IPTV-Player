@@ -67,11 +67,13 @@
   "live.preview_unavailable": "المعاينة غير متاحة",
   "movies.title": "الأفلام",
   "movies.overview": "نظرة عامة",
+  "movies.search_placeholder": "البحث في الأفلام...",
   "movies.categories": "الفئات",
   "movies.all_movies": "جميع الأفلام",
   "movies.no_movies": "لم يتم العثور على أفلام",
   "movies.count": "{count} فيلم",
   "series.title": "المسلسلات",
+  "series.search_placeholder": "البحث في المسلسلات...",
   "series.categories": "الفئات",
   "series.all_series": "جميع المسلسلات",
   "series.no_series": "لم يتم العثور على مسلسلات",
@@ -224,5 +226,11 @@
   "series.no_seasons": "لا توجد مواسم متاحة.",
   "series.loading_seasons": "جارٍ تحميل المواسم...",
   "series.episodes_label": "الحلقات",
-  "categories.search_placeholder": "البحث في الأقسام..."
+  "categories.search_placeholder": "البحث في الأقسام...",
+  "movies.recently_added": "أضيف حديثاً",
+  "series.recently_added": "أضيف حديثاً",
+  "movies.continue_watching": "متابعة المشاهدة",
+  "movies.favorites": "المفضلة",
+  "series.continue_watching": "متابعة المشاهدة",
+  "series.favorites": "المفضلة"
 }

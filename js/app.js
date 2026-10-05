@@ -16,9 +16,12 @@
       var FreeIPTV = window.FreeIPTV;
 
       try {
-        // 1. Logger
+        // 1. Logger & Diagnostics
         if (FreeIPTV.Logger) {
           FreeIPTV.Logger.info('Free IPTV Player initializing (Phase 5 Complete IPTV Application)...');
+        }
+        if (FreeIPTV.Diagnostics) {
+          FreeIPTV.Diagnostics.init();
         }
 
         // 2. Localization

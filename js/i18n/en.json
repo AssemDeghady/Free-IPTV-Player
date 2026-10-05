@@ -67,11 +67,13 @@
   "live.preview_unavailable": "Preview unavailable",
   "movies.title": "Movies",
   "movies.overview": "Overview",
+  "movies.search_placeholder": "Search movies...",
   "movies.categories": "Categories",
   "movies.all_movies": "All Movies",
   "movies.no_movies": "No movies found",
   "movies.count": "{count} Movies",
   "series.title": "Series",
+  "series.search_placeholder": "Search series...",
   "series.categories": "Categories",
   "series.all_series": "All Series",
   "series.no_series": "No series found",
@@ -224,5 +226,11 @@
   "series.no_seasons": "No seasons available.",
   "series.loading_seasons": "Loading seasons...",
   "series.episodes_label": "Episodes",
-  "categories.search_placeholder": "Search categories..."
+  "categories.search_placeholder": "Search categories...",
+  "movies.recently_added": "Recently Added",
+  "series.recently_added": "Recently Added",
+  "movies.continue_watching": "Continue Watching",
+  "movies.favorites": "Favorites",
+  "series.continue_watching": "Continue Watching",
+  "series.favorites": "Favorites"
 }

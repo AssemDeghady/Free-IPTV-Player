@@ -115,14 +115,6 @@
         });
       }
 
-      // Aspect ratio button
-      var btnAspect = document.getElementById('player-btn-aspect');
-      if (btnAspect) {
-        btnAspect.addEventListener('click', function () {
-          self.cycleAspectRatio();
-        });
-      }
-
       // Back to channels / screens button
       var btnBack = document.getElementById('player-btn-back');
       if (btnBack) {
@@ -319,19 +311,26 @@
         }
       }
 
-      var epPoster = (episode && (episode.posterUrl || episode.poster || episode.cover)) ||
+      var epPoster = (episode && (episode.thumbnailUrl || episode.posterUrl || episode.poster || episode.cover)) ||
                      (series && (series.posterUrl || series.poster || series.cover)) || '';
+      var epNumber = episode.episodeNumber !== undefined ? episode.episodeNumber : (episode.episode_num !== undefined ? episode.episode_num : (episode.episodeNum || 1));
+      var epTitle = episode.name || episode.title || ('Episode ' + epNumber);
+      var sName = series.name || 'Series';
+      var sNum = seasonNum !== undefined ? seasonNum : (episode.seasonNumber || 1);
+
       currentMedia = {
         type: 'episode',
         id: episode.id,
         seriesId: series.seriesId || series.id,
-        title: (series.name || 'Series') + ' - S' + seasonNum + 'E' + (episode.episodeNum || 1),
-        subtitle: episode.title || ('Episode ' + (episode.episodeNum || 1)),
+        seasonNumber: sNum,
+        episodeNumber: epNumber,
+        title: sName + ' - S' + (sNum < 10 ? '0' + sNum : sNum) + 'E' + (epNumber < 10 ? '0' + epNumber : epNumber),
+        subtitle: epTitle,
         streamUrl: streamUrl,
         logoUrl: epPoster,
         posterUrl: epPoster,
         poster: epPoster,
-        duration: (episode.durationSecs || 0) * 1000,
+        duration: (episode.durationSecs || (episode.metadata && episode.metadata.durationSeconds) || 0) * 1000,
         position: startPositionMs || 0,
         rawItem: episode,
         rawSeries: series
@@ -818,28 +817,6 @@
         engine.pause();
       } else {
         engine.play();
-      }
-      this.resetControlsTimer();
-    },
-
-    /**
-     * Cycle through Aspect Ratio modes (FIT -> FULL -> AUTO).
-     */
-    cycleAspectRatio: function () {
-      var engine = window.FreeIPTV.AVPlayEngine;
-      if (!engine) return;
-
-      var current = engine.getDisplayMethod();
-      var next = 'FIT';
-      if (current === 'FIT') next = 'FULL';
-      else if (current === 'FULL') next = 'AUTO';
-      else next = 'FIT';
-
-      engine.setDisplayMethod(next);
-
-      var label = document.getElementById('player-aspect-label');
-      if (label) {
-        label.textContent = next;
       }
       this.resetControlsTimer();
     },

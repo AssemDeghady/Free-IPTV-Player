@@ -9,9 +9,16 @@
   transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast);
 }
 
+/* Universal Fallback Focus Highlight — Guarantees every focusable element is visibly illuminated */
+.focusable.focused,
+.focusable:focus {
+  outline: 3px solid var(--focus-border-color);
+  outline-offset: 2px;
+}
+
 /* Sidebar item focus — Subtle scale without horizontal jitter */
 .nav-link.focused,
-.nav-link:focus-visible {
+.nav-link:focus {
   background-color: var(--focus-bg-color);
   color: #ffffff;
   border-color: var(--focus-border-color);
@@ -21,7 +28,7 @@
 
 /* Header button focus */
 .header-button.focused,
-.header-button:focus-visible {
+.header-button:focus {
   background-color: var(--focus-bg-color);
   color: #ffffff;
   border-color: var(--focus-border-color);
@@ -31,7 +38,7 @@
 
 /* Primary CTA button focus */
 .btn-primary.focused,
-.btn-primary:focus-visible {
+.btn-primary:focus {
   background: linear-gradient(135deg, #3b82f6, #2563eb);
   border-color: #93c5fd;
   box-shadow: 0 0 0 4px rgba(147, 197, 253, 0.7), 0 12px 32px rgba(37, 99, 235, 0.6);
@@ -42,7 +49,11 @@
 .form-input.focused,
 .form-input:focus,
 .live-search-input.focused,
-.live-search-input:focus {
+.live-search-input:focus,
+.category-search-input.focused,
+.category-search-input:focus,
+.global-search-input.focused,
+.global-search-input:focus {
   background-color: var(--bg-surface-active);
   border-color: var(--focus-border-color);
   box-shadow: var(--focus-glow);
@@ -51,7 +62,7 @@
 
 /* Secondary Button focus */
 .btn-secondary.focused,
-.btn-secondary:focus-visible {
+.btn-secondary:focus {
   background-color: var(--focus-bg-color);
   color: #ffffff;
   border-color: var(--focus-border-color);
@@ -61,7 +72,7 @@
 
 /* Category item focus — Solid highlight without layout shift */
 .category-item.focused,
-.category-item:focus-visible {
+.category-item:focus {
   background-color: var(--focus-bg-color);
   color: #ffffff;
   border-color: var(--focus-border-color);
@@ -70,7 +81,7 @@
 
 /* Channel Card focus */
 .channel-card.focused,
-.channel-card:focus-visible {
+.channel-card:focus {
   background-color: #1e293b;
   border-color: var(--focus-border-color);
   box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.65), 0 8px 24px rgba(0, 0, 0, 0.6);
@@ -84,12 +95,12 @@
 
 /* Movie & Series Cards focus */
 .movie-card.focused,
-.movie-card:focus-visible,
+.movie-card:focus,
 .series-card.focused,
-.series-card:focus-visible {
+.series-card:focus {
   border-color: var(--focus-border-color);
   box-shadow: var(--focus-glow);
-  transform: scale(1.02);
+  transform: none;
   z-index: 10;
 }
 
@@ -100,12 +111,12 @@
 
 .movie-card.focused .movie-poster-img,
 .series-card.focused .series-poster-img {
-  transform: scale(1.03);
+  transform: none;
 }
 
 /* Playlist Items & Actions focus */
 .playlist-item-card.focused,
-.playlist-item-card:focus-visible {
+.playlist-item-card:focus {
   border-color: var(--focus-border-color);
   box-shadow: var(--focus-glow);
   transform: scale(1.02);
@@ -113,11 +124,11 @@
 }
 
 .btn-card-activate.focused,
-.btn-card-activate:focus-visible,
+.btn-card-activate:focus,
 .btn-card-action.focused,
-.btn-card-action:focus-visible,
+.btn-card-action:focus,
 .btn-playlist-action.focused,
-.btn-playlist-action:focus-visible {
+.btn-playlist-action:focus {
   background-color: var(--focus-bg-color);
   color: #ffffff;
   border-color: var(--focus-border-color);
@@ -127,9 +138,9 @@
 
 /* Home & Favorites Cards focus */
 .home-media-card.focused,
-.home-media-card:focus-visible,
+.home-media-card:focus,
 .home-action-btn.focused,
-.home-action-btn:focus-visible {
+.home-action-btn:focus {
   border-color: var(--focus-border-color);
   box-shadow: var(--focus-glow);
   transform: scale(1.02);
@@ -141,7 +152,7 @@
 }
 
 .favorite-card.focused,
-.favorite-card:focus-visible {
+.favorite-card:focus {
   border-color: var(--focus-border-color);
   box-shadow: var(--focus-glow);
   transform: scale(1.02);
@@ -153,9 +164,9 @@
 }
 
 .favorites-tab-btn.focused,
-.favorites-tab-btn:focus-visible,
+.favorites-tab-btn:focus,
 .provider-tab-btn.focused,
-.provider-tab-btn:focus-visible {
+.provider-tab-btn:focus {
   background-color: var(--focus-bg-color);
   color: #ffffff;
   border-color: var(--focus-border-color);
@@ -165,7 +176,7 @@
 
 /* Series Season & Episode focus */
 .btn-page-back.focused,
-.btn-page-back:focus-visible {
+.btn-page-back:focus {
   border-color: var(--focus-border-color);
   background-color: var(--focus-bg-color);
   box-shadow: var(--focus-glow);
@@ -174,7 +185,7 @@
 }
 
 .btn-action-lg.focused,
-.btn-action-lg:focus-visible,
+.btn-action-lg:focus,
 #btn-movie-play.focused,
 #btn-movie-resume.focused,
 #btn-movie-fav.focused,
@@ -185,7 +196,7 @@
 }
 
 .season-select-btn.focused,
-.season-select-btn:focus-visible {
+.season-select-btn:focus {
   border-color: var(--focus-border-color) !important;
   box-shadow: 0 0 20px rgba(59, 130, 246, 0.8) !important;
   background-color: rgba(59, 130, 246, 0.25) !important;
@@ -193,20 +204,20 @@
 }
 
 .season-dropdown-item.focused,
-.season-dropdown-item:focus-visible {
+.season-dropdown-item:focus {
   background-color: var(--focus-bg-color) !important;
   border-left: 4px solid var(--focus-border-color) !important;
   color: #ffffff !important;
 }
 
 html[dir="rtl"] .season-dropdown-item.focused,
-html[dir="rtl"] .season-dropdown-item:focus-visible {
+html[dir="rtl"] .season-dropdown-item:focus {
   border-left: none !important;
   border-right: 4px solid var(--focus-border-color) !important;
 }
 
 .series-season-tab.focused,
-.series-season-tab:focus-visible {
+.series-season-tab:focus {
   border-color: var(--focus-border-color);
   box-shadow: var(--focus-glow);
   color: #ffffff;
@@ -214,9 +225,9 @@ html[dir="rtl"] .season-dropdown-item:focus-visible {
 }
 
 .series-episode-card.focused,
-.series-episode-card:focus-visible,
+.series-episode-card:focus,
 .episode-card.focused,
-.episode-card:focus-visible {
+.episode-card:focus {
   background-color: var(--focus-bg-color);
   border-color: var(--focus-border-color);
   box-shadow: 0 0 16px rgba(59, 130, 246, 0.7);
@@ -225,25 +236,47 @@ html[dir="rtl"] .season-dropdown-item:focus-visible {
 }
 
 .live-epg-schedule-item.focused,
-.live-epg-schedule-item:focus-visible {
+.live-epg-schedule-item:focus {
   background-color: var(--focus-bg-color);
   border-color: var(--focus-border-color);
   box-shadow: var(--focus-glow);
   transform: scale(1.01);
 }
 
+/* Screen Title Header Focus (Neutral resting focus while categories/content load) */
+.live-screen-title.focused,
+.live-screen-title:focus {
+  color: var(--accent-hover);
+  text-shadow: 0 0 16px rgba(96, 165, 250, 0.7);
+  outline: none !important;
+}
+
 /* Settings actions focus */
 .btn-settings-action.focused,
-.btn-settings-action:focus-visible,
+.btn-settings-action:focus,
 .btn-settings-add.focused,
-.btn-settings-add:focus-visible,
+.btn-settings-add:focus,
 .btn-lang-toggle.focused,
-.btn-lang-toggle:focus-visible {
+.btn-lang-toggle:focus {
   background-color: var(--focus-bg-color);
   color: #ffffff;
   border-color: var(--focus-border-color);
   box-shadow: var(--focus-glow);
   transform: scale(1.03);
+}
+
+/* Settings Toggle Items & Checkbox Focus */
+.settings-toggle-item.focused,
+.settings-toggle-item:focus-within {
+  background-color: var(--focus-bg-color);
+  border-color: var(--focus-border-color);
+  box-shadow: var(--focus-glow);
+}
+
+.settings-toggle-item input[type="checkbox"].focused,
+.settings-toggle-item input[type="checkbox"]:focus {
+  outline: 3px solid var(--focus-border-color) !important;
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.9);
 }
 
 /* ============================================================
@@ -282,7 +315,7 @@ html[dir="rtl"] .nav-link {
 
 /* Sidebar Active Indicator & Focus in RTL */
 html[dir="rtl"] .nav-link.focused,
-html[dir="rtl"] .nav-link:focus-visible {
+html[dir="rtl"] .nav-link:focus {
   transform: scale(1.02);
 }
 
@@ -294,7 +327,7 @@ html[dir="rtl"] .nav-link.active::before {
 
 /* Category Item Focus in RTL */
 html[dir="rtl"] .category-item.focused,
-html[dir="rtl"] .category-item:focus-visible {
+html[dir="rtl"] .category-item:focus {
   transform: none;
 }
 
@@ -325,7 +358,7 @@ input[type="password"],
 
 /* Player Focus Styles (Native AVPlay Video Coordinates Untouched) */
 .btn-player-control.focused,
-.btn-player-control:focus-visible {
+.btn-player-control:focus {
   background-color: #1e293b;
   border-color: var(--focus-border-color);
   box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.7), 0 8px 24px rgba(0, 0, 0, 0.8);
@@ -333,7 +366,7 @@ input[type="password"],
 }
 
 .btn-player-primary.focused,
-.btn-player-primary:focus-visible {
+.btn-player-primary:focus {
   background: linear-gradient(135deg, #3b82f6, #60a5fa);
   border-color: #ffffff;
   box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.8), 0 12px 32px rgba(37, 99, 235, 0.8);

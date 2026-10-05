@@ -407,10 +407,6 @@ function createDOMEnvironment() {
     btnPrev.setAttribute('data-nav-zone', 'player_controls');
     const btnNext = new MockElement('button', 'player-btn-next');
     btnNext.classList.add('focusable');
-    btnNext.setAttribute('data-nav-zone', 'player_controls');
-    const btnAspect = new MockElement('button', 'player-btn-aspect');
-    btnAspect.classList.add('focusable');
-    btnAspect.setAttribute('data-nav-zone', 'player_controls');
     const btnBack = new MockElement('button', 'player-btn-back');
     btnBack.classList.add('focusable');
     btnBack.setAttribute('data-nav-zone', 'player_controls');
@@ -431,7 +427,6 @@ function createDOMEnvironment() {
     controlsOverlay.appendChild(btnPrev);
     controlsOverlay.appendChild(btnPlayPause);
     controlsOverlay.appendChild(btnNext);
-    controlsOverlay.appendChild(btnAspect);
     controlsOverlay.appendChild(btnBack);
 
     errorOverlay.appendChild(errRetry);

@@ -205,12 +205,18 @@
         skippedEntries++;
       }
 
-      // Collect categories sorted alphabetically, with 'Other' at the end
-      var categories = Object.keys(categoriesSet).sort(function (a, b) {
-        if (a === 'Other') return 1;
-        if (b === 'Other') return -1;
-        return a.localeCompare(b);
-      });
+      var categoriesOrder = [];
+      var seenCategories = {};
+
+      for (var ci = 0; ci < channels.length; ci++) {
+        var cGroup = channels[ci].groupTitle;
+        if (!seenCategories[cGroup]) {
+          seenCategories[cGroup] = true;
+          categoriesOrder.push(cGroup);
+        }
+      }
+
+      var categories = categoriesOrder;
 
       return {
         channels: channels,

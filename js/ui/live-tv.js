@@ -31,6 +31,9 @@
   var currentPreviewChannel = null;
   var isPreviewActive = false;
 
+  // Channel State
+  var currentPlaylistId = null;
+
   var LiveTV = {
     /**
      * Initialize Live TV view.
@@ -66,9 +69,11 @@
       // Re-load when active playlist changes or playlists are updated
       if (window.FreeIPTV.Events && window.FreeIPTV.Constants) {
         window.FreeIPTV.Events.on(window.FreeIPTV.Constants.EVENTS.PLAYLIST_ACTIVE_CHANGED, function () {
+          currentPlaylistId = null;
           self.loadActivePlaylist();
         });
         window.FreeIPTV.Events.on(window.FreeIPTV.Constants.EVENTS.PLAYLIST_UPDATED, function () {
+          currentPlaylistId = null;
           self.loadActivePlaylist();
         });
         window.FreeIPTV.Events.on(window.FreeIPTV.Constants.EVENTS.VIEW_CHANGED, function (data) {
@@ -88,7 +93,52 @@
      * Called when user enters Live TV screen.
      */
     onEnterView: function () {
-      this.loadActivePlaylist();
+      var PlaylistManager = window.FreeIPTV.PlaylistManager;
+      var activePlaylist = PlaylistManager ? PlaylistManager.getActivePlaylist() : null;
+      if (activePlaylist && currentPlaylistId === activePlaylist.id && allChannels.length > 0) {
+        this.restoreViewState();
+      } else {
+        this.loadActivePlaylist();
+      }
+    },
+
+    /**
+     * Restore previous category/channel state when returning from player or other views.
+     */
+    restoreViewState: function () {
+      this.renderCategories();
+      this.applyFilter();
+
+      var cardToFocus = null;
+      if (selectedChannel) {
+        var targetIdx = -1;
+        for (var i = 0; i < filteredChannels.length; i++) {
+          if (filteredChannels[i].id === selectedChannel.id) {
+            targetIdx = i;
+            break;
+          }
+        }
+        if (targetIdx !== -1) {
+          while (renderedCount <= targetIdx && renderedCount < filteredChannels.length) {
+            this.renderChannelList(false);
+          }
+          cardToFocus = document.querySelector('[data-channel-id="' + selectedChannel.id + '"]');
+        }
+      }
+
+      if (!cardToFocus) {
+        cardToFocus = document.querySelector('#live-channels-container .channel-card') ||
+                      document.querySelector('#live-categories-list .category-item.active') ||
+                      document.querySelector('#live-categories-list .focusable');
+      }
+
+      if (cardToFocus && window.FreeIPTV.Navigation) {
+        window.FreeIPTV.Navigation.focus(cardToFocus);
+      }
+
+      if (selectedChannel) {
+        this.renderChannelEpg(selectedChannel);
+      }
     },
 
     /**
@@ -188,6 +238,7 @@
           categoryStack = [];
           selectedCategoryNode = null;
           activeCategory = 'all';
+          currentPlaylistId = activePlaylist.id;
 
           self.renderCategories();
           self.applyFilter();

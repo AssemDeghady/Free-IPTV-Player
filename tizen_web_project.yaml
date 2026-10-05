@@ -38,6 +38,7 @@ files:
   - index.html
   - js/app.js
   - js/core/constants.js
+  - js/core/diagnostics.js
   - js/core/events.js
   - js/core/http.js
   - js/core/logger.js
@@ -91,7 +92,7 @@ excludes:
   - \.tizen-ui-builder-tool.xml
   - \.tproject
   - \.wgt
-  - *.wgt
+  - .*\.wgt
   - author-signature.xml
   - signature1.xml
   - .git/*

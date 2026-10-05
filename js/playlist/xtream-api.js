@@ -528,21 +528,33 @@
         }
       }
 
-      var sortedCategories = Object.keys(categoriesSet).sort(function (a, b) {
-        if (a === 'Other') return 1;
-        if (b === 'Other') return -1;
-        return a.localeCompare(b);
-      });
+      var orderedCategories = [];
+      var seenCats = {};
+      if (Array.isArray(categories)) {
+        for (var c = 0; c < categories.length; c++) {
+          var cName = categories[c] ? (categories[c].name || categories[c].category_name) : null;
+          if (cName && categoriesSet[cName] && !seenCats[cName]) {
+            seenCats[cName] = true;
+            orderedCategories.push(cName);
+          }
+        }
+      }
+      for (var catName in categoriesSet) {
+        if (!seenCats[catName]) {
+          seenCats[catName] = true;
+          orderedCategories.push(catName);
+        }
+      }
 
       return {
         channels: channels,
-        categories: sortedCategories,
+        categories: orderedCategories,
         categoryObjects: Array.isArray(categories) ? categories : [],
         stats: {
           totalEntries: totalStreams,
           validEntries: channels.length,
           skippedEntries: totalStreams - channels.length,
-          categoriesCount: sortedCategories.length
+          categoriesCount: orderedCategories.length
         }
       };
     },
@@ -780,9 +792,10 @@
             isFavorite: false,
             progress: 0,
             durationSeconds: item.duration_secs || 0,
+            added: item.added || item.created_at || '',
             metadata: {
               streamId: streamId,
-              added: item.added || '',
+              added: item.added || item.created_at || '',
               rating5Based: item.rating_5based || null
             }
           };
@@ -792,20 +805,32 @@
         }
       }
 
-      var sortedCategories = Object.keys(categoriesSet).sort(function (a, b) {
-        if (a === 'Other') return 1;
-        if (b === 'Other') return -1;
-        return a.localeCompare(b);
-      });
+      var orderedCategories = [];
+      var seenCats = {};
+      if (Array.isArray(categories)) {
+        for (var c = 0; c < categories.length; c++) {
+          var cName = categories[c] ? (categories[c].name || categories[c].category_name) : null;
+          if (cName && categoriesSet[cName] && !seenCats[cName]) {
+            seenCats[cName] = true;
+            orderedCategories.push(cName);
+          }
+        }
+      }
+      for (var catName in categoriesSet) {
+        if (!seenCats[catName]) {
+          seenCats[catName] = true;
+          orderedCategories.push(catName);
+        }
+      }
 
       return {
         movies: movies,
-        categories: sortedCategories,
+        categories: orderedCategories,
         stats: {
           totalEntries: total,
           validEntries: movies.length,
           skippedEntries: total - movies.length,
-          categoriesCount: sortedCategories.length
+          categoriesCount: orderedCategories.length
         }
       };
     },
@@ -1004,9 +1029,14 @@
             director: item.director || '',
             seasons: [],
             isFavorite: false,
+            added: item.added || item.created_at || '',
+            lastModified: item.last_modified || '',
+            last_modified: item.last_modified || '',
             metadata: {
               seriesId: seriesId,
+              added: item.added || item.created_at || '',
               lastModified: item.last_modified || '',
+              last_modified: item.last_modified || '',
               episodeRunTime: item.episode_run_time || ''
             }
           };
@@ -1016,20 +1046,32 @@
         }
       }
 
-      var sortedCategories = Object.keys(categoriesSet).sort(function (a, b) {
-        if (a === 'Other') return 1;
-        if (b === 'Other') return -1;
-        return a.localeCompare(b);
-      });
+      var orderedCategories = [];
+      var seenCats = {};
+      if (Array.isArray(categories)) {
+        for (var c = 0; c < categories.length; c++) {
+          var cName = categories[c] ? (categories[c].name || categories[c].category_name) : null;
+          if (cName && categoriesSet[cName] && !seenCats[cName]) {
+            seenCats[cName] = true;
+            orderedCategories.push(cName);
+          }
+        }
+      }
+      for (var catName in categoriesSet) {
+        if (!seenCats[catName]) {
+          seenCats[catName] = true;
+          orderedCategories.push(catName);
+        }
+      }
 
       return {
         series: seriesList,
-        categories: sortedCategories,
+        categories: orderedCategories,
         stats: {
           totalEntries: total,
           validEntries: seriesList.length,
           skippedEntries: total - seriesList.length,
-          categoriesCount: sortedCategories.length
+          categoriesCount: orderedCategories.length
         }
       };
     },
@@ -1057,7 +1099,7 @@
         return { seasons: seasons, episodesBySeason: episodesBySeason, allEpisodes: allEpisodes };
       }
 
-      // 1. Process Seasons
+      // 1. Process explicit Seasons metadata if returned
       var rawSeasons = rawInfo.seasons;
       var rawSeasonList = [];
 
@@ -1083,14 +1125,18 @@
         var rawNum = s.season_number !== undefined ? s.season_number :
                      (s.season_num !== undefined ? s.season_num :
                      (s.season !== undefined ? s.season :
-                     (s.seasonNumber !== undefined ? s.seasonNumber : (i + 1))));
-        var sNum = parseInt(String(rawNum), 10);
-        if (isNaN(sNum)) {
+                     (s.seasonNumber !== undefined ? s.seasonNumber : null)));
+        var sNum = null;
+        if (rawNum !== null && rawNum !== undefined) {
+          var sMatch = String(rawNum).match(/\d+/);
+          if (sMatch) sNum = parseInt(sMatch[0], 10);
+        }
+        if (sNum === null || isNaN(sNum)) {
           sNum = i + 1;
         }
 
         var sName = s.name ? String(s.name).trim() :
-                    (s.title ? String(s.title).trim() : 'Season ' + sNum);
+                    (s.title ? String(s.title).trim() : (sNum === 0 ? 'Specials' : ('Season ' + sNum)));
         var epCount = s.episode_count !== undefined ? Number(s.episode_count) :
                       (s.episodeCount !== undefined ? Number(s.episodeCount) : 0);
         var customId = s.id || s.season_id ? String(s.id || s.season_id) : ('season_' + pId + '_' + sId + '_' + sNum);
@@ -1107,87 +1153,138 @@
         }
       }
 
-      // Sort seasons ascending by seasonNumber
-      seasons.sort(function (a, b) { return a.seasonNumber - b.seasonNumber; });
-
-      // 2. Process Episodes
-      // In Xtream, rawInfo.episodes is typically an object with keys "1", "2", etc., or an array
+      // 2. Process Episodes defensively (handling objects {"1":[...]}, flat arrays, and associative maps)
       var rawEpisodes = rawInfo.episodes || {};
-      var seasonKeys = [];
-      if (Array.isArray(rawEpisodes)) {
-        seasonKeys = ['1'];
-      } else if (typeof rawEpisodes === 'object') {
-        seasonKeys = Object.keys(rawEpisodes);
-      }
 
-      for (var k = 0; k < seasonKeys.length; k++) {
-        var sKey = seasonKeys[k];
-        var epList = Array.isArray(rawEpisodes) ? rawEpisodes : rawEpisodes[sKey];
-        if (!Array.isArray(epList)) continue;
+      function processEpisodeItem(ep, fallbackSeasonNum, indexHint) {
+        if (!ep || typeof ep !== 'object') return;
 
-        var sNumVal = parseInt(sKey, 10) || 1;
-        episodesBySeason[sNumVal] = [];
-
-        for (var e = 0; e < epList.length; e++) {
-          var ep = epList[e];
-          if (!ep || typeof ep !== 'object') continue;
-
-          var epId = ep.id !== undefined ? String(ep.id).trim() : (ep.stream_id !== undefined ? String(ep.stream_id).trim() : String(e + 1));
-          var epNum = ep.episode_num !== undefined ? Number(ep.episode_num) : (e + 1);
-          var epTitle = ep.title ? String(ep.title).trim() : (ep.info && ep.info.name ? String(ep.info.name).trim() : 'Episode ' + epNum);
-
-          var info = ep.info || {};
-          var thumb = ep.movie_image ? String(ep.movie_image).trim() : (info.movie_image ? String(info.movie_image).trim() : '');
-          var plot = info.plot || ep.plot || info.description || '';
-          var duration = info.duration || ep.duration || (info.duration_secs ? Math.round(info.duration_secs / 60) + ' min' : '');
-          var airDate = ep.air_date || info.releasedate || '';
-          var ext = (ep.container_extension ? String(ep.container_extension).replace(/^\./, '').trim() : '') || 'mp4';
-
-          var streamUrl = generateEpisodeStreamUrl(normServer, username, password, ep);
-
-          var episodeModel = {
-            id: 'episode_' + pId + '_' + sId + '_' + sNumVal + '_' + epId,
-            seriesId: sId,
-            seasonNumber: sNumVal,
-            episodeNumber: epNum,
-            name: epTitle,
-            streamUrl: streamUrl,
-            thumbnailUrl: thumb,
-            description: plot,
-            duration: duration,
-            airDate: airDate,
-            containerExtension: ext,
-            progress: 0,
-            metadata: {
-              episodeId: epId,
-              durationSeconds: info.duration_secs || 0
-            }
-          };
-
-          episodesBySeason[sNumVal].push(episodeModel);
-          allEpisodes.push(episodeModel);
-        }
-
-        // Sort episodes in season by episodeNumber
-        episodesBySeason[sNumVal].sort(function (a, b) { return a.episodeNumber - b.episodeNumber; });
-      }
-
-      // If seasons was empty but episodes were found, generate synthetic seasons
-      if (seasons.length === 0 && Object.keys(episodesBySeason).length > 0) {
-        for (var sn in episodesBySeason) {
-          if (episodesBySeason.hasOwnProperty(sn)) {
-            var sNumInt = Number(sn);
-            seasons.push({
-              id: 'season_' + pId + '_' + sId + '_' + sNumInt,
-              seriesId: sId,
-              seasonNumber: sNumInt,
-              name: 'Season ' + sNumInt,
-              episodeCount: episodesBySeason[sn].length
-            });
+        // Season discovery priority: episode-level field -> fallback key season number -> 1
+        var epSeasonRaw = ep.season_num !== undefined ? ep.season_num :
+                          (ep.season !== undefined ? ep.season :
+                          (ep.seasonNumber !== undefined ? ep.seasonNumber :
+                          (ep.info && ep.info.season !== undefined ? ep.info.season : undefined)));
+        var sNumVal = fallbackSeasonNum;
+        if (epSeasonRaw !== undefined && epSeasonRaw !== null && epSeasonRaw !== '') {
+          var sMatch = String(epSeasonRaw).match(/\d+/);
+          if (sMatch) {
+            sNumVal = parseInt(sMatch[0], 10);
           }
         }
-        seasons.sort(function (a, b) { return a.seasonNumber - b.seasonNumber; });
+        if (sNumVal === undefined || sNumVal === null || isNaN(sNumVal)) {
+          sNumVal = 1;
+        }
+
+        if (!episodesBySeason[sNumVal]) {
+          episodesBySeason[sNumVal] = [];
+        }
+
+        var epId = ep.id !== undefined ? String(ep.id).trim() : (ep.stream_id !== undefined ? String(ep.stream_id).trim() : String(indexHint + 1));
+        var epNum = ep.episode_num !== undefined ? Number(ep.episode_num) : (indexHint + 1);
+        var epTitle = ep.title ? String(ep.title).trim() : (ep.info && ep.info.name ? String(ep.info.name).trim() : 'Episode ' + epNum);
+
+        var info = ep.info || {};
+        var thumb = ep.movie_image ? String(ep.movie_image).trim() : (info.movie_image ? String(info.movie_image).trim() : '');
+        var plot = info.plot || ep.plot || info.description || '';
+        var duration = info.duration || ep.duration || (info.duration_secs ? Math.round(info.duration_secs / 60) + ' min' : '');
+        var airDate = ep.air_date || info.releasedate || '';
+        var ext = (ep.container_extension ? String(ep.container_extension).replace(/^\./, '').trim() : '') || 'mp4';
+
+        var streamUrl = generateEpisodeStreamUrl(normServer, username, password, ep);
+
+        var episodeModel = {
+          id: 'episode_' + pId + '_' + sId + '_' + sNumVal + '_' + epId,
+          seriesId: sId,
+          seasonNumber: sNumVal,
+          episodeNumber: epNum,
+          name: epTitle,
+          streamUrl: streamUrl,
+          thumbnailUrl: thumb,
+          description: plot,
+          duration: duration,
+          airDate: airDate,
+          containerExtension: ext,
+          progress: 0,
+          metadata: {
+            episodeId: epId,
+            durationSeconds: info.duration_secs || 0
+          }
+        };
+
+        episodesBySeason[sNumVal].push(episodeModel);
+        allEpisodes.push(episodeModel);
       }
+
+      if (Array.isArray(rawEpisodes)) {
+        // Flat array of episodes: group by each episode's season field
+        for (var e = 0; e < rawEpisodes.length; e++) {
+          processEpisodeItem(rawEpisodes[e], 1, e);
+        }
+      } else if (typeof rawEpisodes === 'object' && rawEpisodes !== null) {
+        var seasonKeys = Object.keys(rawEpisodes);
+        for (var k = 0; k < seasonKeys.length; k++) {
+          var sKey = seasonKeys[k];
+          var epEntry = rawEpisodes[sKey];
+
+          var sMatch = String(sKey).match(/\d+/);
+          var sNumVal = sMatch ? parseInt(sMatch[0], 10) : (parseInt(sKey, 10) || 1);
+
+          if (Array.isArray(epEntry)) {
+            for (var e = 0; e < epEntry.length; e++) {
+              processEpisodeItem(epEntry[e], sNumVal, e);
+            }
+          } else if (epEntry && typeof epEntry === 'object') {
+            // Associative map where key is episode id / index or single episode object
+            processEpisodeItem(epEntry, sNumVal, k);
+          }
+        }
+      }
+
+      // 3. SYNTHESIS STEP: Ensure ALL seasons present in episodesBySeason are represented in seasons
+      for (var sn in episodesBySeason) {
+        if (episodesBySeason.hasOwnProperty(sn)) {
+          var snInt = parseInt(sn, 10);
+          if (isNaN(snInt)) continue;
+
+          // Sort episodes in this season numerically by episodeNumber
+          episodesBySeason[snInt].sort(function (a, b) {
+            return (Number(a.episodeNumber) || 0) - (Number(b.episodeNumber) || 0);
+          });
+
+          if (!seenSeasons[snInt]) {
+            seenSeasons[snInt] = true;
+            seasons.push({
+              id: 'season_' + pId + '_' + sId + '_' + snInt,
+              seriesId: sId,
+              seasonNumber: snInt,
+              name: snInt === 0 ? 'Specials' : ('Season ' + snInt),
+              episodeCount: episodesBySeason[snInt].length
+            });
+          } else {
+            // Update episodeCount: actual episode data takes precedence over metadata
+            for (var sIdx = 0; sIdx < seasons.length; sIdx++) {
+              if (seasons[sIdx].seasonNumber === snInt) {
+                if (episodesBySeason[snInt].length > 0 || !seasons[sIdx].episodeCount) {
+                  seasons[sIdx].episodeCount = episodesBySeason[snInt].length;
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // Ensure every season in seasons has an episodes array in episodesBySeason
+      for (var si = 0; si < seasons.length; si++) {
+        var sNum = seasons[si].seasonNumber;
+        if (!episodesBySeason[sNum]) {
+          episodesBySeason[sNum] = [];
+        }
+      }
+
+      // Sort seasons strictly ascending by seasonNumber (Specials 0, then 1, 2, ... 10)
+      seasons.sort(function (a, b) {
+        return (a.seasonNumber || 0) - (b.seasonNumber || 0);
+      });
 
       return {
         seasons: seasons,
