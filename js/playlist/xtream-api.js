@@ -1289,6 +1289,7 @@
       return {
         seasons: seasons,
         episodesBySeason: episodesBySeason,
+        content: allEpisodes,
         allEpisodes: allEpisodes
       };
     },

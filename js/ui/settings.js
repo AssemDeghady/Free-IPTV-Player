@@ -164,21 +164,28 @@
     },
 
     /**
-     * Clear EPG Cache and notify user.
+     * Clear All Caches (EPG, Series details, VOD details, catalogs) and notify user.
      */
     clearEpgCache: function () {
       var ChannelStore = window.FreeIPTV.ChannelStore;
+      var PlaylistManager = window.FreeIPTV.PlaylistManager;
       var I18n = window.FreeIPTV.I18n;
       var statusEl = document.getElementById('epg-cache-status');
 
-      if (ChannelStore && ChannelStore.clearEpgCache) {
-        ChannelStore.clearEpgCache().then(function () {
-          if (statusEl) {
-            statusEl.textContent = I18n ? I18n.t('settings.epg_cache_cleared') : 'EPG cache cleared successfully.';
-            setTimeout(function () { statusEl.textContent = ''; }, 3000);
-          }
-        });
-      }
+      var clearPromise = (ChannelStore && ChannelStore.clearAll)
+        ? ChannelStore.clearAll()
+        : ((ChannelStore && ChannelStore.clearEpgCache) ? ChannelStore.clearEpgCache() : Promise.resolve(true));
+
+      clearPromise.then(function () {
+        // Invalidate any in-memory/session caches if available
+        if (PlaylistManager && PlaylistManager.clearMemoryCache) {
+          PlaylistManager.clearMemoryCache();
+        }
+        if (statusEl) {
+          statusEl.textContent = I18n ? I18n.t('settings.epg_cache_cleared') : 'Cache cleared successfully.';
+          setTimeout(function () { statusEl.textContent = ''; }, 3000);
+        }
+      });
     },
 
     /**
@@ -191,6 +198,9 @@
       try {
         localStorage.removeItem('freeiptv_watch_history');
         localStorage.removeItem('freeiptv_playback_progress');
+        if (window.FreeIPTV.PlaylistManager && window.FreeIPTV.PlaylistManager.clearWatchHistory) {
+          window.FreeIPTV.PlaylistManager.clearWatchHistory();
+        }
         if (window.FreeIPTV.Events && window.FreeIPTV.Constants) {
           window.FreeIPTV.Events.emit(window.FreeIPTV.Constants.EVENTS.HISTORY_UPDATED);
         }

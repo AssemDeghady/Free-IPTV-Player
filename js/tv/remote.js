@@ -164,19 +164,50 @@
           }
         }
 
-        // Input when controls are hidden
+        // Interactive Scrubber Timeline controls when timeline is focused
+        var currentFocusEl = Navigation ? (Navigation.getCurrent ? Navigation.getCurrent() : document.activeElement) : null;
+        var isTimelineFocused = currentFocusEl && currentFocusEl.id === 'player-seek-bar-track';
+
+        if (isTimelineFocused && Player.handleTimelineKey) {
+          if (keyCode === Constants.KEYS.LEFT) {
+            Player.handleTimelineKey('left');
+            event.preventDefault();
+            return;
+          } else if (keyCode === Constants.KEYS.RIGHT) {
+            Player.handleTimelineKey('right');
+            event.preventDefault();
+            return;
+          } else if (keyCode === Constants.KEYS.ENTER) {
+            Player.handleTimelineKey('enter');
+            event.preventDefault();
+            return;
+          }
+        }
+
         var controlsOverlay = document.getElementById('player-controls-overlay');
         var isControlsHidden = controlsOverlay && controlsOverlay.classList.contains('hidden');
-        
+
+        // STATE A: Controls are HIDDEN -> Left / Right perform quick seek (+/-10s)
+        // Any other nav key (Enter, Up, Down) wakes up controls and focuses play/pause.
         if (isControlsHidden) {
-          // If controls are hidden, any nav key (Enter, Up, Down, Left, Right) should just show controls
-          var isNavKey = keyCode === Constants.KEYS.ENTER || 
-                         keyCode === Constants.KEYS.UP || 
-                         keyCode === Constants.KEYS.DOWN || 
-                         keyCode === Constants.KEYS.LEFT || 
-                         keyCode === Constants.KEYS.RIGHT;
-                         
-          if (isNavKey) {
+          if (!isLive && !isErrorShowing) {
+            if (keyCode === Constants.KEYS.LEFT) {
+              Player.seek(-10);
+              event.preventDefault();
+              return;
+            } else if (keyCode === Constants.KEYS.RIGHT) {
+              Player.seek(10);
+              event.preventDefault();
+              return;
+            }
+          }
+
+          var isWakeNavKey = keyCode === Constants.KEYS.ENTER || 
+                             keyCode === Constants.KEYS.UP || 
+                             keyCode === Constants.KEYS.DOWN ||
+                             keyCode === Constants.KEYS.LEFT ||
+                             keyCode === Constants.KEYS.RIGHT;
+          if (isWakeNavKey) {
             Player.showControls();
             if (Navigation) {
               var playBtn = document.getElementById('player-btn-play-pause');
@@ -186,6 +217,8 @@
             return;
           }
         }
+        // STATE B: Controls are VISIBLE -> do NOT seek on Left/Right!
+        // Fall through to standard Navigation.move(LEFT/RIGHT) to navigate between player buttons.
       }
 
       // Player controls visible but focus is elsewhere (e.g. a hidden page behind the video):

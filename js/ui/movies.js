@@ -106,6 +106,9 @@
     precomputedRecentlyAdded = sorted.slice(0, 20);
   }
 
+  var isRestoringBrowsingContext = false;
+  var browsingSnapshot = null;
+
   var Movies = {
     /**
      * Initialize Movies view.
@@ -147,6 +150,9 @@
       if (window.FreeIPTV.Events && window.FreeIPTV.Constants) {
         window.FreeIPTV.Events.on(window.FreeIPTV.Constants.EVENTS.VIEW_CHANGED, function (data) {
           if (data && data.route === 'movies') {
+            if (isRestoringBrowsingContext) {
+              return;
+            }
             self.onEnterView();
           }
         });
@@ -746,6 +752,19 @@
       if (originRoute === 'movie_details') originRoute = 'movies';
       previousFocusedElement = window.FreeIPTV.Navigation ? window.FreeIPTV.Navigation.getCurrent() : null;
 
+      // Capture full browsing state snapshot for seamless return navigation
+      var currentMovieId = String(movie.id || '');
+      var currentCardIdx = previousFocusedElement ? previousFocusedElement.getAttribute('data-index') : null;
+      var gridContainer = document.getElementById('movies-grid-container');
+      browsingSnapshot = {
+        route: originRoute,
+        category: activeCategory,
+        searchQuery: currentSearchQuery,
+        focusedId: currentMovieId,
+        focusedIndex: currentCardIdx,
+        scrollY: gridContainer ? gridContainer.scrollTop : 0
+      };
+
       var self = this;
 
       // Populate basic info immediately
@@ -925,7 +944,13 @@
       }
 
       if (window.FreeIPTV.Home && window.FreeIPTV.Home.switchView) {
-        window.FreeIPTV.Home.switchView(targetRoute);
+        if (targetRoute === 'movies' && browsingSnapshot) {
+          isRestoringBrowsingContext = true;
+          window.FreeIPTV.Home.switchView(targetRoute);
+          isRestoringBrowsingContext = false;
+        } else {
+          window.FreeIPTV.Home.switchView(targetRoute);
+        }
       } else {
         var view = document.getElementById('view-movie_details');
         if (view) view.classList.add('hidden');
@@ -935,6 +960,34 @@
 
       if (window.FreeIPTV.Remote) {
         window.FreeIPTV.Remote.popBackHandler();
+      }
+
+      if (targetRoute === 'movies' && browsingSnapshot) {
+        var snap = browsingSnapshot;
+        browsingSnapshot = null;
+        if (snap.category && snap.category !== activeCategory) {
+          activeCategory = snap.category;
+          this.renderCategories();
+          this.applyFilter();
+        }
+        var gridContainer = document.getElementById('movies-grid-container');
+        if (gridContainer && snap.scrollY) {
+          gridContainer.scrollTop = snap.scrollY;
+        }
+        var targetCard = null;
+        if (snap.focusedId) {
+          targetCard = document.querySelector('#movies-grid-container .movie-card[data-movie-id="' + snap.focusedId + '"]');
+        }
+        if (!targetCard && snap.focusedIndex !== null) {
+          targetCard = document.querySelector('#movies-grid-container .movie-card[data-index="' + snap.focusedIndex + '"]');
+        }
+        if (!targetCard && previousFocusedElement && document.body.contains(previousFocusedElement)) {
+          targetCard = previousFocusedElement;
+        }
+        if (targetCard && window.FreeIPTV.Navigation) {
+          window.FreeIPTV.Navigation.focus(targetCard);
+          return;
+        }
       }
 
       if (window.FreeIPTV.Navigation && previousFocusedElement && document.body.contains(previousFocusedElement)) {

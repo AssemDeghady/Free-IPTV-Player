@@ -302,6 +302,7 @@
       if (el.closest('#home-recent-section') || el.closest('#home-recent-grid') || el.classList.contains('home-media-card')) return 'home_recent';
       if (el.closest('#home-quick-access-section') || el.closest('.home-quick-access-grid')) return 'home_quick_access';
       if (el.closest('#player-error-overlay')) return 'player_error';
+      if (el.closest('#player-seek-bar-track')) return 'player_timeline';
       if (el.closest('#player-controls-overlay')) return 'player_controls';
       if (el.closest('#view-add_playlist') || el.closest('#modal-overlay')) return 'modal';
       if (el.closest('#live-search-input')) return 'live_search';
@@ -425,7 +426,9 @@
     calculateNextElement: function (zone, direction) {
       var Constants = window.FreeIPTV.Constants;
 
-      if (zone === 'player_controls') {
+      if (zone === 'player_timeline') {
+        return this.handlePlayerTimelineNavigation(direction);
+      } else if (zone === 'player_controls') {
         return this.handlePlayerControlsNavigation(direction);
       } else if (zone === 'player_error') {
         return this.handlePlayerErrorNavigation(direction);
@@ -564,19 +567,46 @@
     },
 
     /**
+     * Player timeline scrubber navigation rules.
+     */
+    handlePlayerTimelineNavigation: function (direction) {
+      var Constants = window.FreeIPTV.Constants;
+
+      if (direction === Constants.DIRECTIONS.DOWN) {
+        // Leave timeline down to primary controls
+        return document.getElementById('player-btn-play-pause') ||
+               document.querySelector('#player-controls-overlay .focusable:not(#player-seek-bar-track):not(.hidden)');
+      } else if (direction === Constants.DIRECTIONS.UP) {
+        // Top boundary of player
+        return null;
+      }
+      return null;
+    },
+
+    /**
      * Player controls navigation rules.
      */
     handlePlayerControlsNavigation: function (direction) {
       var Constants = window.FreeIPTV.Constants;
-      var buttons = Array.prototype.slice.call(document.querySelectorAll('#player-controls-overlay .focusable:not(.hidden)'));
+      var buttons = Array.prototype.slice.call(document.querySelectorAll('.player-controls-row .focusable:not(.hidden)'));
       var index = buttons.indexOf(currentElement);
 
       if (direction === Constants.DIRECTIONS.RIGHT) {
-        if (index < buttons.length - 1) return buttons[index + 1];
-        return buttons[0];
+        if (index >= 0 && index < buttons.length - 1) return buttons[index + 1];
+        return buttons[0] || null;
       } else if (direction === Constants.DIRECTIONS.LEFT) {
         if (index > 0) return buttons[index - 1];
-        return buttons[buttons.length - 1];
+        return buttons[buttons.length - 1] || null;
+      } else if (direction === Constants.DIRECTIONS.UP) {
+        // Move UP to timeline scrubber if visible
+        var progressContainer = document.getElementById('player-progress-container');
+        if (progressContainer && !progressContainer.classList.contains('hidden')) {
+          var scrubber = document.getElementById('player-seek-bar-track');
+          if (scrubber && !scrubber.classList.contains('hidden')) {
+            return scrubber;
+          }
+        }
+        return null;
       }
 
       return null;

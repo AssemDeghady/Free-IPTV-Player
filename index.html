@@ -710,11 +710,16 @@
 
         <!-- Bottom Bar: Playback, Seekbar & Controls -->
         <div class="player-bottom-bar">
-          <!-- Seek Bar (Active on VOD Movies & Episodes) -->
+          <!-- Interactive Scrubber / Seek Bar (Active on VOD Movies & Episodes) -->
           <div id="player-progress-container" class="player-progress-container hidden">
             <span id="player-time-current" class="player-time">00:00</span>
-            <div id="player-seek-bar-track" class="player-seek-bar-track">
+            <div id="player-seek-bar-track" class="player-seek-bar-track focusable" data-nav-zone="player_timeline" tabindex="0" role="slider" aria-label="Timeline Scrubber">
+              <div id="player-seek-bar-buffered" class="player-seek-bar-buffered" style="width: 0%;"></div>
               <div id="player-seek-bar-fill" class="player-seek-bar-fill" style="width: 0%;"></div>
+              <div id="player-seek-thumb" class="player-seek-thumb" style="left: 0%;"></div>
+              <div id="player-seek-preview" class="player-seek-preview hidden">
+                <span id="player-seek-preview-time">00:00</span>
+              </div>
             </div>
             <span id="player-time-duration" class="player-time">00:00</span>
           </div>
@@ -847,7 +852,10 @@
   <script src="js/playlist/m3u-parser.js"></script>
   <script src="js/playlist/xtream-api.js"></script>
   <script src="js/playlist/playlist-manager.js"></script>
+  <script src="js/vendor/hls.min.js"></script>
   <script src="js/player/avplay-engine.js"></script>
+  <script src="js/player/html5-adapter.js"></script>
+  <script src="js/player/player-manager.js"></script>
   <script src="js/i18n/i18n.js"></script>
   <script src="js/tv/remote.js"></script>
   <script src="js/ui/navigation.js"></script>

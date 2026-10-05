@@ -3401,18 +3401,88 @@ html[dir="rtl"] .global-search-input {
 }
 
 .player-seek-bar-track {
+  position: relative;
   flex: 1;
   height: 8px;
   background: rgba(255, 255, 255, 0.2);
   border-radius: 4px;
-  overflow: hidden;
+  outline: none;
+  cursor: pointer;
+  transition: height 0.15s ease;
+}
+
+.player-seek-bar-track.focused,
+.player-seek-bar-track:focus {
+  height: 12px;
+  background: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.8);
+}
+
+.player-seek-bar-buffered {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.35);
+  border-radius: 4px;
+  pointer-events: none;
+  transition: width 0.3s ease;
+  z-index: 1;
 }
 
 .player-seek-bar-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
   height: 100%;
   background: linear-gradient(90deg, #2563eb, #38bdf8);
   border-radius: 4px;
-  transition: width 0.2s linear;
+  transition: width 0.1s linear;
+  z-index: 2;
+}
+
+.player-seek-thumb {
+  position: absolute;
+  top: 50%;
+  left: 0%;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.6);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 3;
+}
+
+.player-seek-bar-track.focused .player-seek-thumb,
+.player-seek-bar-track:focus .player-seek-thumb,
+.player-seek-bar-track.scrubbing .player-seek-thumb {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1.25);
+  background: #60a5fa;
+  border: 2px solid #ffffff;
+}
+
+.player-seek-preview {
+  position: absolute;
+  bottom: 24px;
+  left: 0%;
+  transform: translateX(-50%);
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: var(--radius-sm);
+  padding: 4px 10px;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: monospace;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
 
 .player-osd-toast {

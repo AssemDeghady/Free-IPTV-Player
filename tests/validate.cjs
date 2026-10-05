@@ -86,7 +86,8 @@ const expectedFiles = [
   'tests/test-category-quick-filter.cjs',
   'tests/test-series-season-selector.cjs',
   'tests/test-complete-iptv.cjs',
-  'tests/test-phase-6-4.cjs'
+  'tests/test-phase-6-4.cjs',
+  'tests/test-player-navigation-regression.cjs'
 ];
 
 expectedFiles.forEach(file => {
@@ -163,7 +164,9 @@ const suites = [
   'test-phase-6-4.cjs',
   'test-tizen-5-5-compatibility.cjs',
   'test-phase-7-stabilization.cjs',
-  'test-xtream-series-seasons.cjs'
+  'test-xtream-series-seasons.cjs',
+  'test-html5-playback.cjs',
+  'test-player-navigation-regression.cjs'
 ];
 
 suites.forEach(suite => {

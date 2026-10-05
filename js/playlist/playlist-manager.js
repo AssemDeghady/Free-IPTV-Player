@@ -1018,7 +1018,105 @@
 
       if (channelStore) {
         return channelStore.getSeriesDetails(playlistId, seriesId).then(function (cached) {
-          if (cached) return cached;
+          if (cached) {
+            // Authoritative content array source of truth:
+            // Available seasons MUST reflect the actual episodes in content.
+            var content = cached.content || cached.allEpisodes || [];
+            if (Array.isArray(content) && content.length > 0) {
+              var epMap = {};
+              var contentSeasonNums = [];
+              for (var ci = 0; ci < content.length; ci++) {
+                var epItem = content[ci];
+                var sNumVal = Number(epItem.seasonNumber);
+                if (isNaN(sNumVal) || sNumVal < 0) sNumVal = 1;
+                if (!epMap[sNumVal]) {
+                  epMap[sNumVal] = [];
+                  contentSeasonNums.push(sNumVal);
+                }
+                epMap[sNumVal].push(epItem);
+              }
+              contentSeasonNums.sort(function (a, b) { return a - b; });
+
+              // Sort episodes within each season numerically
+              for (var k = 0; k < contentSeasonNums.length; k++) {
+                var snKey = contentSeasonNums[k];
+                epMap[snKey].sort(function (a, b) {
+                  return (Number(a.episodeNumber) || 0) - (Number(b.episodeNumber) || 0);
+                });
+              }
+
+              var cachedMeta = Array.isArray(cached.seasons) ? cached.seasons : [];
+              var derivedSeasons = [];
+              for (var j = 0; j < contentSeasonNums.length; j++) {
+                var snNum = contentSeasonNums[j];
+                var existingMeta = cachedMeta.find(function (s) { return Number(s.seasonNumber) === snNum; });
+                if (existingMeta) {
+                  derivedSeasons.push(Object.assign({}, existingMeta, {
+                    seasonNumber: snNum,
+                    episodeCount: epMap[snNum].length
+                  }));
+                } else {
+                  derivedSeasons.push({
+                    id: String(seriesId) + '_s' + snNum,
+                    seasonNumber: snNum,
+                    name: (snNum === 0 ? 'Specials' : ('Season ' + snNum)),
+                    episodeCount: epMap[snNum].length,
+                    overview: '',
+                    cover: '',
+                    airDate: ''
+                  });
+                }
+              }
+
+              cached.seasons = derivedSeasons;
+              cached.episodesBySeason = epMap;
+              cached.content = content;
+              cached.allEpisodes = content;
+              channelStore.saveSeriesDetails(playlistId, seriesId, cached);
+            } else if (cached.episodesBySeason) {
+              // Fallback for caches without a flat content array: derive from episodesBySeason map
+              var legacyMap = cached.episodesBySeason;
+              var epSeasonKeys = Object.keys(legacyMap);
+              var seasonNumsInCached = (cached.seasons || []).map(function (s) { return Number(s.seasonNumber); });
+              var isMissingAnySeason = false;
+
+              for (var k2 = 0; k2 < epSeasonKeys.length; k2++) {
+                var sNum2 = Number(epSeasonKeys[k2]);
+                if (!isNaN(sNum2) && sNum2 > 0 && seasonNumsInCached.indexOf(sNum2) === -1) {
+                  isMissingAnySeason = true;
+                  break;
+                }
+              }
+
+              if (isMissingAnySeason) {
+                var synthesizedSeasons = (cached.seasons || []).slice();
+                for (var j2 = 0; j2 < epSeasonKeys.length; j2++) {
+                  var sKeyNum = Number(epSeasonKeys[j2]);
+                  if (!isNaN(sKeyNum) && sKeyNum > 0 && seasonNumsInCached.indexOf(sKeyNum) === -1) {
+                    var epList = legacyMap[epSeasonKeys[j2]] || [];
+                    synthesizedSeasons.push({
+                      id: String(seriesId) + '_s' + sKeyNum,
+                      seasonNumber: sKeyNum,
+                      name: 'Season ' + sKeyNum,
+                      episodeCount: epList.length,
+                      overview: '',
+                      cover: '',
+                      airDate: ''
+                    });
+                    seasonNumsInCached.push(sKeyNum);
+                  }
+                }
+
+                synthesizedSeasons.sort(function (a, b) {
+                  return a.seasonNumber - b.seasonNumber;
+                });
+
+                cached.seasons = synthesizedSeasons;
+                channelStore.saveSeriesDetails(playlistId, seriesId, cached);
+              }
+            }
+            return cached;
+          }
           return fetchSeriesDetailsFromApi();
         });
       }

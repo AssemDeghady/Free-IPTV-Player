@@ -278,6 +278,92 @@ it('TEST 12: Episode numbers within seasons are strictly sorted numerically', ()
   assert.strictEqual(norm.episodesBySeason['1'][2].episodeNumber, 10);
 });
 
+// TEST 13: Content only contains Season 1 -> [1]
+it('TEST 13: Content only contains Season 1 -> [1]', () => {
+  const raw = {
+    seasons: [],
+    episodes: {
+      '1': [{ id: 1, episode_num: 1, season: 1 }]
+    }
+  };
+  const norm = XtreamApi.normalizeSeriesInfo(raw, '2001', 'http://test:8080', 'user', 'pass', 'pl_1');
+  assert.strictEqual(norm.seasons.length, 1);
+  assert.strictEqual(JSON.stringify(norm.seasons.map(s => s.seasonNumber)), JSON.stringify([1]));
+});
+
+// TEST 14: Content contains 1, 2 -> [1, 2]
+it('TEST 14: Content contains 1, 2 -> [1, 2]', () => {
+  const raw = {
+    seasons: [{ season_number: 1, name: 'Season 1' }],
+    episodes: {
+      '1': [{ id: 1, episode_num: 1, season: 1 }],
+      '2': [{ id: 2, episode_num: 1, season: 2 }]
+    }
+  };
+  const norm = XtreamApi.normalizeSeriesInfo(raw, '2002', 'http://test:8080', 'user', 'pass', 'pl_1');
+  assert.strictEqual(norm.seasons.length, 2);
+  assert.strictEqual(JSON.stringify(norm.seasons.map(s => s.seasonNumber)), JSON.stringify([1, 2]));
+});
+
+// TEST 15: Content contains 1, 2, 3 -> [1, 2, 3]
+it('TEST 15: Content contains 1, 2, 3 -> [1, 2, 3]', () => {
+  const raw = {
+    seasons: [{ season_number: 1, name: 'Season 1' }],
+    episodes: {
+      '1': [{ id: 1, episode_num: 1, season: 1 }],
+      '2': [{ id: 2, episode_num: 1, season: 2 }],
+      '3': [{ id: 3, episode_num: 1, season: 3 }]
+    }
+  };
+  const norm = XtreamApi.normalizeSeriesInfo(raw, '2003', 'http://test:8080', 'user', 'pass', 'pl_1');
+  assert.strictEqual(norm.seasons.length, 3);
+  assert.strictEqual(JSON.stringify(norm.seasons.map(s => s.seasonNumber)), JSON.stringify([1, 2, 3]));
+});
+
+// TEST 16: Content contains 1, 3 -> [1, 3]
+it('TEST 16: Content contains 1, 3 -> [1, 3]', () => {
+  const raw = {
+    seasons: [{ season_number: 1, name: 'Season 1' }],
+    episodes: {
+      '1': [{ id: 1, episode_num: 1, season: 1 }],
+      '3': [{ id: 3, episode_num: 1, season: 3 }]
+    }
+  };
+  const norm = XtreamApi.normalizeSeriesInfo(raw, '2004', 'http://test:8080', 'user', 'pass', 'pl_1');
+  assert.strictEqual(norm.seasons.length, 2);
+  assert.strictEqual(JSON.stringify(norm.seasons.map(s => s.seasonNumber)), JSON.stringify([1, 3]));
+});
+
+// TEST 17: Content contains 1, 2, 10 -> [1, 2, 10]
+it('TEST 17: Content contains 1, 2, 10 -> [1, 2, 10]', () => {
+  const raw = {
+    seasons: [],
+    episodes: {
+      '10': [{ id: 10, episode_num: 1, season: 10 }],
+      '2': [{ id: 2, episode_num: 1, season: 2 }],
+      '1': [{ id: 1, episode_num: 1, season: 1 }]
+    }
+  };
+  const norm = XtreamApi.normalizeSeriesInfo(raw, '2005', 'http://test:8080', 'user', 'pass', 'pl_1');
+  assert.strictEqual(norm.seasons.length, 3);
+  assert.strictEqual(JSON.stringify(norm.seasons.map(s => s.seasonNumber)), JSON.stringify([1, 2, 10]));
+});
+
+// TEST 18: Authoritative content property exposed and populated
+it('TEST 18: Authoritative content array property is exposed alongside allEpisodes', () => {
+  const raw = {
+    seasons: [{ season_number: 1 }],
+    episodes: {
+      '1': [{ id: 101, season: 1, episode_num: 1 }],
+      '2': [{ id: 201, season: 2, episode_num: 1 }]
+    }
+  };
+  const norm = XtreamApi.normalizeSeriesInfo(raw, '2006', 'http://test:8080', 'user', 'pass', 'pl_1');
+  assert.ok(Array.isArray(norm.content), 'norm.content is an Array');
+  assert.strictEqual(norm.content.length, 2);
+  assert.strictEqual(norm.content, norm.allEpisodes);
+});
+
 (async function () {
   console.log('\n============================================================');
   console.log(`RESULTS: ${passedTests} PASSED, ${failedTests} FAILED`);

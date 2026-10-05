@@ -30,6 +30,8 @@
   var osdToastTimer = null;
   var savedRouteBeforePlayer = null;
   var savedFocusBeforePlayer = null;
+  var isScrubbing = false;
+  var scrubTargetMs = 0;
 
   var Player = {
     /**
@@ -151,6 +153,14 @@
           self.closePlayer();
         });
       }
+
+      // Interactive timeline seek bar track
+      var seekTrack = document.getElementById('player-seek-bar-track');
+      if (seekTrack) {
+        seekTrack.addEventListener('click', function (e) {
+          self.handleTimelineClick(e);
+        });
+      }
     },
 
     /**
@@ -179,7 +189,7 @@
       document.addEventListener('visibilitychange', function () {
         if (!isPlayerActive) return;
 
-        var engine = window.FreeIPTV.AVPlayEngine;
+        var engine = window.FreeIPTV.PlayerManager || window.FreeIPTV.AVPlayEngine;
         if (!engine) return;
 
         if (document.hidden) {
@@ -433,39 +443,29 @@
         }
       }
 
-      // 7. Check if AVPlay is available or in Mock/Development mode
-      var engine = window.FreeIPTV.AVPlayEngine;
+      // 7. Check platform playback adapter
+      var platform = window.FreeIPTV.PlayerManager ? window.FreeIPTV.PlayerManager.getPlatform() : 'samsung';
       var devNotice = document.getElementById('player-dev-notice');
 
-      if (!engine || !engine.isAvailable()) {
-        if (playerView) playerView.classList.add('dev-mock');
-        if (devNotice) devNotice.classList.remove('hidden');
-        if (window.FreeIPTV.Logger) {
-          window.FreeIPTV.Logger.info('Samsung AVPlay unavailable — running in development mock mode.');
-        }
-        setTimeout(function () {
-          if (activeSessionId === currentSessionId && isPlayerActive) {
-            self.showBuffering(false);
-          }
-        }, 1200);
-        return;
-      } else {
-        if (playerView) playerView.classList.remove('dev-mock');
-        if (devNotice) devNotice.classList.add('hidden');
+      if (devNotice) {
+        devNotice.classList.add('hidden');
+      }
+      if (playerView) {
+        playerView.classList.remove('dev-mock');
       }
 
-      // 8. Initiate AVPlay stream
+      // 8. Initiate stream playback through active adapter
       this.startPlayback(media.streamUrl, media.position);
     },
 
     /**
-     * Start stream playback through AVPlay.
+     * Start stream playback through active engine.
      * @param {string} url
      * @param {number} [startPositionMs]
      */
     startPlayback: function (url, startPositionMs) {
       var self = this;
-      var engine = window.FreeIPTV.AVPlayEngine;
+      var engine = window.FreeIPTV.PlayerManager || window.FreeIPTV.AVPlayEngine;
       if (!engine) return;
 
       var sessionId = currentSessionId;
@@ -529,7 +529,7 @@
      */
     tickProgress: function () {
       if (!isPlayerActive || !currentMedia) return;
-      var engine = window.FreeIPTV.AVPlayEngine;
+      var engine = window.FreeIPTV.PlayerManager || window.FreeIPTV.AVPlayEngine;
       if (!engine) return;
 
       var curTimeMs = engine.getCurrentTime();
@@ -542,8 +542,8 @@
       currentMedia.position = curTimeMs;
       if (durMs > 0) currentMedia.duration = durMs;
 
-      // Update UI if VOD
-      if (currentMedia.type !== 'live' && durMs > 0) {
+      // Update UI if VOD and user is not scrubbing manually
+      if (currentMedia.type !== 'live' && durMs > 0 && !isScrubbing) {
         this.updateProgressBar(curTimeMs, durMs);
       }
 
@@ -568,7 +568,7 @@
     },
 
     /**
-     * Update seekbar UI fill and time labels.
+     * Update seekbar UI fill, thumb position, buffered bar, and time labels.
      * @param {number} curMs
      * @param {number} durMs
      */
@@ -576,13 +576,138 @@
       var curLabel = document.getElementById('player-time-current');
       var durLabel = document.getElementById('player-time-duration');
       var fillBar = document.getElementById('player-seek-bar-fill');
+      var thumb = document.getElementById('player-seek-thumb');
 
       if (curLabel) curLabel.textContent = this.formatDuration(curMs);
       if (durLabel) durLabel.textContent = this.formatDuration(durMs);
 
-      if (fillBar && durMs > 0) {
+      if (durMs > 0) {
         var pct = Math.min(100, Math.max(0, (curMs / durMs) * 100));
-        fillBar.style.width = pct.toFixed(1) + '%';
+        var pctStr = pct.toFixed(1) + '%';
+        if (fillBar) fillBar.style.width = pctStr;
+        if (thumb) thumb.style.left = pctStr;
+      }
+    },
+
+    /**
+     * Interactive timeline scrubbing handler (Left / Right step, Enter/OK commit).
+     * @param {'left'|'right'|'enter'|'cancel'} action
+     */
+    handleTimelineKey: function (action) {
+      if (!isPlayerActive || !currentMedia || currentMedia.type === 'live') return;
+      var engine = window.FreeIPTV.PlayerManager || window.FreeIPTV.AVPlayEngine;
+      if (!engine) return;
+
+      var durMs = engine.getDuration() || currentMedia.duration || 0;
+      if (durMs <= 0) return;
+
+      if (!isScrubbing) {
+        isScrubbing = true;
+        scrubTargetMs = engine.getCurrentTime();
+        var track = document.getElementById('player-seek-bar-track');
+        if (track) track.classList.add('scrubbing');
+        var preview = document.getElementById('player-seek-preview');
+        if (preview) preview.classList.remove('hidden');
+      }
+
+      // Step sizing: proportional jumps so 10-20 presses traverse any duration
+      // Step size is 1% of total duration, clamped between 10s and 60s
+      var stepMs = Math.max(10000, Math.min(60000, Math.round(durMs * 0.015)));
+
+      if (action === 'left') {
+        scrubTargetMs = Math.max(0, scrubTargetMs - stepMs);
+        this.renderScrubState(scrubTargetMs, durMs);
+        this.resetControlsTimer();
+      } else if (action === 'right') {
+        scrubTargetMs = Math.min(durMs, scrubTargetMs + stepMs);
+        this.renderScrubState(scrubTargetMs, durMs);
+        this.resetControlsTimer();
+      } else if (action === 'enter') {
+        // Commit seek
+        this.commitScrub(scrubTargetMs);
+      } else if (action === 'cancel') {
+        this.cancelScrub();
+      }
+    },
+
+    /**
+     * Render the transient scrubber position while user is adjusting preview thumb.
+     */
+    renderScrubState: function (targetMs, durMs) {
+      var curLabel = document.getElementById('player-time-current');
+      var fillBar = document.getElementById('player-seek-bar-fill');
+      var thumb = document.getElementById('player-seek-thumb');
+      var preview = document.getElementById('player-seek-preview');
+      var previewTime = document.getElementById('player-seek-preview-time');
+
+      var pct = Math.min(100, Math.max(0, (targetMs / durMs) * 100));
+      var pctStr = pct.toFixed(1) + '%';
+
+      if (curLabel) curLabel.textContent = this.formatDuration(targetMs);
+      if (fillBar) fillBar.style.width = pctStr;
+      if (thumb) thumb.style.left = pctStr;
+      if (preview) {
+        preview.style.left = pctStr;
+        preview.classList.remove('hidden');
+      }
+      if (previewTime) previewTime.textContent = this.formatDuration(targetMs);
+    },
+
+    /**
+     * Commit scrub position to media engine.
+     */
+    commitScrub: function (targetMs) {
+      isScrubbing = false;
+      var track = document.getElementById('player-seek-bar-track');
+      if (track) track.classList.remove('scrubbing');
+      var preview = document.getElementById('player-seek-preview');
+      if (preview) preview.classList.add('hidden');
+
+      var engine = window.FreeIPTV.PlayerManager || window.FreeIPTV.AVPlayEngine;
+      if (engine) {
+        engine.seekTo(targetMs);
+      }
+      this.showOsdToast('Seek: ' + this.formatDuration(targetMs));
+      this.resetControlsTimer();
+    },
+
+    /**
+     * Cancel scrub and restore actual playback position.
+     */
+    cancelScrub: function () {
+      isScrubbing = false;
+      var track = document.getElementById('player-seek-bar-track');
+      if (track) track.classList.remove('scrubbing');
+      var preview = document.getElementById('player-seek-preview');
+      if (preview) preview.classList.add('hidden');
+
+      var engine = window.FreeIPTV.PlayerManager || window.FreeIPTV.AVPlayEngine;
+      if (engine && currentMedia) {
+        var curMs = engine.getCurrentTime();
+        var durMs = engine.getDuration() || currentMedia.duration || 0;
+        this.updateProgressBar(curMs, durMs);
+      }
+    },
+
+    /**
+     * Handle mouse or touch click on scrubber track.
+     */
+    handleTimelineClick: function (e) {
+      if (!isPlayerActive || !currentMedia || currentMedia.type === 'live') return;
+      var track = document.getElementById('player-seek-bar-track');
+      if (!track) return;
+
+      var rect = track.getBoundingClientRect();
+      var clickX = e.clientX - rect.left;
+      var pct = Math.max(0, Math.min(1, clickX / rect.width));
+
+      var engine = window.FreeIPTV.PlayerManager || window.FreeIPTV.AVPlayEngine;
+      if (!engine) return;
+
+      var durMs = engine.getDuration() || currentMedia.duration || 0;
+      if (durMs > 0) {
+        var targetMs = Math.round(durMs * pct);
+        this.commitScrub(targetMs);
       }
     },
 
@@ -591,7 +716,7 @@
      * @param {number} deltaSec
      */
     seek: function (deltaSec) {
-      var engine = window.FreeIPTV.AVPlayEngine;
+      var engine = window.FreeIPTV.PlayerManager || window.FreeIPTV.AVPlayEngine;
       if (!engine || !isPlayerActive || !currentMedia) return;
 
       var curMs = engine.getCurrentTime();
@@ -610,7 +735,7 @@
      * Cycle through audio tracks.
      */
     cycleAudioTrack: function () {
-      var engine = window.FreeIPTV.AVPlayEngine;
+      var engine = window.FreeIPTV.PlayerManager || window.FreeIPTV.AVPlayEngine;
       if (!engine) return;
 
       var tracks = engine.getTotalTrackInfo();
@@ -635,7 +760,7 @@
      * Cycle through subtitle tracks.
      */
     cycleSubtitleTrack: function () {
-      var engine = window.FreeIPTV.AVPlayEngine;
+      var engine = window.FreeIPTV.PlayerManager || window.FreeIPTV.AVPlayEngine;
       if (!engine) return;
 
       var tracks = engine.getTotalTrackInfo();
@@ -762,8 +887,23 @@
           }
         }, 1500);
       } else {
+        var errDesc = 'The stream may be unavailable or unsupported.';
+        if (error) {
+          if (typeof error === 'string') {
+            errDesc = error;
+          } else if (error.message) {
+            errDesc = error.message;
+          } else if (error.error) {
+            errDesc = String(error.error);
+          }
+        }
+        var descEl = document.querySelector('#player-error-overlay .player-error-desc');
+        if (descEl) {
+          descEl.textContent = errDesc;
+        }
+
         if (window.FreeIPTV.Logger) {
-          window.FreeIPTV.Logger.error('Playback failed after maximum retries:', error || 'Unknown stream error');
+          window.FreeIPTV.Logger.error('Playback failed after maximum retries:', errDesc);
         }
         this.showBuffering(false);
         this.showErrorOverlay();
@@ -810,7 +950,7 @@
      * Toggle Play / Pause.
      */
     togglePlayPause: function () {
-      var engine = window.FreeIPTV.AVPlayEngine;
+      var engine = window.FreeIPTV.PlayerManager || window.FreeIPTV.AVPlayEngine;
       if (!engine || !engine.isAvailable()) return;
 
       if (engine.isPlaying()) {
@@ -829,7 +969,7 @@
 
       // Final progress save
       if (currentMedia && currentMedia.type !== 'live') {
-        var engine = window.FreeIPTV.AVPlayEngine;
+        var engine = window.FreeIPTV.PlayerManager || window.FreeIPTV.AVPlayEngine;
         var pos = engine ? engine.getCurrentTime() : currentMedia.position;
         var dur = (engine ? engine.getDuration() : 0) || currentMedia.duration;
         if (window.FreeIPTV.PlaylistManager && window.FreeIPTV.PlaylistManager.savePlaybackProgress) {
@@ -856,7 +996,7 @@
       retryTimer = null;
       retryCount = 0;
 
-      var avEngine = window.FreeIPTV.AVPlayEngine;
+      var avEngine = window.FreeIPTV.PlayerManager || window.FreeIPTV.AVPlayEngine;
       if (avEngine) {
         avEngine.stop();
         avEngine.close();
