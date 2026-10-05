@@ -28,6 +28,8 @@
   var wasPlayingBeforeHide = false;
   var currentSessionId = 0;
   var osdToastTimer = null;
+  var savedRouteBeforePlayer = null;
+  var savedFocusBeforePlayer = null;
 
   var Player = {
     /**
@@ -339,6 +341,35 @@
     },
 
     /**
+     * Explicit lifecycle: Enter dedicated player display mode (Phase 6.4).
+     * @param {Object} media
+     */
+    enterPlayerMode: function (media) {
+      if (window.FreeIPTV.Navigation) {
+        savedRouteBeforePlayer = window.FreeIPTV.Navigation.getCurrentRoute() || 'home';
+        savedFocusBeforePlayer = window.FreeIPTV.Navigation.getCurrent();
+      }
+
+      // Add player-active to documentElement and body for native transparency
+      if (document.documentElement) document.documentElement.classList.add('player-active');
+      if (document.body) document.body.classList.add('player-active');
+
+      if (window.FreeIPTV.Logger) {
+        window.FreeIPTV.Logger.info('PLAYER ENTER');
+        window.FreeIPTV.Logger.info('ORIGIN ROUTE: ' + (savedRouteBeforePlayer || 'unknown'));
+        window.FreeIPTV.Logger.info('AVPLAY STATE: READY');
+        window.FreeIPTV.Logger.info('PLAYER MODE: ACTIVE');
+      }
+
+      // Configure AVPlay display area & method for full screen
+      var engine = window.FreeIPTV.AVPlayEngine;
+      if (engine && typeof engine.setDisplayArea === 'function') {
+        engine.setDisplayArea(0, 0, 1920, 1080);
+        engine.setDisplayMethod('FULL');
+      }
+    },
+
+    /**
      * Internal launch flow for all media types.
      * @param {Object} media
      */
@@ -350,20 +381,23 @@
       isPlayerActive = true;
       lastSaveTime = 0;
 
-      // 1. Show player view
+      // 1. Enter explicit player display mode & transparency
+      this.enterPlayerMode(media);
+
+      // 2. Show player view
       var playerView = document.getElementById('view-player');
       if (playerView) {
         playerView.classList.remove('hidden');
       }
 
-      // 2. Update UI headers & metadata
+      // 3. Update UI headers & metadata
       this.updatePlayerHeader(media);
       this.configureControlsForMediaType(media.type);
       this.hideErrorOverlay();
       this.showBuffering(true);
       this.showControls();
 
-      // 3. Register custom Back handler on Remote
+      // 4. Register custom Back handler on Remote
       var self = this;
       if (window.FreeIPTV.Remote) {
         window.FreeIPTV.Remote.pushBackHandler(function () {
@@ -378,7 +412,7 @@
         });
       }
 
-      // 4. Record history
+      // 5. Record history
       if (window.FreeIPTV.PlaylistManager && window.FreeIPTV.PlaylistManager.recordWatchHistory) {
         var histPoster = media.posterUrl || media.poster || media.logoUrl || '';
         window.FreeIPTV.PlaylistManager.recordWatchHistory({
@@ -392,7 +426,7 @@
         });
       }
 
-      // 5. Focus initial player control
+      // 6. Focus initial player control
       if (window.FreeIPTV.Navigation) {
         var playBtn = document.getElementById('player-btn-play-pause');
         if (playBtn) {
@@ -400,7 +434,7 @@
         }
       }
 
-      // 6. Check if AVPlay is available or in Mock/Development mode
+      // 7. Check if AVPlay is available or in Mock/Development mode
       var engine = window.FreeIPTV.AVPlayEngine;
       var devNotice = document.getElementById('player-dev-notice');
 
@@ -418,11 +452,10 @@
         return;
       } else {
         if (playerView) playerView.classList.remove('dev-mock');
-        if (document.body) document.body.classList.add('player-active');
         if (devNotice) devNotice.classList.add('hidden');
       }
 
-      // 7. Initiate AVPlay stream
+      // 8. Initiate AVPlay stream
       this.startPlayback(media.streamUrl, media.position);
     },
 
@@ -738,6 +771,10 @@
       }
     },
 
+    getCurrentMedia: function () {
+      return currentMedia;
+    },
+
     /**
      * Channel Zapping: Switch to Next Channel.
      */
@@ -854,45 +891,73 @@
         playerView.classList.add('hidden');
       }
 
-      if (document.body) {
-        document.body.classList.remove('player-active');
-      }
-
       if (window.FreeIPTV.Remote) {
         window.FreeIPTV.Remote.popBackHandler();
       }
 
-      // Return focus to appropriate view
-      if (window.FreeIPTV.Navigation) {
-        var restoreEl = null;
-        if (currentMedia && currentMedia.type === 'live') {
-          restoreEl = document.querySelector('[data-channel-id="' + (currentChannel ? currentChannel.id : '') + '"]') ||
-                      document.querySelector('#live-channels-container .focusable');
-        } else if (currentMedia && currentMedia.type === 'movie') {
-          restoreEl = document.getElementById('btn-movie-resume') ||
-                      document.getElementById('btn-movie-play') ||
-                      document.getElementById('movie-btn-play') ||
-                      document.querySelector('#view-movie_details .focusable') ||
-                      document.querySelector('#movies-grid-container .focusable');
-        } else if (currentMedia && currentMedia.type === 'episode') {
-          restoreEl = document.querySelector('.series-episode-card.focused') ||
-                      document.querySelector('.series-episode-card.active') ||
-                      document.querySelector('#series-episodes-list .focusable') ||
-                      document.querySelector('#view-series_details .focusable');
-        }
-
-        if (!restoreEl) {
-          restoreEl = document.querySelector('.view-screen:not(.hidden) .focusable') ||
-                      document.querySelector('#home-quick-access-section .focusable') ||
-                      document.querySelector('.focusable');
-        }
-        if (restoreEl) {
-          window.FreeIPTV.Navigation.focus(restoreEl);
-        }
-      }
+      this.exitPlayerMode();
 
       currentChannel = null;
       currentMedia = null;
+    },
+
+    /**
+     * Explicit lifecycle: Exit dedicated player display mode (Phase 6.4).
+     */
+    exitPlayerMode: function () {
+      if (document.documentElement) document.documentElement.classList.remove('player-active');
+      if (document.body) document.body.classList.remove('player-active');
+
+      var targetRoute = savedRouteBeforePlayer || 'home';
+      var targetFocus = savedFocusBeforePlayer;
+
+      if (window.FreeIPTV.Logger) {
+        window.FreeIPTV.Logger.info('PLAYER EXIT');
+        window.FreeIPTV.Logger.info('RESTORE ROUTE: ' + targetRoute);
+        window.FreeIPTV.Logger.info('RESTORE FOCUS: ' + (targetFocus ? (targetFocus.id || targetFocus.className || targetFocus.tagName) : 'default'));
+      }
+
+      // Restore view via Home.switchView if not already active
+      if (window.FreeIPTV.Home && typeof window.FreeIPTV.Home.switchView === 'function') {
+        window.FreeIPTV.Home.switchView(targetRoute);
+      }
+
+      // Restore focus to saved element if still connected and focusable
+      if (window.FreeIPTV.Navigation) {
+        if (targetFocus && document.body.contains(targetFocus) && targetFocus.offsetParent !== null) {
+          window.FreeIPTV.Navigation.focus(targetFocus);
+        } else {
+          // Fallback to media context or view default focus
+          var restoreEl = null;
+          if (currentMedia && currentMedia.type === 'live') {
+            restoreEl = document.querySelector('[data-channel-id="' + (currentChannel ? currentChannel.id : '') + '"]') ||
+                        document.querySelector('#live-channels-container .focusable');
+          } else if (currentMedia && currentMedia.type === 'movie') {
+            restoreEl = document.getElementById('btn-movie-resume') ||
+                        document.getElementById('btn-movie-play') ||
+                        document.getElementById('movie-btn-play') ||
+                        document.querySelector('#view-movie_details .focusable') ||
+                        document.querySelector('#movies-grid-container .focusable');
+          } else if (currentMedia && currentMedia.type === 'episode') {
+            restoreEl = document.querySelector('.series-episode-card.focused') ||
+                        document.querySelector('.series-episode-card.active') ||
+                        document.querySelector('#series-episodes-list .focusable') ||
+                        document.querySelector('#view-series_details .focusable');
+          }
+
+          if (!restoreEl) {
+            restoreEl = document.querySelector('.view-screen:not(.hidden) .focusable') ||
+                        document.querySelector('#home-quick-access-section .focusable') ||
+                        document.querySelector('.focusable');
+          }
+          if (restoreEl) {
+            window.FreeIPTV.Navigation.focus(restoreEl);
+          }
+        }
+      }
+
+      savedRouteBeforePlayer = null;
+      savedFocusBeforePlayer = null;
     },
 
     /**

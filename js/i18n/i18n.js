@@ -16,6 +16,7 @@
   translations.en = {
     'app.name': 'Free IPTV Player',
     'app.badge': 'Player',
+    'app.loading': 'Loading...',
     'header.search': 'Search',
     'header.settings': 'Settings',
     'nav.home': 'Home',
@@ -48,6 +49,7 @@
     'live.preview_idle': 'Focus a channel to preview',
     'live.preview_loading': 'Loading preview...',
     'live.preview_error': 'Preview unavailable',
+    'live.preview_unavailable': 'Preview unavailable',
     'live.loading': 'Loading...',
     'live.loading_channels': 'Loading TV channels...',
     'live.state_no_provider': 'No IPTV playlist configured.',
@@ -63,6 +65,7 @@
 
     'home.welcome': 'Welcome to Free IPTV Player',
     'home.subtitle': 'Add your IPTV playlist to get started.',
+    'home.learn_more': 'Learn More / About',
     'playlist.add': 'Add Playlist',
     'home.empty_title': 'No playlist has been configured yet.',
     'home.empty_desc': 'Free IPTV Player is an independent media player and does not provide, host, or bundle any channels or streams. Please add your authorized M3U or IPTV provider URL to begin.',
@@ -126,6 +129,7 @@
     'live.no_epg': 'No program guide data available for this channel.',
 
     'movies.title': 'Movies',
+    'movies.overview': 'Overview',
     'movies.categories': 'Categories',
     'movies.all_movies': 'All Movies',
     'movies.no_movies': 'No movies found',
@@ -146,6 +150,8 @@
     'series.series_count': '{count} Series',
     'series.no_series_sub': 'Try selecting another category or changing your search query.',
     'series.loading_episodes': 'Loading seasons and episodes...',
+    'series.loading_seasons': 'Loading seasons...',
+    'series.no_seasons': 'No seasons available',
     'series.no_description': 'No overview available.',
     'series.no_episodes': 'No episodes found for this season.',
     'series.remove_favorite': 'Remove Favorite',
@@ -153,6 +159,8 @@
     'series.seasons': 'Seasons:',
     'series.season': 'Season {num}',
     'series.episode': 'Episode {num}',
+    'series.season_label': 'SEASON',
+    'series.episodes_label': 'Episodes',
 
     'guide.title': 'TV Guide',
     'guide.badge': 'EPG Timeline',
@@ -250,6 +258,7 @@
   translations.ar = {
     'app.name': 'مشغل IPTV المجاني',
     'app.badge': 'مشغل',
+    'app.loading': 'جارٍ التحميل...',
     'header.search': 'بحث',
     'header.settings': 'الإعدادات',
     'nav.home': 'الرئيسية',
@@ -282,6 +291,7 @@
     'live.preview_idle': 'وجّه المؤشر لقناة لبدء المعاينة',
     'live.preview_loading': 'جارٍ تحميل المعاينة...',
     'live.preview_error': 'المعاينة غير متاحة',
+    'live.preview_unavailable': 'المعاينة غير متاحة',
     'live.loading': 'جارٍ التحميل...',
     'live.loading_channels': 'جارٍ تحميل القنوات...',
     'live.state_no_provider': 'لم يتم تكوين أي قائمة قنوات.',
@@ -297,6 +307,7 @@
 
     'home.welcome': 'مرحبًا بك في مشغل IPTV المجاني',
     'home.subtitle': 'أضف قائمة قنوات IPTV للبدء.',
+    'home.learn_more': 'المزيد / حول التطبيق',
     'playlist.add': 'إضافة قائمة قنوات',
     'home.empty_title': 'لم تتم إضافة أي قائمة قنوات بعد.',
     'home.empty_desc': 'مشغل IPTV المجاني هو تطبيق تشغيل وسائط مستقل ولا يوفر أو يستضيف أو يبيع أي قنوات أو بث مباشر. يرجى إضافة رابط M3U أو بيانات مزود الخدمة المعتمد للبدء.',
@@ -360,6 +371,7 @@
     'live.no_epg': 'لا تتوفر بيانات دليل البرامج لهذه القناة.',
 
     'movies.title': 'الأفلام',
+    'movies.overview': 'نظرة عامة',
     'movies.categories': 'الفئات',
     'movies.all_movies': 'جميع الأفلام',
     'movies.no_movies': 'لم يتم العثور على أفلام',
@@ -380,6 +392,8 @@
     'series.series_count': '{count} مسلسل',
     'series.no_series_sub': 'حاول اختيار فئة أخرى أو تغيير عبارة البحث.',
     'series.loading_episodes': 'جارٍ تحميل المواسم والحلقات...',
+    'series.loading_seasons': 'جارٍ تحميل المواسم...',
+    'series.no_seasons': 'لا تتوفر مواسم',
     'series.no_description': 'لا يتوفر وصف.',
     'series.no_episodes': 'لا توجد حلقات لهذا الموسم.',
     'series.remove_favorite': 'إزالة من المفضلة',
@@ -387,6 +401,8 @@
     'series.seasons': 'المواسم:',
     'series.season': 'الموسم {num}',
     'series.episode': 'الحلقة {num}',
+    'series.season_label': 'الموسم',
+    'series.episodes_label': 'الحلقات',
 
     'guide.title': 'دليل التلفزيون',
     'guide.badge': 'جدول البرامج',

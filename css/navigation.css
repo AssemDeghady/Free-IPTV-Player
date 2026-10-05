@@ -164,6 +164,47 @@
 }
 
 /* Series Season & Episode focus */
+.btn-page-back.focused,
+.btn-page-back:focus-visible {
+  border-color: var(--focus-border-color);
+  background-color: var(--focus-bg-color);
+  box-shadow: var(--focus-glow);
+  color: #ffffff;
+  transform: scale(1.05);
+}
+
+.btn-action-lg.focused,
+.btn-action-lg:focus-visible,
+#btn-movie-play.focused,
+#btn-movie-resume.focused,
+#btn-movie-fav.focused,
+#btn-series-fav.focused {
+  border-color: var(--focus-border-color);
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.8), inset 0 0 8px rgba(255, 255, 255, 0.3);
+  transform: scale(1.04);
+}
+
+.season-select-btn.focused,
+.season-select-btn:focus-visible {
+  border-color: var(--focus-border-color) !important;
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.8) !important;
+  background-color: rgba(59, 130, 246, 0.25) !important;
+  transform: scale(1.02);
+}
+
+.season-dropdown-item.focused,
+.season-dropdown-item:focus-visible {
+  background-color: var(--focus-bg-color) !important;
+  border-left: 4px solid var(--focus-border-color) !important;
+  color: #ffffff !important;
+}
+
+html[dir="rtl"] .season-dropdown-item.focused,
+html[dir="rtl"] .season-dropdown-item:focus-visible {
+  border-left: none !important;
+  border-right: 4px solid var(--focus-border-color) !important;
+}
+
 .series-season-tab.focused,
 .series-season-tab:focus-visible {
   border-color: var(--focus-border-color);
@@ -173,12 +214,14 @@
 }
 
 .series-episode-card.focused,
-.series-episode-card:focus-visible {
+.series-episode-card:focus-visible,
+.episode-card.focused,
+.episode-card:focus-visible {
   background-color: var(--focus-bg-color);
   border-color: var(--focus-border-color);
-  box-shadow: var(--focus-glow);
+  box-shadow: 0 0 16px rgba(59, 130, 246, 0.7);
   color: #ffffff;
-  transform: scale(1.01);
+  transform: scale(1.02);
 }
 
 .live-epg-schedule-item.focused,
@@ -209,6 +252,8 @@
 
 /* Text Alignment and Document Flow */
 html[dir="rtl"] .welcome-section,
+html[dir="rtl"] .home-section-title,
+html[dir="rtl"] .home-row-title,
 html[dir="rtl"] .empty-state-text-group,
 html[dir="rtl"] .empty-state-card,
 html[dir="rtl"] .live-screen-title,

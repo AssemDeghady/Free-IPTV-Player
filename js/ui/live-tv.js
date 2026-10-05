@@ -398,6 +398,19 @@
 
         container.appendChild(itemEl);
       }
+
+      // If on Live TV screen and focus is not yet placed on a category or is on search input, focus first category
+      if (window.FreeIPTV.Navigation && window.FreeIPTV.Navigation.getCurrentRoute() === 'live_tv') {
+        var cur = window.FreeIPTV.Navigation.getCurrent();
+        var isSearch = cur && (cur.id === 'live-category-search-input' || cur.id === 'live-search-input');
+        var isOutside = !cur || !document.body.contains(cur) || !cur.closest('#view-live_tv');
+        if (isSearch || isOutside) {
+          var firstCat = container.querySelector('.category-item.active') || container.querySelector('.category-item');
+          if (firstCat) {
+            window.FreeIPTV.Navigation.focus(firstCat);
+          }
+        }
+      }
     },
 
     /**

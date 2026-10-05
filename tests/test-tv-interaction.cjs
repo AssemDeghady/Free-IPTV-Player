@@ -653,6 +653,8 @@ async function runInteractionValidation() {
   const inputUrl = env.document.getElementById('input-playlist-url');
   assert(inputUrl !== null, 'Modal URL input field exists');
 
+  // Xtream is the default tab; switch to M3U for the URL validation check
+  FreeIPTV.Modal.switchTab('m3u');
   // Submit with empty URL -> should show error state
   FreeIPTV.Modal.submit();
   const modalErrState = env.document.getElementById('modal-state-error');

@@ -13,7 +13,7 @@
   var previousRoute = 'playlists';
   var isOpen = false;
   var isLoading = false;
-  var activeTab = 'm3u'; // 'm3u' | 'xtream'
+  var activeTab = 'xtream'; // 'm3u' | 'xtream'
 
   var Modal = {
     /**
@@ -305,8 +305,8 @@
       if (usernameInput) usernameInput.value = '';
       if (passwordInput) passwordInput.value = '';
 
-      // Reset to M3U tab
-      this.switchTab('m3u');
+      // Reset to Xtream tab (default)
+      this.switchTab('xtream');
 
       // Register Back handler to close modal on TV Return key
       var self = this;

@@ -14,16 +14,25 @@
 </head>
 
 <body>
+  <!-- APPLICATION SPLASH / STARTUP SCREEN (Phase 6.4) -->
+  <div id="app-splash-screen" class="app-splash-screen" role="dialog" aria-label="Loading Free IPTV Player">
+    <div class="splash-content">
+      <div class="splash-logo-container">
+        <img id="splash-logo" class="splash-logo" src="assets/images/logo.png" alt="Free IPTV Player"
+          onerror="this.style.display='none'; if (window.FreeIPTV && window.FreeIPTV.Logger) window.FreeIPTV.Logger.warn('Logo asset failed to load: assets/images/logo.png');">
+      </div>
+      <h1 class="splash-title" data-i18n="app.name">Free IPTV Player</h1>
+      <div class="splash-spinner"></div>
+      <p class="splash-status" data-i18n="app.loading">Loading...</p>
+    </div>
+  </div>
+
   <div class="app-root">
     <!-- HEADER -->
     <header class="app-header">
-      <div class="brand-section">
-        <div class="brand-logo-icon">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12zM9.5 8v8l6.5-4z" />
-          </svg>
-        </div>
+      <div class="brand-section" tabindex="-1" aria-hidden="true">
+        <img class="brand-logo-img" src="assets/images/logo.png" alt="Free IPTV Player"
+          onerror="this.style.display='none'; if (window.FreeIPTV && window.FreeIPTV.Logger) window.FreeIPTV.Logger.warn('Logo asset failed to load: assets/images/logo.png');" tabindex="-1">
         <h1 class="brand-title" data-i18n="app.name">Free IPTV Player</h1>
       </div>
 
@@ -32,7 +41,7 @@
         <button id="header-active-playlist" class="header-button header-playlist-pill focusable" data-nav-zone="header"
           aria-label="Active Playlist">
           <span class="active-dot">●</span>
-          <span id="header-playlist-name" class="active-playlist-text">No Playlist</span>
+          <span id="header-playlist-name" class="active-playlist-text" data-i18n="playlists.no_active">No Playlist</span>
           <span class="dropdown-chevron">&#9662;</span>
         </button>
 
@@ -68,16 +77,14 @@
             <div id="home-onboarding-area" class="home-onboarding-area">
               <!-- Empty-State Card (Shown when no active provider) -->
               <div id="home-empty-card" class="empty-state-card" role="status">
-                <div class="empty-state-icon">
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path
-                      d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12zM9.5 8v8l6.5-4z" />
-                  </svg>
+                <div class="onboarding-logo-wrap">
+                  <img class="onboarding-logo-img" src="assets/images/logo.png" alt="Free IPTV Player"
+                    onerror="this.style.display='none'; if (window.FreeIPTV && window.FreeIPTV.Logger) window.FreeIPTV.Logger.warn('Logo asset failed to load: assets/images/logo.png');" tabindex="-1">
                 </div>
                 <div class="empty-state-text-group">
-                  <h3 class="empty-state-headline">Your TV library starts here.</h3>
-                  <p class="empty-state-description">
-                    Add your IPTV playlist to access Live TV, Movies, Series, EPG, and Favorites.
+                  <h3 class="empty-state-headline" data-i18n="home.welcome">Welcome to Free IPTV Player</h3>
+                  <p class="empty-state-description" data-i18n="home.subtitle">
+                    Add your IPTV playlist to get started.
                   </p>
                 </div>
                 <div class="cta-actions">
@@ -88,7 +95,7 @@
                     <span data-i18n="playlist.add">Add Playlist</span>
                   </button>
                   <button id="btn-learn-more" class="btn-secondary focusable" data-nav-zone="main">
-                    <span>Learn More / About</span>
+                    <span data-i18n="home.learn_more">Learn More / About</span>
                   </button>
                 </div>
               </div>
@@ -98,7 +105,6 @@
             <div id="home-dashboard-content" class="home-dashboard-content hidden">
               <div id="home-quick-access-section" class="home-quick-access-section"></div>
               <div id="home-provider-banner" class="home-provider-banner"></div>
-              <div id="home-continue-watching-section" class="home-row-section"></div>
               <div id="home-recent-section" class="home-row-section"></div>
               <div id="home-quick-actions-row" class="home-row-section"></div>
             </div>
@@ -445,11 +451,8 @@
                     </button>
                     <button id="movie-btn-fav" class="hidden" tabindex="-1"></button>
 
-                    <button id="btn-movie-back" class="btn-secondary btn-action-lg focusable"
-                      data-nav-zone="movie_details" data-i18n="details.back">
-                      <span data-i18n="details.back">Back</span>
-                    </button>
-                    <button id="movie-btn-back" class="hidden" tabindex="-1"></button>
+                    <button id="btn-movie-back" class="hidden" tabindex="-1" style="display: none;"></button>
+                    <button id="movie-btn-back" class="hidden" tabindex="-1" style="display: none;"></button>
                   </div>
 
                   <div class="details-synopsis-box">
@@ -501,6 +504,17 @@
                   <div id="series-modal-meta" class="hidden"></div>
 
                   <div class="details-actions-bar">
+                    <!-- Season Dropdown Selector in place of Back button -->
+                    <div class="series-season-selector-group">
+                      <div class="season-dropdown-wrapper">
+                        <button id="btn-season-selector" class="season-select-btn focusable" data-nav-zone="series_details" aria-haspopup="listbox" aria-expanded="false" aria-label="Select Season">
+                          <span id="season-selector-label">Season 1</span>
+                          <span class="dropdown-arrow" aria-hidden="true">&#9660;</span>
+                        </button>
+                        <div id="season-dropdown-list" class="season-dropdown-menu hidden" role="listbox" aria-label="Seasons"></div>
+                      </div>
+                    </div>
+
                     <button id="btn-series-fav" class="btn-secondary btn-action-lg focusable"
                       data-nav-zone="series_details">
                       <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -511,11 +525,8 @@
                     </button>
                     <button id="series-btn-fav" class="hidden" tabindex="-1"></button>
 
-                    <button id="btn-series-back" class="btn-secondary btn-action-lg focusable"
-                      data-nav-zone="series_details" data-i18n="details.back">
-                      <span data-i18n="details.back">Back</span>
-                    </button>
-                    <button id="series-btn-back" class="hidden" tabindex="-1"></button>
+                    <button id="btn-series-back" class="hidden" tabindex="-1" style="display: none;"></button>
+                    <button id="series-btn-back" class="hidden" tabindex="-1" style="display: none;"></button>
                   </div>
 
                   <div class="details-synopsis-box">
@@ -529,18 +540,6 @@
 
               <!-- Seasons Selector & Episodes List -->
               <div class="series-episodes-section">
-                <!-- Season Dropdown Selector Group -->
-                <div class="series-season-selector-group">
-                  <div class="series-section-label" data-i18n="series.season_label">SEASON</div>
-                  <div class="season-dropdown-wrapper">
-                    <button id="btn-season-selector" class="season-select-btn focusable" data-nav-zone="series_details" aria-haspopup="listbox" aria-expanded="false" aria-label="Select Season">
-                      <span id="season-selector-label">Season 1</span>
-                      <span class="dropdown-arrow" aria-hidden="true">&#9660;</span>
-                    </button>
-                    <div id="season-dropdown-list" class="season-dropdown-menu hidden" role="listbox" aria-label="Seasons"></div>
-                  </div>
-                </div>
-
                 <div class="series-episodes-heading-row">
                   <h3 class="series-episodes-heading" data-i18n="series.episodes_label">Episodes</h3>
                 </div>
@@ -571,11 +570,11 @@
             <div class="add-playlist-card">
               <!-- Provider Type Tabs -->
               <div class="provider-tabs" role="tablist">
-                <button id="modal-tab-m3u" class="provider-tab-btn focusable active" role="tab" aria-selected="true"
+                <button id="modal-tab-m3u" class="provider-tab-btn focusable" role="tab" aria-selected="false"
                   data-provider="m3u" data-nav-zone="modal">
                   <span data-i18n="modal.tab_m3u">M3U / M3U8</span>
                 </button>
-                <button id="modal-tab-xtream" class="provider-tab-btn focusable" role="tab" aria-selected="false"
+                <button id="modal-tab-xtream" class="provider-tab-btn focusable active" role="tab" aria-selected="true"
                   data-provider="xtream" data-nav-zone="modal">
                   <span data-i18n="modal.tab_xtream">XTREAM CODES</span>
                 </button>
@@ -584,7 +583,7 @@
               <!-- Form State -->
               <div id="modal-state-form">
                 <!-- M3U Panel -->
-                <div id="modal-panel-m3u" class="modal-provider-panel">
+                <div id="modal-panel-m3u" class="modal-provider-panel hidden">
                   <div class="form-group">
                     <label for="input-playlist-name" class="form-label" data-i18n="modal.playlist_name">Playlist Name</label>
                     <input type="text" id="input-playlist-name" class="form-input focusable" data-nav-zone="modal"
@@ -605,7 +604,7 @@
                 </div>
 
                 <!-- Xtream Codes Panel -->
-                <div id="modal-panel-xtream" class="modal-provider-panel hidden">
+                <div id="modal-panel-xtream" class="modal-provider-panel">
                   <div class="form-group">
                     <label for="input-xtream-name" class="form-label" data-i18n="modal.playlist_name">Playlist Name</label>
                     <input type="text" id="input-xtream-name" class="form-input focusable" data-nav-zone="modal"

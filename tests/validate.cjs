@@ -72,6 +72,7 @@ const expectedFiles = [
   'tests/fixtures/xtream/series-categories.json',
   'tests/fixtures/xtream/series.json',
   'tests/fixtures/xtream/series-info.json',
+  'assets/images/logo.png',
   'tests/fixtures/xtream/short-epg.json',
   'tests/test-m3u-parser.cjs',
   'tests/test-playlist-manager.cjs',
@@ -81,7 +82,8 @@ const expectedFiles = [
   'tests/test-tv-interaction.cjs',
   'tests/test-xtream-api.cjs',
   'tests/test-localization-rtl.cjs',
-  'tests/test-complete-iptv.cjs'
+  'tests/test-complete-iptv.cjs',
+  'tests/test-phase-6-4.cjs'
 ];
 
 expectedFiles.forEach(file => {
@@ -152,7 +154,8 @@ const suites = [
   'test-tv-interaction.cjs',
   'test-xtream-api.cjs',
   'test-localization-rtl.cjs',
-  'test-complete-iptv.cjs'
+  'test-complete-iptv.cjs',
+  'test-phase-6-4.cjs'
 ];
 
 suites.forEach(suite => {

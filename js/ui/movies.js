@@ -194,6 +194,19 @@
 
         container.appendChild(catItem);
       }
+
+      // If on Movies screen and focus is not yet placed on a category or is on search input, focus first category
+      if (window.FreeIPTV.Navigation && window.FreeIPTV.Navigation.getCurrentRoute() === 'movies') {
+        var cur = window.FreeIPTV.Navigation.getCurrent();
+        var isSearch = cur && cur.id === 'movies-category-search-input';
+        var isOutside = !cur || !document.body.contains(cur) || !cur.closest('#view-movies');
+        if (isSearch || isOutside) {
+          var firstCat = container.querySelector('.category-item.active') || container.querySelector('.category-item');
+          if (firstCat) {
+            window.FreeIPTV.Navigation.focus(firstCat);
+          }
+        }
+      }
     },
 
     /**
@@ -469,23 +482,27 @@
       var progress = window.FreeIPTV.PlaylistManager ? window.FreeIPTV.PlaylistManager.getPlaybackProgress(movie.id) : null;
       var btnResume = document.getElementById('btn-movie-resume');
       var btnPlay = document.getElementById('btn-movie-play');
+      var initialFocusEl = null;
 
-      if (btnResume) {
-        if (progress && progress.positionSeconds >= 15 && (!progress.durationSeconds || progress.positionSeconds < progress.durationSeconds - 30)) {
-          var mins = Math.floor(progress.positionSeconds / 60);
-          var secs = progress.positionSeconds % 60;
-          var timeStr = (mins < 10 ? '0' : '') + mins + ':' + (secs < 10 ? '0' : '') + secs;
-          btnResume.textContent = (window.FreeIPTV.I18n ? window.FreeIPTV.I18n.t('movies.resume_from') : 'Resume from {time}').replace('{time}', timeStr);
-          btnResume.classList.remove('hidden');
-          if (window.FreeIPTV.Navigation) {
-            window.FreeIPTV.Navigation.focus(btnResume);
-          }
-        } else {
-          btnResume.classList.add('hidden');
-          if (window.FreeIPTV.Navigation && btnPlay) {
-            window.FreeIPTV.Navigation.focus(btnPlay);
-          }
-        }
+      if (btnResume && progress && progress.positionSeconds >= 15 && (!progress.durationSeconds || progress.positionSeconds < progress.durationSeconds - 30)) {
+        var mins = Math.floor(progress.positionSeconds / 60);
+        var secs = progress.positionSeconds % 60;
+        var timeStr = (mins < 10 ? '0' : '') + mins + ':' + (secs < 10 ? '0' : '') + secs;
+        btnResume.textContent = (window.FreeIPTV.I18n ? window.FreeIPTV.I18n.t('movies.resume_from') : 'Resume from {time}').replace('{time}', timeStr);
+        btnResume.classList.remove('hidden');
+        initialFocusEl = btnResume;
+      } else {
+        if (btnResume) btnResume.classList.add('hidden');
+        initialFocusEl = btnPlay || document.getElementById('btn-movie-page-back');
+      }
+
+      if (window.FreeIPTV.Navigation && initialFocusEl) {
+        window.FreeIPTV.Navigation.focus(initialFocusEl);
+      }
+
+      if (window.FreeIPTV.Logger) {
+        window.FreeIPTV.Logger.info('ROUTE: ' + originRoute + ' -> movie_details');
+        window.FreeIPTV.Logger.info('INITIAL FOCUS: ' + (initialFocusEl ? (initialFocusEl.id || initialFocusEl.tagName) : 'none'));
       }
 
       // Check favorite state
@@ -609,6 +626,11 @@
       isDetailsOpen = false;
       var targetRoute = originRoute || 'movies';
       selectedMovie = null;
+
+      if (window.FreeIPTV.Logger) {
+        window.FreeIPTV.Logger.info('ROUTE: movie_details -> ' + targetRoute);
+        window.FreeIPTV.Logger.info('RESTORE FOCUS: ' + (previousFocusedElement ? (previousFocusedElement.id || previousFocusedElement.className) : 'fallback'));
+      }
 
       if (window.FreeIPTV.Home && window.FreeIPTV.Home.switchView) {
         window.FreeIPTV.Home.switchView(targetRoute);

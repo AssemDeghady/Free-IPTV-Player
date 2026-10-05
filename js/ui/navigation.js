@@ -41,13 +41,90 @@
     },
 
     /**
-     * Set initial focus on app launch.
+     * Set initial focus on app launch or view change.
+     * @param {string} [optRoute]
      */
-    setInitialFocus: function () {
-      var initial = document.querySelector('[data-initial-focus="true"]') ||
-                    document.querySelector('#home-quick-access-section .focusable') ||
-                    document.querySelector('.app-sidebar .focusable.active') ||
-                    document.querySelector('.focusable');
+    setInitialFocus: function (optRoute) {
+      // Legacy compatibility for test suites with sidebar upon initial app boot (e.g. test-tv-interaction.cjs)
+      if (!optRoute) {
+        var sidebarActive = document.querySelector('.app-sidebar .active') ||
+                            document.querySelector('.app-sidebar .nav-link.focusable') ||
+                            document.querySelector('.app-sidebar .focusable');
+        if (sidebarActive) {
+          this.focus(sidebarActive);
+          return;
+        }
+      }
+
+      var route = optRoute || currentRoute || 'home';
+      var activeView = document.getElementById('view-' + route) ||
+                       document.getElementById('view-' + route.replace(/_/g, '-')) ||
+                       document.getElementById('view-' + route.replace(/-/g, '_'));
+
+      if (!activeView || activeView.classList.contains('hidden')) {
+        activeView = document.querySelector('.view-screen:not(.hidden)');
+      }
+
+      var initial = null;
+
+      if (activeView) {
+        var activeRoute = (activeView.id ? activeView.id.replace('view-', '') : route).replace(/-/g, '_');
+
+        // 1. For Live TV, Movies, and Series: STRICTLY focus on the first category item (NEVER on search input!)
+        if (activeRoute === 'live_tv' || activeRoute === 'movies' || activeRoute === 'series') {
+          var catPrefix = activeRoute === 'live_tv' ? 'live' : activeRoute;
+          initial = activeView.querySelector('#' + catPrefix + '-categories-list .category-item.active') ||
+                    activeView.querySelector('#' + catPrefix + '-categories-list .category-item.focusable') ||
+                    activeView.querySelector('#' + catPrefix + '-categories-list .category-item') ||
+                    activeView.querySelector('#' + catPrefix + '-categories-list .focusable');
+        } else if (activeRoute === 'home') {
+          initial = activeView.querySelector('[data-initial-focus="true"]') ||
+                    activeView.querySelector('#home-quick-access-section .focusable') ||
+                    activeView.querySelector('#home-onboarding-area .focusable');
+        } else if (activeRoute === 'settings') {
+          initial = activeView.querySelector('#settings-btn-add-playlist') ||
+                    activeView.querySelector('.focusable:not([tabindex="-1"])');
+        } else if (activeRoute === 'movie_details') {
+          initial = activeView.querySelector('#btn-movie-resume:not(.hidden)') ||
+                    activeView.querySelector('#btn-movie-play') ||
+                    activeView.querySelector('#btn-movie-page-back');
+        } else if (activeRoute === 'series_details') {
+          initial = activeView.querySelector('#btn-season-selector') ||
+                    activeView.querySelector('#btn-series-fav') ||
+                    activeView.querySelector('#btn-series-page-back');
+        } else if (activeRoute === 'playlists') {
+          initial = activeView.querySelector('#btn-playlists-add') ||
+                    activeView.querySelector('#playlists-list-container .focusable');
+        } else if (activeRoute === 'favorites') {
+          initial = activeView.querySelector('#favorites-tabs-row .focusable.active') ||
+                    activeView.querySelector('#favorites-tabs-row .focusable') ||
+                    activeView.querySelector('#favorites-grid-container .focusable');
+        }
+
+        if (!initial && activeRoute !== 'live_tv' && activeRoute !== 'movies' && activeRoute !== 'series') {
+          initial = activeView.querySelector('[data-initial-focus="true"]') ||
+                    activeView.querySelector('.focusable.active') ||
+                    activeView.querySelector('.focusable:not([tabindex="-1"])');
+        }
+      }
+
+      // Legacy fallback for test suites with sidebar (e.g. test-tv-interaction.cjs)
+      if (!initial) {
+        var sidebarActive = document.querySelector('.app-sidebar .focusable.active') ||
+                            document.querySelector('.app-sidebar .active') ||
+                            document.querySelector('.app-sidebar .nav-link') ||
+                            document.querySelector('.app-sidebar .focusable');
+        if (sidebarActive) {
+          initial = sidebarActive;
+        }
+      }
+
+      if (!initial) {
+        initial = document.querySelector('.view-screen:not(.hidden) .focusable:not([tabindex="-1"])') ||
+                  document.querySelector('.focusable:not([tabindex="-1"])') ||
+                  document.querySelector('.focusable');
+      }
+
       if (initial) {
         this.focus(initial);
       }
@@ -141,6 +218,19 @@
     },
 
     /**
+     * Retrieve a historically focused element for a zone, validating it is still attached and visible.
+     * @param {string} zone 
+     * @returns {HTMLElement|null}
+     */
+    getValidHistoryElement: function (zone) {
+      var el = zoneHistory[zone];
+      if (el && document.body.contains(el) && el.offsetParent !== null && !el.closest('.view-screen.hidden') && el.getAttribute('tabindex') !== '-1') {
+        return el;
+      }
+      return null;
+    },
+
+    /**
      * Determine the navigation zone of an element.
      * @param {HTMLElement} el
      * @returns {string}
@@ -155,6 +245,7 @@
       if (el.closest('#season-dropdown-list') || el.classList.contains('season-dropdown-item')) return 'series_season_dropdown';
       if (el.closest('#view-movie_details') || el.closest('#movie-details-modal')) return 'movie_details';
       if (el.closest('#view-series_details') || el.closest('#series-details-modal')) return 'series_details';
+      if (el.closest('#home-recent-section') || el.closest('#home-recent-grid') || el.classList.contains('home-media-card')) return 'home_recent';
       if (el.closest('#home-quick-access-section') || el.closest('.home-quick-access-grid')) return 'home_quick_access';
       if (el.closest('#player-error-overlay')) return 'player_error';
       if (el.closest('#player-controls-overlay')) return 'player_controls';
@@ -214,7 +305,7 @@
      * @returns {boolean} True if movement occurred
      */
     move: function (direction) {
-      if (!currentElement) {
+      if (!currentElement || !document.body.contains(currentElement) || currentElement.closest('.view-screen.hidden')) {
         this.setInitialFocus();
         return true;
       }
@@ -278,8 +369,12 @@
         return this.handleSeriesDetailsNavigation(direction);
       } else if (zone === 'home_quick_access') {
         return this.handleHomeQuickAccessNavigation(direction);
+      } else if (zone === 'home_recent') {
+        return this.handleHomeRecentNavigation(direction);
       } else if (zone === Constants.NAV_ZONES.SIDEBAR) {
         return this.handleSidebarNavigation(direction);
+      } else if (zone === 'live_search') {
+        return this.handleLiveSearchNavigation(direction);
       } else if (zone === 'live_category_search') {
         return this.handleLiveCategorySearchNavigation(direction);
       } else if (zone === 'movies_category_search') {
@@ -327,14 +422,66 @@
         if (idx >= 0 && idx < cards.length - 1) return cards[idx + 1];
       } else if (direction === Constants.DIRECTIONS.LEFT) {
         if (idx > 0) return cards[idx - 1];
+        return document.querySelector('.app-sidebar .focusable.active') || document.querySelector('.app-sidebar .focusable');
       } else if (direction === Constants.DIRECTIONS.UP) {
         return document.getElementById('header-active-playlist') ||
                document.querySelector('.app-header .focusable');
       } else if (direction === Constants.DIRECTIONS.DOWN) {
-        var nextRow = document.querySelector('#home-continue-watching-section:not([style*="display: none"]) .focusable') ||
+        var nextRow = this.getValidHistoryElement('home_recent') ||
+                      document.querySelector('#home-recent-grid .home-media-card.focusable') ||
                       document.querySelector('#home-recent-section:not([style*="display: none"]) .focusable') ||
                       document.querySelector('#home-quick-actions-row .focusable');
         if (nextRow) return nextRow;
+      }
+
+      return null;
+    },
+
+    /**
+     * Home Recently Watched row navigation rules (Horizontal row: Left <-> Right with multi-row support).
+     */
+    handleHomeRecentNavigation: function (direction) {
+      var Constants = window.FreeIPTV.Constants;
+      var cards = Array.prototype.slice.call(document.querySelectorAll('#home-recent-grid .home-media-card.focusable'));
+      var idx = cards.indexOf(currentElement);
+      if (idx === -1) return cards[0] || null;
+
+      var cols = 6;
+      if (cards.length > 1 && cards[0] && cards[1]) {
+        var top0 = cards[0].offsetTop;
+        for (var c = 1; c < cards.length; c++) {
+          if (cards[c].offsetTop > top0) {
+            cols = c;
+            break;
+          }
+        }
+      }
+
+      if (direction === Constants.DIRECTIONS.RIGHT) {
+        if (idx < cards.length - 1) return cards[idx + 1];
+        return null;
+      } else if (direction === Constants.DIRECTIONS.LEFT) {
+        if (idx > 0) return cards[idx - 1];
+        return document.querySelector('.app-sidebar .focusable.active') || document.querySelector('.app-sidebar .focusable');
+      } else if (direction === Constants.DIRECTIONS.UP) {
+        if (idx >= cols) {
+          return cards[idx - cols];
+        }
+        var quickCards = Array.prototype.slice.call(document.querySelectorAll('#home-quick-access-section .home-quick-card.focusable'));
+        if (quickCards.length > 0) {
+          var targetIdx = Math.min(idx, quickCards.length - 1);
+          return this.getValidHistoryElement('home_quick_access') || quickCards[targetIdx] || quickCards[0];
+        }
+        return document.getElementById('header-active-playlist') || document.querySelector('.app-header .focusable');
+      } else if (direction === Constants.DIRECTIONS.DOWN) {
+        if (idx + cols < cards.length) {
+          return cards[idx + cols];
+        } else if (idx < cols && cards.length > cols) {
+          return cards[cards.length - 1];
+        }
+        var nextAction = document.querySelector('#home-quick-actions-row .focusable');
+        if (nextAction && nextAction.offsetParent !== null) return nextAction;
+        return null;
       }
 
       return null;
@@ -404,18 +551,29 @@
      */
     handleSeriesSeasonDropdownNavigation: function (direction) {
       var Constants = window.FreeIPTV.Constants;
-      var items = Array.prototype.slice.call(document.querySelectorAll('#season-dropdown-list .season-dropdown-item.focusable')).filter(function (el) {
-        return (el.offsetParent !== null || el.offsetParent === undefined) && !el.classList.contains('hidden');
+      var menu = document.getElementById('season-dropdown-list');
+      var seasonBtn = document.getElementById('btn-season-selector');
+      if (!menu) return null;
+
+      var items = Array.prototype.slice.call(menu.querySelectorAll('.season-dropdown-item')).filter(function (el) {
+        return !el.classList.contains('hidden');
       });
+      if (items.length === 0) return seasonBtn || null;
+
       var idx = items.indexOf(currentElement);
-      if (idx === -1) return items[0] || null;
+      if (idx === -1) return items[0];
 
       if (direction === Constants.DIRECTIONS.DOWN) {
         if (idx < items.length - 1) return items[idx + 1];
         return null;
       } else if (direction === Constants.DIRECTIONS.UP) {
         if (idx > 0) return items[idx - 1];
-        return null;
+        return seasonBtn || null;
+      } else if (direction === Constants.DIRECTIONS.LEFT || direction === Constants.DIRECTIONS.RIGHT) {
+        if (window.FreeIPTV.Series && window.FreeIPTV.Series.closeSeasonDropdown) {
+          window.FreeIPTV.Series.closeSeasonDropdown(true);
+        }
+        return seasonBtn || null;
       }
       return null;
     },
@@ -428,31 +586,56 @@
       var container = document.getElementById('view-series_details') || document.getElementById('series-details-modal');
       if (!container) return null;
 
+      var topBarBtn = container.querySelector('#btn-series-page-back');
       var seasonBtn = container.querySelector('#btn-season-selector');
+      var favBtn = container.querySelector('#btn-series-fav') || container.querySelector('#series-btn-fav');
       var legacySeasons = Array.prototype.slice.call(container.querySelectorAll('.series-season-tab.focusable, #series-seasons-tabs .focusable')).filter(function (el) {
         return (el.offsetParent !== null || el.offsetParent === undefined) && !el.classList.contains('hidden');
       });
       var episodes = Array.prototype.slice.call(container.querySelectorAll('.series-episode-card.focusable, .episode-card.focusable, #series-episodes-list .focusable')).filter(function (el) {
         return (el.offsetParent !== null || el.offsetParent === undefined) && !el.classList.contains('hidden');
       });
-      var actions = Array.prototype.slice.call(container.querySelectorAll('.details-top-bar .focusable, .details-actions-bar .focusable, .series-details-actions .focusable')).filter(function (el) {
-        return (el.offsetParent !== null || el.offsetParent === undefined) && !el.classList.contains('hidden') && el.getAttribute('tabindex') !== '-1';
-      });
 
-      var isAction = actions.indexOf(currentElement) !== -1;
+      var isTopBar = (currentElement === topBarBtn);
       var isSeasonBtn = (currentElement === seasonBtn);
+      var isFavBtn = (currentElement === favBtn);
       var isLegacySeason = legacySeasons.indexOf(currentElement) !== -1;
       var isEpisode = episodes.indexOf(currentElement) !== -1;
 
-      if (isAction) {
-        var actIdx = actions.indexOf(currentElement);
-        if (direction === Constants.DIRECTIONS.RIGHT && actIdx < actions.length - 1) return actions[actIdx + 1];
-        if (direction === Constants.DIRECTIONS.LEFT && actIdx > 0) return actions[actIdx - 1];
-        if (direction === Constants.DIRECTIONS.DOWN) return seasonBtn || legacySeasons[0] || episodes[0] || null;
+      if (isTopBar) {
+        if (direction === Constants.DIRECTIONS.DOWN || direction === Constants.DIRECTIONS.RIGHT) {
+          return seasonBtn || favBtn || episodes[0] || null;
+        }
+        return null;
       } else if (isSeasonBtn) {
-        if (direction === Constants.DIRECTIONS.UP) return actions[actions.length - 1] || actions[0] || null;
-        if (direction === Constants.DIRECTIONS.DOWN) return episodes[0] || null;
-        if (direction === Constants.DIRECTIONS.LEFT || direction === Constants.DIRECTIONS.RIGHT) return null;
+        if (direction === Constants.DIRECTIONS.RIGHT) {
+          return favBtn || null;
+        }
+        if (direction === Constants.DIRECTIONS.LEFT || direction === Constants.DIRECTIONS.UP) {
+          return topBarBtn || null;
+        }
+        if (direction === Constants.DIRECTIONS.DOWN) {
+          if (window.FreeIPTV.Series && window.FreeIPTV.Series.isSeasonDropdownOpen && window.FreeIPTV.Series.isSeasonDropdownOpen()) {
+            var menu = document.getElementById('season-dropdown-list');
+            if (menu) {
+              return menu.querySelector('.season-dropdown-item.active') ||
+                     menu.querySelector('.season-dropdown-item') ||
+                     episodes[0] || null;
+            }
+          }
+          return episodes[0] || null;
+        }
+      } else if (isFavBtn) {
+        if (direction === Constants.DIRECTIONS.LEFT) {
+          return seasonBtn || topBarBtn || null;
+        }
+        if (direction === Constants.DIRECTIONS.UP) {
+          return topBarBtn || null;
+        }
+        if (direction === Constants.DIRECTIONS.DOWN) {
+          return episodes[0] || null;
+        }
+        return null;
       } else if (isLegacySeason) {
         var sIdx = legacySeasons.indexOf(currentElement);
         if (direction === Constants.DIRECTIONS.RIGHT && sIdx < legacySeasons.length - 1) return legacySeasons[sIdx + 1];
@@ -589,37 +772,37 @@
         var activeRoute = currentElement.getAttribute('data-route');
 
         if (activeRoute === 'live_tv') {
-          return zoneHistory.live_categories ||
+          return this.getValidHistoryElement('live_categories') ||
                  document.querySelector('#live-categories-list .focusable') ||
                  document.querySelector('#view-live_tv .focusable') ||
                  document.querySelector('#view-live-tv .focusable');
         } else if (activeRoute === 'movies') {
-          return zoneHistory.movies_categories ||
+          return this.getValidHistoryElement('movies_categories') ||
                  document.querySelector('#movies-categories-list .focusable') ||
                  document.querySelector('#movies-grid-container .focusable');
         } else if (activeRoute === 'series') {
-          return zoneHistory.series_categories ||
+          return this.getValidHistoryElement('series_categories') ||
                  document.querySelector('#series-categories-list .focusable') ||
                  document.querySelector('#series-grid-container .focusable');
         } else if (activeRoute === 'guide') {
-          return zoneHistory.guide_channels ||
+          return this.getValidHistoryElement('guide_channels') ||
                  document.querySelector('#guide-channels-list .focusable');
         } else if (activeRoute === 'search') {
           return document.getElementById('global-search-input') ||
                  document.querySelector('#view-search .focusable');
         } else if (activeRoute === 'favorites') {
-          return zoneHistory.favorites_tabs ||
+          return this.getValidHistoryElement('favorites_tabs') ||
                  document.querySelector('#favorites-tabs-row .focusable') ||
                  document.querySelector('#favorites-grid-container .focusable');
         } else if (activeRoute === 'playlists') {
-          return zoneHistory.playlists_actions ||
+          return this.getValidHistoryElement('playlists_actions') ||
                  document.querySelector('#view-playlists .focusable');
         } else if (activeRoute === 'settings') {
-          return zoneHistory.settings_actions ||
+          return this.getValidHistoryElement('settings_actions') ||
                  document.querySelector('#view-settings .focusable');
         }
 
-        var lastMain = zoneHistory[Constants.NAV_ZONES.MAIN];
+        var lastMain = this.getValidHistoryElement(Constants.NAV_ZONES.MAIN);
         if (lastMain && document.body.contains(lastMain) && lastMain.offsetParent !== null) {
           return lastMain;
         }
@@ -630,16 +813,38 @@
     },
 
     /**
+     * Live TV Channel Search Input Navigation rules.
+     */
+    handleLiveSearchNavigation: function (direction) {
+      var Constants = window.FreeIPTV.Constants;
+      if (direction === Constants.DIRECTIONS.UP) {
+        return document.getElementById('btn-header-search') ||
+               document.getElementById('header-active-playlist') ||
+               document.querySelector('.app-header .focusable') || null;
+      } else if (direction === Constants.DIRECTIONS.DOWN) {
+        return document.getElementById('live-category-search-input') ||
+               this.getValidHistoryElement('live_categories') ||
+               document.querySelector('#live-categories-list .focusable') || null;
+      } else if (direction === Constants.DIRECTIONS.RIGHT) {
+        return this.getValidHistoryElement('live_channels') ||
+               document.querySelector('#live-channels-container .focusable') || null;
+      } else if (direction === Constants.DIRECTIONS.LEFT) {
+        return null;
+      }
+      return null;
+    },
+
+    /**
      * Live TV Category Search Input Navigation rules.
      */
     handleLiveCategorySearchNavigation: function (direction) {
       var Constants = window.FreeIPTV.Constants;
       if (direction === Constants.DIRECTIONS.DOWN) {
-        return zoneHistory.live_categories || document.querySelector('#live-categories-list .focusable');
+        return this.getValidHistoryElement('live_categories') || document.querySelector('#live-categories-list .focusable');
       } else if (direction === Constants.DIRECTIONS.UP) {
         return document.getElementById('live-search-input');
       } else if (direction === Constants.DIRECTIONS.RIGHT) {
-        return document.getElementById('live-search-input') || zoneHistory.live_channels || document.querySelector('#live-channels-container .focusable');
+        return document.getElementById('live-search-input') || this.getValidHistoryElement('live_channels') || document.querySelector('#live-channels-container .focusable');
       } else if (direction === Constants.DIRECTIONS.LEFT) {
         return document.querySelector('.app-sidebar .focusable.active') || document.querySelector('.app-sidebar .focusable');
       }
@@ -652,11 +857,11 @@
     handleMoviesCategorySearchNavigation: function (direction) {
       var Constants = window.FreeIPTV.Constants;
       if (direction === Constants.DIRECTIONS.DOWN) {
-        return zoneHistory.movies_categories || document.querySelector('#movies-categories-list .focusable');
+        return this.getValidHistoryElement('movies_categories') || document.querySelector('#movies-categories-list .focusable');
       } else if (direction === Constants.DIRECTIONS.UP) {
         return document.getElementById('btn-header-search') || null;
       } else if (direction === Constants.DIRECTIONS.RIGHT) {
-        return zoneHistory.movies_grid || document.querySelector('#movies-grid-container .focusable');
+        return this.getValidHistoryElement('movies_grid') || document.querySelector('#movies-grid-container .focusable');
       } else if (direction === Constants.DIRECTIONS.LEFT) {
         return null;
       }
@@ -669,11 +874,11 @@
     handleSeriesCategorySearchNavigation: function (direction) {
       var Constants = window.FreeIPTV.Constants;
       if (direction === Constants.DIRECTIONS.DOWN) {
-        return zoneHistory.series_categories || document.querySelector('#series-categories-list .focusable');
+        return this.getValidHistoryElement('series_categories') || document.querySelector('#series-categories-list .focusable');
       } else if (direction === Constants.DIRECTIONS.UP) {
         return document.getElementById('btn-header-search') || null;
       } else if (direction === Constants.DIRECTIONS.RIGHT) {
-        return zoneHistory.series_grid || document.querySelector('#series-grid-container .focusable');
+        return this.getValidHistoryElement('series_grid') || document.querySelector('#series-grid-container .focusable');
       } else if (direction === Constants.DIRECTIONS.LEFT) {
         return null;
       }
@@ -694,14 +899,13 @@
         if (index > 0) return catItems[index - 1];
         return document.getElementById('live-category-search-input') || document.getElementById('live-search-input') || catItems[0];
       } else if (direction === Constants.DIRECTIONS.RIGHT) {
-        var lastChannel = zoneHistory.live_channels;
+        var lastChannel = this.getValidHistoryElement('live_channels');
         if (lastChannel && document.body.contains(lastChannel) && lastChannel.offsetParent !== null) {
           return lastChannel;
         }
         return document.querySelector('#live-channels-container .focusable');
       } else if (direction === Constants.DIRECTIONS.LEFT) {
-        return document.querySelector('.app-sidebar .focusable.active') ||
-               document.querySelector('.app-sidebar .focusable');
+        return null;
       }
 
       return null;
@@ -721,7 +925,7 @@
         if (index > 0) return channelItems[index - 1];
         return document.getElementById('live-search-input');
       } else if (direction === Constants.DIRECTIONS.LEFT) {
-        var lastCat = zoneHistory.live_categories;
+        var lastCat = this.getValidHistoryElement('live_categories');
         if (lastCat && document.body.contains(lastCat)) return lastCat;
         return document.querySelector('#live-categories-list .focusable.active') ||
                document.querySelector('#live-categories-list .focusable');
@@ -739,7 +943,7 @@
     handleLiveEpgNavigation: function (direction) {
       var Constants = window.FreeIPTV.Constants;
       if (direction === Constants.DIRECTIONS.LEFT) {
-        return zoneHistory.live_channels ||
+        return this.getValidHistoryElement('live_channels') ||
                document.querySelector('#live-channels-container .focusable.focused') ||
                document.querySelector('#live-channels-container .focusable');
       }
@@ -769,10 +973,10 @@
           return document.getElementById('movies-category-search-input') || catItems[0];
         }
         if (direction === Constants.DIRECTIONS.LEFT) {
-          return document.querySelector('.app-sidebar .focusable.active') || document.querySelector('.app-sidebar .focusable');
+          return null;
         }
         if (direction === Constants.DIRECTIONS.RIGHT) {
-          return zoneHistory.movies_grid || document.querySelector('#movies-grid-container .focusable');
+          return this.getValidHistoryElement('movies_grid') || document.querySelector('#movies-grid-container .focusable');
         }
       } else if (zone === 'movies_grid') {
         if (window.FreeIPTV.Movies && window.FreeIPTV.Movies.checkLoadMore) {
@@ -785,7 +989,7 @@
         if (direction === Constants.DIRECTIONS.RIGHT && gIdx < gridItems.length - 1) return gridItems[gIdx + 1];
         if (direction === Constants.DIRECTIONS.LEFT) {
           if (gIdx % COLS === 0) {
-            return zoneHistory.movies_categories || document.getElementById('movies-category-search-input') || document.querySelector('#movies-categories-list .focusable');
+            return this.getValidHistoryElement('movies_categories') || document.getElementById('movies-category-search-input') || document.querySelector('#movies-categories-list .focusable');
           }
           if (gIdx > 0) return gridItems[gIdx - 1];
         }
@@ -817,10 +1021,10 @@
           return document.getElementById('series-category-search-input') || catItems[0];
         }
         if (direction === Constants.DIRECTIONS.LEFT) {
-          return document.querySelector('.app-sidebar .focusable.active') || document.querySelector('.app-sidebar .focusable');
+          return null;
         }
         if (direction === Constants.DIRECTIONS.RIGHT) {
-          return zoneHistory.series_grid || document.querySelector('#series-grid-container .focusable');
+          return this.getValidHistoryElement('series_grid') || document.querySelector('#series-grid-container .focusable');
         }
       } else if (zone === 'series_grid') {
         if (window.FreeIPTV.Series && window.FreeIPTV.Series.checkLoadMore) {
@@ -833,7 +1037,7 @@
         if (direction === Constants.DIRECTIONS.RIGHT && gIdx < gridItems.length - 1) return gridItems[gIdx + 1];
         if (direction === Constants.DIRECTIONS.LEFT) {
           if (gIdx % COLS === 0) {
-            return zoneHistory.series_categories || document.getElementById('series-category-search-input') || document.querySelector('#series-categories-list .focusable');
+            return this.getValidHistoryElement('series_categories') || document.getElementById('series-category-search-input') || document.querySelector('#series-categories-list .focusable');
           }
           if (gIdx > 0) return gridItems[gIdx - 1];
         }
@@ -869,7 +1073,7 @@
         }
       } else if (zone === 'guide_programs') {
         if (direction === Constants.DIRECTIONS.LEFT) {
-          return zoneHistory.guide_channels || document.querySelector('#guide-channels-list .focusable.active');
+          return this.getValidHistoryElement('guide_channels') || document.querySelector('#guide-channels-list .focusable.active');
         }
       }
 
@@ -937,7 +1141,7 @@
         }
         if (direction === Constants.DIRECTIONS.UP) {
           if (cIdx - COLS >= 0) return cards[cIdx - COLS];
-          return zoneHistory.favorites_tabs || document.querySelector('#favorites-tabs-row .focusable.active');
+          return this.getValidHistoryElement('favorites_tabs') || document.querySelector('#favorites-tabs-row .focusable.active');
         }
         if (direction === Constants.DIRECTIONS.DOWN && cIdx + COLS < cards.length) return cards[cIdx + COLS];
       }
@@ -983,16 +1187,114 @@
      */
     handleSettingsNavigation: function (direction) {
       var Constants = window.FreeIPTV.Constants;
-      var settingsItems = Array.prototype.slice.call(document.querySelectorAll('#view-settings .focusable'));
+      var view = document.getElementById('view-settings');
+      if (!view) return null;
+
+      var settingsItems = Array.prototype.slice.call(view.querySelectorAll('.focusable:not([disabled]):not([tabindex="-1"])')).filter(function (el) {
+        return !el.classList.contains('hidden') && !el.closest('.hidden');
+      });
       var index = settingsItems.indexOf(currentElement);
 
-      if (direction === Constants.DIRECTIONS.DOWN) {
-        if (index < settingsItems.length - 1) return settingsItems[index + 1];
-      } else if (direction === Constants.DIRECTIONS.UP) {
+      var btnAdd = document.getElementById('settings-btn-add-playlist');
+      var toggleAutoResume = document.getElementById('toggle-auto-resume');
+      var toggleAutoNext = document.getElementById('toggle-auto-next-ep');
+      var btnClearEpg = document.getElementById('btn-clear-epg-cache');
+      var btnClearHist = document.getElementById('btn-clear-history');
+      var btnLangEn = document.getElementById('btn-lang-en');
+      var btnLangAr = document.getElementById('btn-lang-ar');
+      var btnDiag = document.getElementById('btn-refresh-diagnostics');
+
+      // Check if current element is in the playlists list
+      var playlistContainer = document.getElementById('settings-playlists-container');
+      var playlistItems = playlistContainer ? Array.prototype.slice.call(playlistContainer.querySelectorAll('.focusable')) : [];
+      var isPlaylistChild = playlistItems.indexOf(currentElement) !== -1;
+
+      if (direction === Constants.DIRECTIONS.UP) {
+        // From top button or first item, navigate directly up to Header Settings button!
+        if (currentElement === btnAdd || index === 0) {
+          return document.getElementById('btn-header-settings') ||
+                 document.querySelector('.app-header .focusable') || null;
+        }
+        if (isPlaylistChild) {
+          var pIdx = playlistItems.indexOf(currentElement);
+          if (pIdx <= 2) {
+            return btnAdd || document.getElementById('btn-header-settings');
+          }
+          return playlistItems[pIdx - 3] || btnAdd;
+        }
+        if (currentElement === toggleAutoResume) {
+          return playlistItems[playlistItems.length - 1] || btnAdd || document.getElementById('btn-header-settings');
+        }
+        if (currentElement === toggleAutoNext) {
+          return toggleAutoResume;
+        }
+        if (currentElement === btnClearEpg || currentElement === btnClearHist) {
+          return toggleAutoNext || toggleAutoResume;
+        }
+        if (currentElement === btnLangEn || currentElement === btnLangAr) {
+          return btnClearEpg || toggleAutoNext;
+        }
+        if (currentElement === btnDiag) {
+          return btnLangEn || btnClearHist;
+        }
         if (index > 0) return settingsItems[index - 1];
+        return document.getElementById('btn-header-settings') || null;
+
+      } else if (direction === Constants.DIRECTIONS.DOWN) {
+        if (currentElement === btnAdd) {
+          return playlistItems[0] || toggleAutoResume || (index < settingsItems.length - 1 ? settingsItems[index + 1] : null);
+        }
+        if (isPlaylistChild) {
+          var pIdx2 = playlistItems.indexOf(currentElement);
+          if (pIdx2 + 3 < playlistItems.length) {
+            return playlistItems[pIdx2 + 3];
+          }
+          return toggleAutoResume;
+        }
+        if (currentElement === toggleAutoResume) {
+          return toggleAutoNext;
+        }
+        if (currentElement === toggleAutoNext) {
+          return btnClearEpg;
+        }
+        if (currentElement === btnClearEpg || currentElement === btnClearHist) {
+          return btnLangEn;
+        }
+        if (currentElement === btnLangEn || currentElement === btnLangAr) {
+          return btnDiag || (index < settingsItems.length - 1 ? settingsItems[index + 1] : null);
+        }
+        if (index < settingsItems.length - 1) return settingsItems[index + 1];
+        return null;
+
+      } else if (direction === Constants.DIRECTIONS.RIGHT) {
+        if (isPlaylistChild) {
+          var pIdx3 = playlistItems.indexOf(currentElement);
+          if (pIdx3 < playlistItems.length - 1 && (pIdx3 % 3 !== 2)) {
+            return playlistItems[pIdx3 + 1];
+          }
+        }
+        if (currentElement === btnClearEpg) {
+          return btnClearHist;
+        }
+        if (currentElement === btnLangEn) {
+          return btnLangAr;
+        }
+        return null;
+
       } else if (direction === Constants.DIRECTIONS.LEFT) {
-        return document.querySelector('.app-sidebar .focusable.active') ||
-               document.querySelector('.app-sidebar .focusable');
+        if (isPlaylistChild) {
+          var pIdx4 = playlistItems.indexOf(currentElement);
+          if (pIdx4 > 0 && (pIdx4 % 3 !== 0)) {
+            return playlistItems[pIdx4 - 1];
+          }
+        }
+        if (currentElement === btnClearHist) {
+          return btnClearEpg;
+        }
+        if (currentElement === btnLangAr) {
+          return btnLangEn;
+        }
+        return null;
       }
 
       return null;
@@ -1003,18 +1305,37 @@
      */
     handleMainNavigation: function (direction) {
       var Constants = window.FreeIPTV.Constants;
+
+      if (currentElement && (currentElement.classList.contains('home-media-card') || currentElement.closest('#home-recent-grid'))) {
+        return this.handleHomeRecentNavigation(direction);
+      }
+
+      var ctaButtons = Array.prototype.slice.call(document.querySelectorAll('#home-onboarding-area .cta-actions .focusable'));
+      var ctaIdx = ctaButtons.indexOf(currentElement);
+      if (ctaIdx !== -1) {
+        if (direction === Constants.DIRECTIONS.RIGHT && ctaIdx < ctaButtons.length - 1) return ctaButtons[ctaIdx + 1];
+        if (direction === Constants.DIRECTIONS.LEFT && ctaIdx > 0) return ctaButtons[ctaIdx - 1];
+        if (direction === Constants.DIRECTIONS.UP) {
+          var headerItems = Array.prototype.slice.call(document.querySelectorAll('.app-header .focusable'));
+          return headerItems[headerItems.length - 1] || headerItems[0];
+        }
+        return null;
+      }
+
       var mainItems = Array.prototype.slice.call(document.querySelectorAll('#view-home .focusable'));
       var index = mainItems.indexOf(currentElement);
 
-      if (direction === Constants.DIRECTIONS.LEFT) {
-        return document.querySelector('.app-sidebar .focusable.active') ||
-               document.querySelector('.app-sidebar .focusable');
+      if (direction === Constants.DIRECTIONS.RIGHT && index < mainItems.length - 1) {
+        return mainItems[index + 1];
+      } else if (direction === Constants.DIRECTIONS.LEFT) {
+        if (index > 0) return mainItems[index - 1];
+        return document.querySelector('.app-sidebar .focusable.active') || null;
       } else if (direction === Constants.DIRECTIONS.UP) {
         if (index > 0) {
           return mainItems[index - 1];
         } else {
-          var headerItems = Array.prototype.slice.call(document.querySelectorAll('.app-header .focusable'));
-          return headerItems[headerItems.length - 1] || headerItems[0];
+          var headerItems2 = Array.prototype.slice.call(document.querySelectorAll('.app-header .focusable'));
+          return headerItems2[headerItems2.length - 1] || headerItems2[0];
         }
       } else if (direction === Constants.DIRECTIONS.DOWN) {
         if (index >= 0 && index < mainItems.length - 1) {
@@ -1037,15 +1358,122 @@
         if (index > 0) {
           return headerItems[index - 1];
         } else {
-          return zoneHistory[Constants.NAV_ZONES.SIDEBAR] || document.querySelector('.app-sidebar .focusable');
+          return this.getValidHistoryElement(Constants.NAV_ZONES.SIDEBAR) || null;
         }
       } else if (direction === Constants.DIRECTIONS.RIGHT) {
         if (index < headerItems.length - 1) {
           return headerItems[index + 1];
         }
       } else if (direction === Constants.DIRECTIONS.DOWN) {
-        var visibleFocusable = document.querySelector('.view-screen:not(.hidden) .focusable');
-        return visibleFocusable || document.querySelector('.app-sidebar .focusable');
+        var route = currentRoute || 'home';
+        var view = document.getElementById('view-' + route) ||
+                   document.getElementById('view-' + route.replace(/_/g, '-')) ||
+                   document.getElementById('view-' + route.replace(/-/g, '_')) ||
+                   document.querySelector('.view-screen:not(.hidden)');
+
+        var isUsable = function (el) {
+          return el && !el.disabled && el.getAttribute('tabindex') !== '-1' &&
+                 !el.classList.contains('hidden') && !el.closest('.hidden');
+        };
+
+        var pickFirst = function (selectors) {
+          for (var s = 0; s < selectors.length; s++) {
+            var list = view ? view.querySelectorAll(selectors[s]) : [];
+            for (var k = 0; k < list.length; k++) {
+              if (isUsable(list[k])) return list[k];
+            }
+          }
+          return null;
+        };
+
+        var isSettingsBtn = (currentElement && currentElement.id === 'btn-header-settings');
+        var isSearchBtn = (currentElement && currentElement.id === 'btn-header-search');
+
+        // 1. If on Settings screen
+        if (route === 'settings' || (view && view.id === 'view-settings')) {
+          var sBtn = document.getElementById('settings-btn-add-playlist');
+          if (isUsable(sBtn)) return sBtn;
+          return pickFirst(['#view-settings .focusable', '.focusable']);
+        }
+
+        // 2. If on Home screen
+        if (route === 'home' || (view && view.id === 'view-home')) {
+          var quickCards = Array.prototype.slice.call(document.querySelectorAll('#home-quick-access-section .home-quick-card.focusable')).filter(isUsable);
+          if (quickCards.length > 0) {
+            if (isSettingsBtn) {
+              // Settings button is on the far right: land on rightmost quick card
+              return quickCards[quickCards.length - 1];
+            } else if (isSearchBtn) {
+              var midIdx = Math.floor(quickCards.length / 2);
+              return quickCards[midIdx];
+            } else {
+              return quickCards[0];
+            }
+          }
+          var ctaBtn = document.getElementById('btn-add-playlist');
+          if (isUsable(ctaBtn)) return ctaBtn;
+          return pickFirst(['.cta-actions .focusable', '.focusable']);
+        }
+
+        // 3. If on Live TV
+        if (route === 'live_tv' || (view && view.id === 'view-live_tv')) {
+          if (isSearchBtn) {
+            var liveSearch = document.getElementById('live-search-input');
+            if (isUsable(liveSearch)) return liveSearch;
+          }
+          var activeLiveCat = document.querySelector('#live-categories-list .category-item.active') ||
+                              document.querySelector('#live-categories-list .category-item.focusable');
+          if (isUsable(activeLiveCat)) return activeLiveCat;
+          return pickFirst(['#live-categories-list .focusable', '#live-channels-container .focusable', '.focusable']);
+        }
+
+        // 4. If on Movies
+        if (route === 'movies' || (view && view.id === 'view-movies')) {
+          var activeMovieCat = document.querySelector('#movies-categories-list .category-item.active') ||
+                               document.querySelector('#movies-categories-list .category-item.focusable');
+          if (isUsable(activeMovieCat)) return activeMovieCat;
+          return pickFirst(['#movies-categories-list .focusable', '#movies-grid-container .focusable', '.focusable']);
+        }
+
+        // 5. If on Series
+        if (route === 'series' || (view && view.id === 'view-series')) {
+          var activeSeriesCat = document.querySelector('#series-categories-list .category-item.active') ||
+                                document.querySelector('#series-categories-list .category-item.focusable');
+          if (isUsable(activeSeriesCat)) return activeSeriesCat;
+          return pickFirst(['#series-categories-list .focusable', '#series-grid-container .focusable', '.focusable']);
+        }
+
+        // 6. If on Search screen
+        if (route === 'search' || (view && view.id === 'view-search')) {
+          var gSearch = document.getElementById('global-search-input');
+          if (isUsable(gSearch)) return gSearch;
+          return pickFirst(['.focusable']);
+        }
+
+        // 7. If on Playlists screen
+        if (route === 'playlists' || (view && view.id === 'view-playlists')) {
+          var plAdd = document.getElementById('btn-playlists-add');
+          if (isUsable(plAdd)) return plAdd;
+          return pickFirst(['#playlists-list-container .focusable', '.focusable']);
+        }
+
+        // 8. If on Favorites screen
+        if (route === 'favorites' || (view && view.id === 'view-favorites')) {
+          var favTab = document.querySelector('#favorites-tabs-row .focusable.active') ||
+                       document.querySelector('#favorites-tabs-row .focusable');
+          if (isUsable(favTab)) return favTab;
+          return pickFirst(['#favorites-grid-container .focusable', '.focusable']);
+        }
+
+        // Generic fallback for any other screen
+        var target = pickFirst([
+          '.home-quick-card.focusable',
+          '.cta-actions .focusable',
+          '.category-item.active.focusable',
+          '.category-item.focusable',
+          '.focusable'
+        ]);
+        return target || null;
       }
 
       return null;
@@ -1098,7 +1526,7 @@
 
       // Grids to categories
       if (currentZone === 'movies_grid') {
-        var mCatTarget = zoneHistory.movies_categories || document.querySelector('#movies-categories-list .focusable');
+        var mCatTarget = this.getValidHistoryElement('movies_categories') || document.querySelector('#movies-categories-list .focusable');
         if (mCatTarget) {
           this.focus(mCatTarget);
           return true;
@@ -1106,7 +1534,7 @@
       }
 
       if (currentZone === 'series_grid') {
-        var sCatTarget = zoneHistory.series_categories || document.querySelector('#series-categories-list .focusable');
+        var sCatTarget = this.getValidHistoryElement('series_categories') || document.querySelector('#series-categories-list .focusable');
         if (sCatTarget) {
           this.focus(sCatTarget);
           return true;
@@ -1114,7 +1542,7 @@
       }
 
       if (currentZone === 'guide_programs') {
-        var gChTarget = zoneHistory.guide_channels || document.querySelector('#guide-channels-list .focusable.active');
+        var gChTarget = this.getValidHistoryElement('guide_channels') || document.querySelector('#guide-channels-list .focusable.active');
         if (gChTarget) {
           this.focus(gChTarget);
           return true;
@@ -1130,7 +1558,7 @@
       }
 
       if (currentZone === 'favorites_grid') {
-        var fTabs = zoneHistory.favorites_tabs || document.querySelector('#favorites-tabs-row .focusable.active');
+        var fTabs = this.getValidHistoryElement('favorites_tabs') || document.querySelector('#favorites-tabs-row .focusable.active');
         if (fTabs) {
           this.focus(fTabs);
           return true;
@@ -1139,7 +1567,7 @@
 
       // Live EPG Pane -> Channel list
       if (currentZone === 'live_epg') {
-        var epgChTarget = zoneHistory.live_channels ||
+        var epgChTarget = this.getValidHistoryElement('live_channels') ||
                           document.querySelector('#live-channels-container .focusable.focused') ||
                           document.querySelector('#live-channels-container .focusable');
         if (epgChTarget) {
@@ -1150,7 +1578,7 @@
 
       // Channel list -> Categories
       if (currentZone === 'live_channels') {
-        var catTarget = zoneHistory.live_categories ||
+        var catTarget = this.getValidHistoryElement('live_categories') ||
                         document.querySelector('#live-categories-list .focusable.active') ||
                         document.querySelector('#live-categories-list .focusable');
         if (catTarget) {

@@ -128,10 +128,13 @@
           return;
         }
 
-        // Channel zapping via UP / DOWN
+        // Channel zapping via UP / DOWN (Live TV ONLY)
         var errorOverlay = document.getElementById('player-error-overlay');
         var isErrorShowing = errorOverlay && !errorOverlay.classList.contains('hidden');
-        if (!isErrorShowing) {
+        var media = Player.getCurrentMedia ? Player.getCurrentMedia() : (Player.currentMedia || null);
+        var isLive = media && media.type === 'live';
+        
+        if (!isErrorShowing && isLive) {
           if (keyCode === Constants.KEYS.UP) {
             Player.zapPrevious();
             event.preventDefault();
@@ -143,20 +146,49 @@
           }
         }
 
-        // OK / ENTER when controls are hidden
+        // Input when controls are hidden
         var controlsOverlay = document.getElementById('player-controls-overlay');
         var isControlsHidden = controlsOverlay && controlsOverlay.classList.contains('hidden');
-        if (keyCode === Constants.KEYS.ENTER && isControlsHidden) {
-          Player.showControls();
-          if (Navigation) {
-            var playBtn = document.getElementById('player-btn-play-pause');
-            if (playBtn) Navigation.focus(playBtn);
+        
+        if (isControlsHidden) {
+          // If controls are hidden, any nav key (Enter, Up, Down, Left, Right) should just show controls
+          var isNavKey = keyCode === Constants.KEYS.ENTER || 
+                         keyCode === Constants.KEYS.UP || 
+                         keyCode === Constants.KEYS.DOWN || 
+                         keyCode === Constants.KEYS.LEFT || 
+                         keyCode === Constants.KEYS.RIGHT;
+                         
+          if (isNavKey) {
+            Player.showControls();
+            if (Navigation) {
+              var playBtn = document.getElementById('player-btn-play-pause');
+              if (playBtn) Navigation.focus(playBtn);
+            }
+            event.preventDefault();
+            return;
           }
-          event.preventDefault();
-          return;
         }
       }
 
+      // Player controls visible but focus is elsewhere (e.g. a hidden page behind the video):
+      // pull focus into the visible controls so the remote drives what the user sees.
+      if (Player && Player.isActive() && Navigation) {
+        var errEl = document.getElementById('player-error-overlay');
+        var errShown = errEl && !errEl.classList.contains('hidden');
+        var curEl = Navigation.getCurrent ? Navigation.getCurrent() : null;
+        var inCtl = curEl && curEl.closest && (curEl.closest('#player-controls-overlay') || curEl.closest('#player-error-overlay'));
+        var navKey = keyCode === Constants.KEYS.ENTER || keyCode === Constants.KEYS.UP ||
+                     keyCode === Constants.KEYS.DOWN || keyCode === Constants.KEYS.LEFT ||
+                     keyCode === Constants.KEYS.RIGHT;
+        if (navKey && !errShown && !inCtl) {
+          var pBtn = document.getElementById('player-btn-play-pause');
+          if (pBtn) {
+            Navigation.focus(pBtn);
+            event.preventDefault();
+            return;
+          }
+        }
+      }
       // Directional & Action keys
       var handled = false;
       if (Navigation) {
@@ -174,12 +206,15 @@
             handled = Navigation.move(Constants.DIRECTIONS.RIGHT);
             break;
           case Constants.KEYS.ENTER:
+            event.preventDefault();
+            event.stopPropagation();
             handled = Navigation.triggerActive();
             break;
         }
       }
 
-      if (handled) {
+      var isInput = event.target && (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA');
+      if (handled || !isInput) {
         event.preventDefault();
       }
     },

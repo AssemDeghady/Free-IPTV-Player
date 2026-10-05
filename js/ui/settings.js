@@ -27,10 +27,12 @@
      */
     bindEvents: function () {
       var self = this;
+      var lastRouteTransitionTime = 0;
 
       if (window.FreeIPTV.Events && window.FreeIPTV.Constants) {
         window.FreeIPTV.Events.on(window.FreeIPTV.Constants.EVENTS.VIEW_CHANGED, function (data) {
           if (data && data.route === 'settings') {
+            lastRouteTransitionTime = Date.now();
             self.renderSettings();
           }
         });
@@ -53,7 +55,15 @@
 
       var btnAddFromSettings = document.getElementById('settings-btn-add-playlist');
       if (btnAddFromSettings) {
-        btnAddFromSettings.addEventListener('click', function () {
+        btnAddFromSettings.addEventListener('click', function (e) {
+          // Prevent accidental activation from double-click or Enter key bleed during route switch
+          if (Date.now() - lastRouteTransitionTime < 300) {
+            if (e) {
+              e.preventDefault();
+              e.stopPropagation();
+            }
+            return;
+          }
           if (window.FreeIPTV.Modal) {
             window.FreeIPTV.Modal.showAddPlaylist();
           }

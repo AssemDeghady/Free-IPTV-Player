@@ -198,6 +198,19 @@
 
         container.appendChild(catItem);
       }
+
+      // If on Series screen and focus is not yet placed on a category or is on search input, focus first category
+      if (window.FreeIPTV.Navigation && window.FreeIPTV.Navigation.getCurrentRoute() === 'series') {
+        var cur = window.FreeIPTV.Navigation.getCurrent();
+        var isSearch = cur && cur.id === 'series-category-search-input';
+        var isOutside = !cur || !document.body.contains(cur) || !cur.closest('#view-series');
+        if (isSearch || isOutside) {
+          var firstCat = container.querySelector('.category-item.active') || container.querySelector('.category-item');
+          if (firstCat) {
+            window.FreeIPTV.Navigation.focus(firstCat);
+          }
+        }
+      }
     },
 
     /**
@@ -447,6 +460,18 @@
         if (view) view.classList.remove('hidden');
       }
 
+      // Explicit initial focus for series details context
+      var seasonBtn = document.getElementById('btn-season-selector');
+      var initialFocusEl = seasonBtn || document.getElementById('btn-series-fav') || document.getElementById('btn-series-page-back');
+      if (initialFocusEl && window.FreeIPTV.Navigation) {
+        window.FreeIPTV.Navigation.focus(initialFocusEl);
+      }
+
+      if (window.FreeIPTV.Logger) {
+        window.FreeIPTV.Logger.info('ROUTE: ' + originRoute + ' -> series_details');
+        window.FreeIPTV.Logger.info('INITIAL FOCUS: ' + (initialFocusEl ? (initialFocusEl.id || initialFocusEl.tagName) : 'none'));
+      }
+
       // Register Back key
       if (window.FreeIPTV.Remote) {
         window.FreeIPTV.Remote.pushBackHandler(function () {
@@ -578,6 +603,11 @@
       menu.classList.remove('hidden');
       btn.setAttribute('aria-expanded', 'true');
 
+      var items = menu.querySelectorAll('.season-dropdown-item');
+      for (var i = 0; i < items.length; i++) {
+        items[i].setAttribute('tabindex', '0');
+      }
+
       // Focus currently selected season item or first season item
       var targetItem = menu.querySelector('.season-dropdown-item.active') ||
                        menu.querySelector('.season-dropdown-item');
@@ -659,6 +689,7 @@
         item.className = 'season-dropdown-item focusable' + (s.seasonNumber === activeSeasonNumber ? ' active' : '');
         item.setAttribute('data-nav-zone', 'series_season_dropdown');
         item.setAttribute('data-season-number', String(s.seasonNumber));
+        item.setAttribute('tabindex', '0');
         item.setAttribute('role', 'option');
         item.setAttribute('aria-selected', s.seasonNumber === activeSeasonNumber ? 'true' : 'false');
         item.textContent = s.name || ('Season ' + s.seasonNumber);
@@ -765,6 +796,7 @@
       btn.setAttribute('data-nav-zone', 'series_details');
       btn.setAttribute('data-episode-id', ep.id);
       btn.setAttribute('data-index', String(index));
+      btn.setAttribute('tabindex', '0');
 
       // Episode number badge
       var numSpan = document.createElement('div');
@@ -907,6 +939,11 @@
       currentSeriesDetails = null;
       availableSeasons = [];
       activeSeasonNumber = 1;
+
+      if (window.FreeIPTV.Logger) {
+        window.FreeIPTV.Logger.info('ROUTE: series_details -> ' + targetRoute);
+        window.FreeIPTV.Logger.info('RESTORE FOCUS: ' + (previousFocusedElement ? (previousFocusedElement.id || previousFocusedElement.className) : 'fallback'));
+      }
 
       if (window.FreeIPTV.Home && window.FreeIPTV.Home.switchView) {
         window.FreeIPTV.Home.switchView(targetRoute);

@@ -79,14 +79,31 @@
           });
         }
 
+        // 7. Dismiss splash screen smoothly (Phase 6.4)
+        this.dismissSplash();
+
         if (FreeIPTV.Logger) {
           FreeIPTV.Logger.info('Free IPTV Player initialized successfully.');
         }
       } catch (error) {
+        this.dismissSplash();
         if (window.console && console.error) {
           console.error('Fatal initialization error:', error);
         }
       }
+    },
+
+    /**
+     * Dismiss splash/loading screen after application initialization.
+     */
+    dismissSplash: function () {
+      var splash = document.getElementById('app-splash-screen');
+      if (!splash) return;
+      splash.classList.add('fade-out');
+      setTimeout(function () {
+        splash.classList.add('hidden');
+        splash.style.display = 'none';
+      }, 400);
     }
   };
 

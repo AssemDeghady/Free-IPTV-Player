@@ -220,7 +220,6 @@
         cards[c].addEventListener('click', function (e) {
           var targetRoute = e.currentTarget.getAttribute('data-route-target');
           self.switchView(targetRoute);
-          self.focusFirstElementInView(targetRoute);
         });
       }
     },
@@ -231,10 +230,24 @@
      */
     focusFirstElementInView: function (route) {
       setTimeout(function () {
-        var viewEl = document.getElementById('view-' + route);
+        var viewEl = document.getElementById('view-' + route) ||
+                     document.getElementById('view-' + route.replace(/_/g, '-')) ||
+                     document.getElementById('view-' + route.replace(/-/g, '_'));
         if (!viewEl) return;
-        var firstFocusable = viewEl.querySelector('.focusable.active') ||
-                             viewEl.querySelector('.focusable:not([tabindex="-1"])');
+
+        var firstFocusable = null;
+        if (route === 'live_tv' || route === 'live-tv' || route === 'movies' || route === 'series') {
+          var catPrefix = (route === 'live_tv' || route === 'live-tv') ? 'live' : route;
+          firstFocusable = viewEl.querySelector('#' + catPrefix + '-categories-list .category-item.active') ||
+                           viewEl.querySelector('#' + catPrefix + '-categories-list .category-item.focusable') ||
+                           viewEl.querySelector('#' + catPrefix + '-categories-list .focusable');
+        }
+
+        if (!firstFocusable) {
+          firstFocusable = viewEl.querySelector('.focusable.active') ||
+                           viewEl.querySelector('.focusable:not([tabindex="-1"])');
+        }
+
         if (firstFocusable && window.FreeIPTV.Navigation) {
           window.FreeIPTV.Navigation.focus(firstFocusable);
         }
@@ -242,50 +255,48 @@
     },
 
     /**
-     * Render "Continue Watching" row.
+     * Render "Continue Watching" row (deprecated - combined into Recently Watched).
      */
     renderContinueWatching: function () {
       var container = document.getElementById('home-continue-watching-section');
-      if (!container) return;
-
-      var PlaylistManager = window.FreeIPTV.PlaylistManager;
-      var items = PlaylistManager ? PlaylistManager.getContinueWatching() : [];
-
-      if (!items || items.length === 0) {
+      if (container) {
         container.style.display = 'none';
         container.innerHTML = '';
-        return;
-      }
-
-      container.style.display = 'block';
-      var I18n = window.FreeIPTV.I18n;
-
-      var html = '<div class="home-row-header">';
-      html += '  <h3 class="home-row-title">' + (I18n ? I18n.t('home.continue_watching') : 'Continue Watching') + '</h3>';
-      html += '</div>';
-      html += '<div class="home-row-grid" id="home-continue-grid"></div>';
-
-      container.innerHTML = html;
-      var grid = document.getElementById('home-continue-grid');
-
-      for (var i = 0; i < Math.min(items.length, 6); i++) {
-        var item = items[i];
-        var card = this.createMediaCard(item, true);
-        grid.appendChild(card);
       }
     },
 
     /**
-     * Render "Recently Watched" row.
+     * Render unified "Recently Watched" row.
      */
     renderRecentlyWatched: function () {
       var container = document.getElementById('home-recent-section');
       if (!container) return;
 
       var PlaylistManager = window.FreeIPTV.PlaylistManager;
-      var items = PlaylistManager ? PlaylistManager.getWatchHistory(8) : [];
+      var historyItems = PlaylistManager ? PlaylistManager.getWatchHistory(10) : [];
+      var continueItems = PlaylistManager ? PlaylistManager.getContinueWatching() : [];
 
-      if (!items || items.length === 0) {
+      // Combine continue watching and recent history, prioritizing items with resume progress
+      var map = {};
+      var combined = [];
+
+      (continueItems || []).forEach(function (item) {
+        var id = item.contentId || item.id;
+        if (id && !map[id]) {
+          map[id] = true;
+          combined.push(item);
+        }
+      });
+
+      (historyItems || []).forEach(function (item) {
+        var id = item.contentId || item.id;
+        if (id && !map[id]) {
+          map[id] = true;
+          combined.push(item);
+        }
+      });
+
+      if (combined.length === 0) {
         container.style.display = 'none';
         container.innerHTML = '';
         return;
@@ -294,17 +305,16 @@
       container.style.display = 'block';
       var I18n = window.FreeIPTV.I18n;
 
-      var html = '<div class="home-row-header">';
-      html += '  <h3 class="home-row-title">' + (I18n ? I18n.t('home.recently_watched') : 'Recently Watched') + '</h3>';
+      var html = '<div class="home-section-header home-row-header">';
+      html += '  <h3 class="home-section-title home-row-title">' + (I18n ? I18n.t('home.recently_watched') : 'Recently Watched') + '</h3>';
       html += '</div>';
       html += '<div class="home-row-grid" id="home-recent-grid"></div>';
 
       container.innerHTML = html;
       var grid = document.getElementById('home-recent-grid');
 
-      for (var i = 0; i < Math.min(items.length, 8); i++) {
-        var item = items[i];
-        var card = this.createMediaCard(item, false);
+      for (var i = 0; i < Math.min(combined.length, 10); i++) {
+        var card = this.createMediaCard(combined[i], true);
         grid.appendChild(card);
       }
     },
@@ -318,7 +328,7 @@
     createMediaCard: function (item, showProgress) {
       var card = document.createElement('button');
       card.className = 'home-media-card focusable';
-      card.setAttribute('data-nav-zone', 'main');
+      card.setAttribute('data-nav-zone', 'home_recent');
       card.setAttribute('data-content-type', item.contentType);
       card.setAttribute('data-content-id', item.contentId);
 
@@ -419,7 +429,7 @@
       if (!container) return;
 
       var I18n = window.FreeIPTV.I18n;
-      var html = '<div class="home-row-header"><h3 class="home-row-title">' +
+      var html = '<div class="home-section-header home-row-header"><h3 class="home-section-title home-row-title">' +
         (I18n ? I18n.t('home.browse_content') : 'Browse Content') +
         '</h3></div><div class="home-actions-grid">';
 
@@ -524,21 +534,44 @@
       var views = document.querySelectorAll('.view-screen');
       for (var i = 0; i < views.length; i++) {
         views[i].classList.add('hidden');
+        var inactives = views[i].querySelectorAll('.focusable');
+        for (var f = 0; f < inactives.length; f++) {
+          inactives[f].setAttribute('tabindex', '-1');
+        }
       }
 
       var targetView = document.getElementById('view-' + route) ||
                        document.getElementById('view-' + route.replace(/_/g, '-')) ||
                        document.getElementById('view-' + route.replace(/-/g, '_'));
 
-      if (targetView) {
-        targetView.classList.remove('hidden');
+      var activeView = targetView;
+      if (activeView) {
+        activeView.classList.remove('hidden');
       } else {
         var homeView = document.getElementById('view-home');
-        if (homeView) homeView.classList.remove('hidden');
+        if (homeView) {
+          homeView.classList.remove('hidden');
+          activeView = homeView;
+        }
+      }
+
+      if (activeView) {
+        var actives = activeView.querySelectorAll('.focusable');
+        for (var a = 0; a < actives.length; a++) {
+          actives[a].setAttribute('tabindex', '0');
+        }
       }
 
       if (window.FreeIPTV.Navigation && typeof window.FreeIPTV.Navigation.setCurrentRoute === 'function') {
         window.FreeIPTV.Navigation.setCurrentRoute(route);
+      }
+
+      if (window.FreeIPTV.Navigation && typeof window.FreeIPTV.Navigation.setInitialFocus === 'function') {
+        window.FreeIPTV.Navigation.setInitialFocus(route);
+      }
+
+      if (window.FreeIPTV.Logger) {
+        window.FreeIPTV.Logger.info('ROUTE SWITCH: ' + route);
       }
 
       if (window.FreeIPTV.Events && window.FreeIPTV.Constants) {
@@ -585,42 +618,32 @@
       // Header Search button -> Route to Global Search
       var btnSearch = document.getElementById('btn-header-search');
       if (btnSearch) {
-        btnSearch.addEventListener('click', function () {
-          var sidebarLinks = document.querySelectorAll('.app-sidebar .nav-link');
-          for (var s = 0; s < sidebarLinks.length; s++) {
-            sidebarLinks[s].classList.remove('active');
+        btnSearch.addEventListener('click', function (e) {
+          if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+          var navRoute = window.FreeIPTV.Navigation ? window.FreeIPTV.Navigation.getCurrentRoute() : null;
+          if (self.currentRoute === 'search' || navRoute === 'search') {
+            return;
           }
           self.switchView('search');
-          if (window.FreeIPTV.Events && window.FreeIPTV.Constants) {
-            window.FreeIPTV.Events.emit(window.FreeIPTV.Constants.EVENTS.VIEW_CHANGED, { route: 'search' });
-          }
-          setTimeout(function () {
-            var searchInput = document.querySelector('#view-search .focusable');
-            if (searchInput && window.FreeIPTV.Navigation) {
-              window.FreeIPTV.Navigation.focus(searchInput);
-            }
-          }, 100);
         });
       }
 
       // Header Settings button
       var btnSettings = document.getElementById('btn-header-settings');
       if (btnSettings) {
-        btnSettings.addEventListener('click', function () {
-          var sidebarLinks = document.querySelectorAll('.app-sidebar .nav-link');
-          for (var s = 0; s < sidebarLinks.length; s++) {
-            sidebarLinks[s].classList.remove('active');
+        btnSettings.addEventListener('click', function (e) {
+          if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+          var navRoute = window.FreeIPTV.Navigation ? window.FreeIPTV.Navigation.getCurrentRoute() : null;
+          if (self.currentRoute === 'settings' || navRoute === 'settings') {
+            return;
           }
           self.switchView('settings');
-          if (window.FreeIPTV.Events && window.FreeIPTV.Constants) {
-            window.FreeIPTV.Events.emit(window.FreeIPTV.Constants.EVENTS.VIEW_CHANGED, { route: 'settings' });
-          }
-          setTimeout(function () {
-            var firstAction = document.querySelector('#view-settings .focusable');
-            if (firstAction && window.FreeIPTV.Navigation) {
-              window.FreeIPTV.Navigation.focus(firstAction);
-            }
-          }, 100);
         });
       }
     },
