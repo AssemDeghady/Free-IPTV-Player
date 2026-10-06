@@ -167,7 +167,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 20px;
+  margin-top: 0;
+  margin-bottom: 24px;
+  padding-bottom: 0;
+  flex-shrink: 0;
 }
 
 .onboarding-logo-img {
@@ -407,16 +410,34 @@
   fill: #ffffff;
 }
 
-/* Empty State Card */
+/* Home Onboarding & Empty Playlist Container */
+.home-onboarding-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  padding: 32px 24px;
+  box-sizing: border-box;
+}
+
+/* Empty State Card (Home Onboarding Card) */
 .empty-state-card {
   display: flex;
-  align-items: flex-start;
-  gap: 24px;
-  padding: 28px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 44px 36px;
   background-color: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+  max-width: 700px;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 auto;
 }
 
 .empty-state-icon {
@@ -428,6 +449,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  margin-bottom: 16px;
 }
 
 .empty-state-icon svg {
@@ -439,19 +461,42 @@
 .empty-state-text-group {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  align-items: center;
+  text-align: center;
+  margin-top: 0;
+  margin-bottom: 32px;
+  width: 100%;
 }
 
 .empty-state-headline {
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-semibold);
   color: var(--text-primary);
+  margin-top: 0;
+  margin-bottom: 10px;
+  line-height: 1.3;
 }
 
 .empty-state-description {
   font-size: var(--font-size-sm);
   color: var(--text-muted);
   line-height: 1.5;
+  margin-top: 0;
+  margin-bottom: 0;
+  max-width: 520px;
+}
+
+.home-onboarding-area .cta-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+html[dir="rtl"] .home-onboarding-area .empty-state-card,
+html[dir="rtl"] .home-onboarding-area .empty-state-text-group {
+  text-align: center;
 }
 
 /* ============================================================
@@ -469,13 +514,22 @@
   gap: 20px;
   flex-shrink: 0;
   height: 44px;
-  margin-bottom: 8px;
+  margin-bottom: 24px;
 }
 
 .live-tv-title-group {
   display: flex;
   align-items: center;
   gap: 14px;
+}
+
+.live-tv-title-group > * + * {
+  margin-left: 14px;
+}
+
+html[dir="rtl"] .live-tv-title-group > * + * {
+  margin-left: 0;
+  margin-right: 14px;
 }
 
 .live-screen-title {
@@ -523,6 +577,15 @@
   flex: 1;
   min-height: 0;
   gap: var(--space-md);
+}
+
+.live-tv-panes > * + * {
+  margin-left: 16px;
+}
+
+html[dir="rtl"] .live-tv-panes > * + * {
+  margin-left: 0;
+  margin-right: 16px;
 }
 
 .categories-pane {
@@ -745,17 +808,25 @@
   fill: #eab308;
 }
 
-/* Empty notices inside channels pane */
+/* Empty & loading notices inside channels pane, movie/series grids, search, details */
 .channels-loading-notice {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 16px;
+  width: 100%;
   height: 100%;
-  min-height: 200px;
+  min-height: 360px;
+  grid-column: 1 / -1;
   color: var(--text-secondary);
   text-align: center;
+  margin: auto;
+  box-sizing: border-box;
+}
+
+.channels-loading-notice > * + * {
+  margin-top: 14px;
 }
 
 .channels-loading-notice .spinner-ring {
@@ -765,6 +836,7 @@
   border-top-color: var(--accent-color, #38bdf8);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
 }
 
 .channels-loading-notice .loading-title {
@@ -778,20 +850,43 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 12px;
+  width: 100%;
   height: 100%;
+  min-height: 360px;
+  grid-column: 1 / -1;
   color: var(--text-muted);
   text-align: center;
+  margin: auto;
+  padding: 40px 20px;
+  box-sizing: border-box;
+}
+
+.channels-empty-notice > * + * {
+  margin-top: 10px;
 }
 
 .channels-empty-notice .empty-title {
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-semibold);
   color: var(--text-secondary);
+  margin: 0;
 }
 
 .channels-empty-notice .empty-sub {
   font-size: var(--font-size-sm);
+  margin: 0;
+}
+
+.channels-empty-notice .loading-spinner {
+  width: 38px;
+  height: 38px;
+  border: 3px solid rgba(255, 255, 255, 0.15);
+  border-top-color: var(--accent-color, #38bdf8);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 8px;
+  flex-shrink: 0;
 }
 
 /* Channel selection banner (notice for Phase 2) */
@@ -958,6 +1053,49 @@
 .btn-lang-toggle.active {
   background-color: var(--accent-color);
   color: #ffffff;
+}
+
+.settings-refresh-options {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.settings-refresh-options > * + * {
+  margin-left: 8px;
+}
+
+html[dir="rtl"] .settings-refresh-options > * + * {
+  margin-left: 0;
+  margin-right: 8px;
+}
+
+.btn-refresh-interval {
+  height: 42px;
+  padding: 0 18px;
+  background-color: var(--bg-surface-elevated);
+  border: 2px solid transparent;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  outline: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-refresh-interval:hover,
+.btn-refresh-interval:focus,
+.btn-refresh-interval.focused {
+  border-color: var(--accent-color, #38bdf8);
+  color: #ffffff;
+  background-color: rgba(56, 189, 248, 0.15);
+}
+
+.btn-refresh-interval.active {
+  background-color: var(--accent-color, #38bdf8);
+  color: #ffffff;
+  font-weight: var(--font-weight-bold);
 }
 
 .empty-settings-notice {
@@ -1903,7 +2041,7 @@ body.player-active .app-splash-screen {
    ============================================================ */
 .home-quick-access-section {
   width: 100%;
-  margin-bottom: 14px;
+  margin-bottom: 36px;
 }
 
 #home-provider-banner:empty {
@@ -3001,8 +3139,16 @@ html[dir="rtl"] .global-search-input {
   align-items: center;
   justify-content: center;
   gap: 12px;
-  padding: 80px 20px;
+  width: 100%;
+  min-height: 380px;
+  padding: 60px 20px;
   text-align: center;
+  margin: auto;
+  box-sizing: border-box;
+}
+
+.search-empty-prompt > * + * {
+  margin-top: 12px;
 }
 
 .search-empty-icon svg {
@@ -3249,6 +3395,7 @@ html[dir="rtl"] .global-search-input {
   display: flex;
   flex-direction: column;
   width: 100%;
+  margin-bottom: 36px;
 }
 
 .home-row-grid {

@@ -341,6 +341,20 @@
             <div class="settings-section-header">
               <h2 class="settings-section-title" data-i18n="settings.cache_title">EPG &amp; Storage Controls</h2>
             </div>
+            <div class="settings-option-item" style="margin-bottom: 20px;">
+              <div class="settings-option-label">
+                <span data-i18n="settings.cache_refresh_days" style="font-weight: 600; font-size: 15px; color: var(--text-primary); display: block;">Content Auto-Refresh</span>
+                <span data-i18n="settings.cache_refresh_days_sub" style="font-size: 13px; color: var(--text-muted); display: block; margin-top: 4px;">How often cached channels, movies, and series are automatically refreshed from the provider.</span>
+              </div>
+              <div class="settings-refresh-options" style="display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap;">
+                <button type="button" class="btn-refresh-interval focusable" data-days="1" data-nav-zone="settings_actions" data-i18n="settings.refresh_1d">1 Day</button>
+                <button type="button" class="btn-refresh-interval focusable" data-days="3" data-nav-zone="settings_actions" data-i18n="settings.refresh_3d">3 Days</button>
+                <button type="button" class="btn-refresh-interval focusable active" data-days="7" data-nav-zone="settings_actions" data-i18n="settings.refresh_7d">7 Days (Recommended)</button>
+                <button type="button" class="btn-refresh-interval focusable" data-days="14" data-nav-zone="settings_actions" data-i18n="settings.refresh_14d">14 Days</button>
+                <button type="button" class="btn-refresh-interval focusable" data-days="30" data-nav-zone="settings_actions" data-i18n="settings.refresh_30d">30 Days</button>
+                <button type="button" class="btn-refresh-interval focusable" data-days="0" data-nav-zone="settings_actions" data-i18n="settings.refresh_never">Never (Manual Only)</button>
+              </div>
+            </div>
             <div class="settings-actions-row">
               <button id="btn-clear-epg-cache" class="btn-secondary focusable" data-nav-zone="settings_actions"
                 data-i18n="settings.btn_clear_epg">Clear EPG Cache</button>

@@ -15,10 +15,64 @@
   var STORAGE_FAVORITES_ITEMS_KEY = 'favorites_items';
   var STORAGE_HISTORY_KEY = 'watch_history';
   var STORAGE_PROGRESS_KEY = 'playback_progress';
+  var STORAGE_CONTENT_REFRESH_DAYS_KEY = 'content_refresh_days';
+  var CONTENT_CACHE_SCHEMA_VERSION = 1;
+  var DEFAULT_CACHE_TTL_DAYS = 7;
   var MAX_HISTORY_ITEMS = 100;
   var _loadingChannelPromises = {};
+  var _loadingMoviePromises = {};
+  var _loadingSeriesPromises = {};
 
   var PlaylistManager = {
+    /**
+     * Cache schema version.
+     */
+    CONTENT_CACHE_SCHEMA_VERSION: CONTENT_CACHE_SCHEMA_VERSION,
+
+    /**
+     * Get configured content auto-refresh days (default 7, 0 = never/manual).
+     * @returns {number}
+     */
+    getContentRefreshDays: function () {
+      var Storage = window.FreeIPTV.Storage;
+      if (!Storage) return DEFAULT_CACHE_TTL_DAYS;
+      var days = Storage.get(STORAGE_CONTENT_REFRESH_DAYS_KEY, null);
+      if (days === null || days === undefined) return DEFAULT_CACHE_TTL_DAYS;
+      return parseInt(days, 10);
+    },
+
+    /**
+     * Set configured content auto-refresh days.
+     * @param {number} days
+     */
+    setContentRefreshDays: function (days) {
+      var Storage = window.FreeIPTV.Storage;
+      if (Storage) {
+        Storage.set(STORAGE_CONTENT_REFRESH_DAYS_KEY, parseInt(days, 10));
+      }
+    },
+
+    /**
+     * Check if cache timestamp is still within configured TTL.
+     * @param {number} cachedAt
+     * @returns {boolean}
+     */
+    isCacheValid: function (cachedAt) {
+      if (!cachedAt || typeof cachedAt !== 'number') return false;
+      var days = this.getContentRefreshDays();
+      if (days === 0) return true; // 0 means Never / manual refresh only
+      var ttlMs = days * 24 * 60 * 60 * 1000;
+      return (Date.now() - cachedAt) < ttlMs;
+    },
+
+    /**
+     * In-memory cache reset for clear cache operations.
+     */
+    clearMemoryCache: function () {
+      _loadingChannelPromises = {};
+      _loadingMoviePromises = {};
+      _loadingSeriesPromises = {};
+    },
     /**
      * Retrieve all saved playlists/providers (metadata only).
      * @returns {Array<Object>}
@@ -544,7 +598,24 @@
           if (!hasCached || forceRefresh) {
             return fetchFromProvider(hasCached ? channels : null);
           }
-          // Synchronize cached count to playlist metadata
+
+          // Cache exists: check if expired according to user-selected refresh days
+          if (channelStore && channelStore.getCacheMeta) {
+            channelStore.getCacheMeta(targetId, 'channels').then(function (meta) {
+              if (meta && !self.isCacheValid(meta.cachedAt)) {
+                // Background refresh: update cache quietly without disrupting user UI
+                fetchFromProvider(channels).then(function (refreshed) {
+                  if (window.FreeIPTV.Events) {
+                    window.FreeIPTV.Events.emit('content:refreshed', { type: 'channels', playlistId: targetId });
+                  }
+                }).catch(function (e) {
+                  // Retain cached data silently on background network failure
+                });
+              }
+            });
+          }
+
+          // Synchronize cached count to playlist metadata immediately
           self.updatePlaylistCounts(targetId, {
             channelCount: channels.length,
             liveCount: channels.length
@@ -806,6 +877,11 @@
         return Promise.resolve({ movies: [], categories: [] });
       }
 
+      // In-flight deduplication: reuse running request if not forceRefresh
+      if (!forceRefresh && _loadingMoviePromises[targetId]) {
+        return _loadingMoviePromises[targetId];
+      }
+
       var channelStore = window.FreeIPTV.ChannelStore;
       if (!channelStore) return Promise.resolve({ movies: [], categories: [] });
 
@@ -818,6 +894,20 @@
 
           if ((movies.length === 0 || forceRefresh) && playlist && playlist.type === 'xtream') {
             return fetchFromApi();
+          }
+
+          // Cache exists: check if expired according to user-selected refresh days
+          if (channelStore.getCacheMeta) {
+            channelStore.getCacheMeta(targetId, 'movies').then(function (meta) {
+              if (meta && !self.isCacheValid(meta.cachedAt) && playlist && playlist.type === 'xtream') {
+                // Background refresh: update cache quietly without disrupting user UI
+                fetchFromApi().then(function () {
+                  if (window.FreeIPTV.Events) {
+                    window.FreeIPTV.Events.emit('content:refreshed', { type: 'movies', playlistId: targetId });
+                  }
+                }).catch(function () {});
+              }
+            });
           }
 
           return decorateMovies(movies, categories);
@@ -867,11 +957,19 @@
         };
       }
 
-      if (forceRefresh && playlist && playlist.type === 'xtream') {
-        return fetchFromApi();
-      }
+      var runningPromise = (forceRefresh && playlist && playlist.type === 'xtream' ? fetchFromApi() : fetchFromStore()).then(
+        function (res) {
+          delete _loadingMoviePromises[targetId];
+          return res;
+        },
+        function (err) {
+          delete _loadingMoviePromises[targetId];
+          throw err;
+        }
+      );
 
-      return fetchFromStore();
+      _loadingMoviePromises[targetId] = runningPromise;
+      return runningPromise;
     },
 
     /**
@@ -887,6 +985,11 @@
         return Promise.resolve({ series: [], categories: [] });
       }
 
+      // In-flight deduplication: reuse running request if not forceRefresh
+      if (!forceRefresh && _loadingSeriesPromises[targetId]) {
+        return _loadingSeriesPromises[targetId];
+      }
+
       var channelStore = window.FreeIPTV.ChannelStore;
       if (!channelStore) return Promise.resolve({ series: [], categories: [] });
 
@@ -899,6 +1002,20 @@
 
           if ((series.length === 0 || forceRefresh) && playlist && playlist.type === 'xtream') {
             return fetchFromApi();
+          }
+
+          // Cache exists: check if expired according to user-selected refresh days
+          if (channelStore.getCacheMeta) {
+            channelStore.getCacheMeta(targetId, 'series').then(function (meta) {
+              if (meta && !self.isCacheValid(meta.cachedAt) && playlist && playlist.type === 'xtream') {
+                // Background refresh: update cache quietly without disrupting user UI
+                fetchFromApi().then(function () {
+                  if (window.FreeIPTV.Events) {
+                    window.FreeIPTV.Events.emit('content:refreshed', { type: 'series', playlistId: targetId });
+                  }
+                }).catch(function () {});
+              }
+            });
           }
 
           return decorateSeries(series, categories);
@@ -948,11 +1065,19 @@
         };
       }
 
-      if (forceRefresh && playlist && playlist.type === 'xtream') {
-        return fetchFromApi();
-      }
+      var runningPromise = (forceRefresh && playlist && playlist.type === 'xtream' ? fetchFromApi() : fetchFromStore()).then(
+        function (res) {
+          delete _loadingSeriesPromises[targetId];
+          return res;
+        },
+        function (err) {
+          delete _loadingSeriesPromises[targetId];
+          throw err;
+        }
+      );
 
-      return fetchFromStore();
+      _loadingSeriesPromises[targetId] = runningPromise;
+      return runningPromise;
     },
 
     /**

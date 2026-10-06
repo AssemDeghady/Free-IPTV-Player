@@ -105,9 +105,11 @@
      * Save channel array for a playlist.
      * @param {string} playlistId
      * @param {Array} channels
+     * @param {Array<string>} [categories]
      * @returns {Promise<boolean>}
      */
-    saveChannels: function (playlistId, channels) {
+    saveChannels: function (playlistId, channels, categories) {
+      var now = Date.now();
       return getDatabase().then(function (db) {
         return new Promise(function (resolve, reject) {
           try {
@@ -116,7 +118,10 @@
             var record = {
               playlistId: playlistId,
               channels: channels,
-              updatedAt: Date.now(),
+              categories: categories || [],
+              cachedAt: now,
+              updatedAt: now,
+              schemaVersion: 1,
               count: channels.length
             };
             var request = store.put(record);
@@ -135,9 +140,15 @@
         if (window.FreeIPTV.Logger) {
           window.FreeIPTV.Logger.warn('ChannelStore falling back to secondary storage for playlist ' + playlistId + ':', error);
         }
-        memoryFallbackStore.channels[playlistId] = channels;
+        memoryFallbackStore.channels[playlistId] = {
+          channels: channels,
+          categories: categories || [],
+          cachedAt: now,
+          schemaVersion: 1
+        };
         if (window.FreeIPTV.Storage && channels.length <= 1500) {
           window.FreeIPTV.Storage.set('channels_' + playlistId, channels);
+          window.FreeIPTV.Storage.set('channels_meta_' + playlistId, { cachedAt: now, schemaVersion: 1 });
         }
         return Promise.resolve(true);
       });
@@ -173,7 +184,8 @@
         });
       }).catch(function () {
         if (memoryFallbackStore.channels[playlistId]) {
-          return Promise.resolve(memoryFallbackStore.channels[playlistId]);
+          var mem = memoryFallbackStore.channels[playlistId];
+          return Promise.resolve(Array.isArray(mem) ? mem : (mem.channels || []));
         }
         if (window.FreeIPTV.Storage) {
           var stored = window.FreeIPTV.Storage.get('channels_' + playlistId, []);
@@ -195,6 +207,7 @@
      * @returns {Promise<boolean>}
      */
     saveMovies: function (playlistId, movies, categories) {
+      var now = Date.now();
       return getDatabase().then(function (db) {
         return new Promise(function (resolve, reject) {
           try {
@@ -204,7 +217,9 @@
               playlistId: playlistId,
               movies: movies,
               categories: categories || [],
-              updatedAt: Date.now(),
+              cachedAt: now,
+              updatedAt: now,
+              schemaVersion: 1,
               count: movies.length
             };
             var request = store.put(record);
@@ -215,9 +230,19 @@
           }
         });
       }).catch(function (error) {
-        memoryFallbackStore.movies[playlistId] = { movies: movies, categories: categories || [] };
+        memoryFallbackStore.movies[playlistId] = {
+          movies: movies,
+          categories: categories || [],
+          cachedAt: now,
+          schemaVersion: 1
+        };
         if (window.FreeIPTV.Storage && movies.length <= 1500) {
-          window.FreeIPTV.Storage.set('movies_' + playlistId, { movies: movies, categories: categories || [] });
+          window.FreeIPTV.Storage.set('movies_' + playlistId, {
+            movies: movies,
+            categories: categories || [],
+            cachedAt: now,
+            schemaVersion: 1
+          });
         }
         return Promise.resolve(true);
       });
@@ -330,6 +355,7 @@
      * @returns {Promise<boolean>}
      */
     saveSeries: function (playlistId, series, categories) {
+      var now = Date.now();
       return getDatabase().then(function (db) {
         return new Promise(function (resolve, reject) {
           try {
@@ -339,7 +365,9 @@
               playlistId: playlistId,
               series: series,
               categories: categories || [],
-              updatedAt: Date.now(),
+              cachedAt: now,
+              updatedAt: now,
+              schemaVersion: 1,
               count: series.length
             };
             var request = store.put(record);
@@ -348,9 +376,19 @@
           } catch (err) { reject(err); }
         });
       }).catch(function () {
-        memoryFallbackStore.series[playlistId] = { series: series, categories: categories || [] };
+        memoryFallbackStore.series[playlistId] = {
+          series: series,
+          categories: categories || [],
+          cachedAt: now,
+          schemaVersion: 1
+        };
         if (window.FreeIPTV.Storage && series.length <= 1500) {
-          window.FreeIPTV.Storage.set('series_' + playlistId, { series: series, categories: categories || [] });
+          window.FreeIPTV.Storage.set('series_' + playlistId, {
+            series: series,
+            categories: categories || [],
+            cachedAt: now,
+            schemaVersion: 1
+          });
         }
         return Promise.resolve(true);
       });
@@ -587,6 +625,51 @@
         });
       }).catch(function () {
         return Promise.resolve(true);
+      });
+    },
+
+    /**
+     * Retrieve cache metadata (cachedAt, schemaVersion, count) for a playlist and store.
+     * @param {string} playlistId
+     * @param {'channels'|'movies'|'series'} type
+     * @returns {Promise<{ cachedAt: number, schemaVersion: number, count: number }|null>}
+     */
+    getCacheMeta: function (playlistId, type) {
+      var storeName = type === 'movies' ? STORES.MOVIES : (type === 'series' ? STORES.SERIES : STORES.CHANNELS);
+      return getDatabase().then(function (db) {
+        return new Promise(function (resolve) {
+          try {
+            var transaction = db.transaction([storeName], 'readonly');
+            var store = transaction.objectStore(storeName);
+            var request = store.get(playlistId);
+            request.onsuccess = function (e) {
+              var res = e.target.result;
+              if (res && res.cachedAt) {
+                resolve({
+                  cachedAt: res.cachedAt,
+                  schemaVersion: res.schemaVersion || 1,
+                  count: res.count || 0
+                });
+              } else {
+                resolve(null);
+              }
+            };
+            request.onerror = function () { resolve(null); };
+          } catch (err) {
+            resolve(null);
+          }
+        });
+      }).catch(function () {
+        var fallbackKey = type === 'movies' ? 'movies' : (type === 'series' ? 'series' : 'channels');
+        var mem = memoryFallbackStore[fallbackKey] && memoryFallbackStore[fallbackKey][playlistId];
+        if (mem && mem.cachedAt) {
+          return Promise.resolve({
+            cachedAt: mem.cachedAt,
+            schemaVersion: mem.schemaVersion || 1,
+            count: mem.count || (mem.channels ? mem.channels.length : 0)
+          });
+        }
+        return Promise.resolve(null);
       });
     },
 

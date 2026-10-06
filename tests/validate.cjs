@@ -87,7 +87,8 @@ const expectedFiles = [
   'tests/test-series-season-selector.cjs',
   'tests/test-complete-iptv.cjs',
   'tests/test-phase-6-4.cjs',
-  'tests/test-player-navigation-regression.cjs'
+  'tests/test-player-navigation-regression.cjs',
+  'tests/test-content-cache.cjs'
 ];
 
 expectedFiles.forEach(file => {
@@ -166,7 +167,8 @@ const suites = [
   'test-phase-7-stabilization.cjs',
   'test-xtream-series-seasons.cjs',
   'test-html5-playback.cjs',
-  'test-player-navigation-regression.cjs'
+  'test-player-navigation-regression.cjs',
+  'test-content-cache.cjs'
 ];
 
 suites.forEach(suite => {

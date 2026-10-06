@@ -91,6 +91,22 @@
         });
       }
 
+      // Auto-Refresh interval buttons
+      var refreshBtns = document.querySelectorAll('.btn-refresh-interval');
+      for (var r = 0; r < refreshBtns.length; r++) {
+        (function (btn) {
+          btn.addEventListener('click', function () {
+            var days = parseInt(btn.getAttribute('data-days'), 10);
+            if (window.FreeIPTV.PlaylistManager && window.FreeIPTV.PlaylistManager.setContentRefreshDays) {
+              window.FreeIPTV.PlaylistManager.setContentRefreshDays(days);
+            } else if (window.FreeIPTV.Storage) {
+              window.FreeIPTV.Storage.set('content_refresh_days', days);
+            }
+            self.updateRefreshIntervalButtons();
+          });
+        })(refreshBtns[r]);
+      }
+
       // EPG Cache Clear button
       var btnClearEpg = document.getElementById('btn-clear-epg-cache');
       if (btnClearEpg) {
@@ -131,6 +147,22 @@
     },
 
     /**
+     * Update active state of Auto-Refresh interval buttons.
+     */
+    updateRefreshIntervalButtons: function () {
+      var PlaylistManager = window.FreeIPTV.PlaylistManager;
+      var currentDays = (PlaylistManager && PlaylistManager.getContentRefreshDays)
+        ? PlaylistManager.getContentRefreshDays()
+        : (window.FreeIPTV.Storage ? window.FreeIPTV.Storage.get('content_refresh_days', 7) : 7);
+
+      var refreshBtns = document.querySelectorAll('.btn-refresh-interval');
+      for (var i = 0; i < refreshBtns.length; i++) {
+        var btnDays = parseInt(refreshBtns[i].getAttribute('data-days'), 10);
+        refreshBtns[i].classList.toggle('active', btnDays === currentDays);
+      }
+    },
+
+    /**
      * Bind playback preferences toggles (saved to localStorage).
      */
     bindPreferenceControls: function () {
@@ -158,6 +190,7 @@
      */
     renderSettings: function () {
       this.updateLanguageButtons();
+      this.updateRefreshIntervalButtons();
       this.renderPlaylists();
       this.renderDiagnostics();
       this.renderAboutStats();
