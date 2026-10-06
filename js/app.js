@@ -89,7 +89,7 @@
           FreeIPTV.Logger.info('Free IPTV Player initialized successfully.');
         }
       } catch (error) {
-        this.dismissSplash();
+        this.dismissSplash(0);
         if (window.console && console.error) {
           console.error('Fatal initialization error:', error);
         }
@@ -98,15 +98,20 @@
 
     /**
      * Dismiss splash/loading screen after application initialization.
+     * Displays the brand logo and startup state for a minimum delay on startup.
+     * @param {number} [delayMs=1200]
      */
-    dismissSplash: function () {
+    dismissSplash: function (delayMs) {
       var splash = document.getElementById('app-splash-screen');
       if (!splash) return;
-      splash.classList.add('fade-out');
+      var delay = (typeof delayMs === 'number') ? delayMs : 1200;
       setTimeout(function () {
-        splash.classList.add('hidden');
-        splash.style.display = 'none';
-      }, 400);
+        splash.classList.add('fade-out');
+        setTimeout(function () {
+          splash.classList.add('hidden');
+          splash.style.display = 'none';
+        }, 400);
+      }, delay);
     }
   };
 

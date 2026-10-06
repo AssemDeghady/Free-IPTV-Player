@@ -29,6 +29,7 @@ trust_anchor: []
 files:
   - assets/icons/icon-117.png
   - assets/icons/icon-512.png
+  - assets/images/icon.png
   - assets/images/logo.png
   - css/app.css
   - css/layout.css

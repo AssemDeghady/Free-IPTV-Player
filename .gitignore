@@ -92,3 +92,6 @@ device/
 # AI coding-agent & assistant local state
 .gemini/
 .antigravity/
+
+# Local deployment scripts
+deploy-tv.ps1
