@@ -453,6 +453,32 @@ async function runCacheTests() {
     assert.ok(css.includes('html[dir="rtl"] .home-onboarding-area .empty-state-card'), 'RTL preserves centering for onboarding card');
   });
 
+  it('21. navigation.js handles Movies and Series UP navigation to Header Search', () => {
+    const navContent = fs.readFileSync(path.join(__dirname, '../js/ui/navigation.js'), 'utf-8');
+    assert.ok(navContent.includes("return document.getElementById('btn-header-search') || null;"), "UP should reach btn-header-search");
+  });
+
+  it('22. movies.js and series.js chunking is infinite and MAX_DOM_CARDS limit is removed', () => {
+    const moviesContent = fs.readFileSync(path.join(__dirname, '../js/ui/movies.js'), 'utf-8');
+    const seriesContent = fs.readFileSync(path.join(__dirname, '../js/ui/series.js'), 'utf-8');
+    assert.ok(moviesContent.includes("var endIndex = targetEnd;"), "movies.js should use targetEnd directly");
+    assert.ok(seriesContent.includes("var endIndex = targetEnd;"), "series.js should use targetEnd directly");
+    assert.ok(!moviesContent.includes("&& renderedCount < MAX_DOM_CARDS"), "movies checkLoadMore should not have MAX_DOM_CARDS");
+    assert.ok(!seriesContent.includes("&& renderedCount < MAX_DOM_CARDS"), "series checkLoadMore should not have MAX_DOM_CARDS");
+  });
+
+  it('23. index.html includes password visibility eye toggle', () => {
+    const htmlContent = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf-8');
+    assert.ok(htmlContent.includes('id="btn-toggle-password"'), "Toggle password button should exist");
+    assert.ok(htmlContent.includes('id="icon-eye-show"'), "Eye show icon should exist");
+  });
+
+  it('24. layout.css includes explicit spacing for detail page (no flex gap)', () => {
+    const cssContent = fs.readFileSync(path.join(__dirname, '../css/layout.css'), 'utf-8');
+    assert.ok(!cssContent.match(/\.details-main-layout\s*\{[^}]*gap:\s*\d+px;[^}]*\}/), "details-main-layout should not use gap");
+    assert.ok(cssContent.includes("margin-right: 48px;"), "details-poster-column should use margin-right");
+  });
+
   console.log(`\n============================================================`);
   console.log(` RESULTS: ${passed} PASSED, ${failed} FAILED`);
   console.log(`============================================================\n`);

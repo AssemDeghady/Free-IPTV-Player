@@ -98,6 +98,26 @@
         });
       }
 
+      var btnTogglePassword = document.getElementById('btn-toggle-password');
+      if (btnTogglePassword) {
+        btnTogglePassword.addEventListener('click', function () {
+          var input = document.getElementById('input-xtream-password');
+          var iconShow = document.getElementById('icon-eye-show');
+          var iconHide = document.getElementById('icon-eye-hide');
+          if (input) {
+            if (input.type === 'password') {
+              input.type = 'text';
+              if (iconShow) iconShow.style.display = 'none';
+              if (iconHide) iconHide.style.display = 'block';
+            } else {
+              input.type = 'password';
+              if (iconShow) iconShow.style.display = 'block';
+              if (iconHide) iconHide.style.display = 'none';
+            }
+          }
+        });
+      }
+
       // Error Recovery Buttons
       var btnRetry = document.getElementById('modal-btn-retry');
       if (btnRetry) {

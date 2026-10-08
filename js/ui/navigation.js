@@ -814,6 +814,7 @@
       var isTab = tabs.indexOf(currentElement) !== -1;
       var isInput = inputs.indexOf(currentElement) !== -1;
       var isAction = actions.indexOf(currentElement) !== -1;
+      var isToggle = currentElement.classList.contains('btn-password-toggle');
 
       if (isTab) {
         var tabIdx = tabs.indexOf(currentElement);
@@ -829,10 +830,23 @@
         return null;
       }
 
-      if (isInput) {
-        var inputIdx = inputs.indexOf(currentElement);
+      if (isInput || isToggle) {
+        if (isInput && currentElement.type === 'password' && direction === Constants.DIRECTIONS.RIGHT) {
+          var nextToggle = currentElement.parentElement.querySelector('.btn-password-toggle.focusable');
+          if (nextToggle && nextToggle.offsetParent !== null) return nextToggle;
+        } else if (isInput && currentElement.type === 'text' && currentElement.id === 'input-xtream-password' && direction === Constants.DIRECTIONS.RIGHT) {
+          var txtToggle = currentElement.parentElement.querySelector('.btn-password-toggle.focusable');
+          if (txtToggle && txtToggle.offsetParent !== null) return txtToggle;
+        } else if (isToggle && direction === Constants.DIRECTIONS.LEFT) {
+          var prevInput = currentElement.parentElement.querySelector('.form-input.focusable');
+          if (prevInput && prevInput.offsetParent !== null) return prevInput;
+        }
+
+        var activeInput = isToggle ? currentElement.parentElement.querySelector('.form-input.focusable') : currentElement;
+        var inputIdx = inputs.indexOf(activeInput);
+        
         if (direction === Constants.DIRECTIONS.DOWN) {
-          if (inputIdx < inputs.length - 1) return inputs[inputIdx + 1];
+          if (inputIdx >= 0 && inputIdx < inputs.length - 1) return inputs[inputIdx + 1];
           return actions[0] || null;
         } else if (direction === Constants.DIRECTIONS.UP) {
           if (inputIdx > 0) return inputs[inputIdx - 1];
@@ -1201,7 +1215,7 @@
             var targetUp = container.querySelector('[data-index="' + (gIdx - COLS) + '"]');
             if (targetUp) return targetUp;
           }
-          return document.getElementById('movies-search-input') || null;
+          return document.getElementById('btn-header-search') || null;
         }
       }
 
@@ -1265,7 +1279,7 @@
             var targetUp = container.querySelector('[data-index="' + (gIdx - COLS) + '"]');
             if (targetUp) return targetUp;
           }
-          return document.getElementById('series-search-input') || null;
+          return document.getElementById('btn-header-search') || null;
         }
       }
 
@@ -1760,6 +1774,10 @@
 
         // 4. If on Movies
         if (route === 'movies' || (view && view.id === 'view-movies')) {
+          if (isSearchBtn) {
+            var mGridItem = this.getValidHistoryElement('movies_grid') || document.querySelector('#movies-grid-container .focusable');
+            if (isUsable(mGridItem)) return mGridItem;
+          }
           var activeMovieCat = document.querySelector('#movies-categories-list .category-item.active') ||
                                document.querySelector('#movies-categories-list .category-item.focusable');
           if (isUsable(activeMovieCat)) return activeMovieCat;
@@ -1768,6 +1786,10 @@
 
         // 5. If on Series
         if (route === 'series' || (view && view.id === 'view-series')) {
+          if (isSearchBtn) {
+            var sGridItem = this.getValidHistoryElement('series_grid') || document.querySelector('#series-grid-container .focusable');
+            if (isUsable(sGridItem)) return sGridItem;
+          }
           var activeSeriesCat = document.querySelector('#series-categories-list .category-item.active') ||
                                 document.querySelector('#series-categories-list .category-item.focusable');
           if (isUsable(activeSeriesCat)) return activeSeriesCat;

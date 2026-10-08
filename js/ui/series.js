@@ -588,7 +588,7 @@
 
       var self = this;
       var targetEnd = Math.min(renderedCount + CHUNK_SIZE, filteredSeries.length);
-      var endIndex = Math.min(targetEnd, MAX_DOM_CARDS);
+      var endIndex = targetEnd;
 
       for (var i = renderedCount; i < endIndex; i++) {
         var series = filteredSeries[i];
@@ -684,7 +684,7 @@
       if (container && !isNaN(index)) {
         loadNearbyImages(container, index);
       }
-      if (!isNaN(index) && index >= renderedCount - 8 && renderedCount < filteredSeries.length && renderedCount < MAX_DOM_CARDS) {
+      if (!isNaN(index) && index >= renderedCount - 8 && renderedCount < filteredSeries.length) {
         this.renderGrid(false);
       }
     },

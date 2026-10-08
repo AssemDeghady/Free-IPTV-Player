@@ -1239,6 +1239,45 @@ html[dir="rtl"] .settings-refresh-options > * + * {
   transition: all var(--transition-fast);
 }
 
+.password-input-wrap {
+  display: flex;
+  align-items: stretch;
+  position: relative;
+}
+
+.password-input-wrap .form-input {
+  flex: 1;
+}
+
+.btn-password-toggle {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  background-color: var(--bg-surface-elevated);
+  border: 2px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  outline: none;
+  cursor: pointer;
+  margin-left: 12px;
+  transition: all var(--transition-fast);
+}
+
+.btn-password-toggle.focused,
+.btn-password-toggle:focus {
+  border-color: var(--accent-primary);
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.4);
+}
+
+[dir="rtl"] .btn-password-toggle {
+  margin-left: 0;
+  margin-right: 12px;
+}
+
 .modal-actions {
   display: flex;
   justify-content: flex-end;
@@ -2313,13 +2352,18 @@ html[dir="rtl"] .btn-page-back .back-arrow {
   position: relative;
   z-index: 5;
   display: flex;
-  gap: 48px;
   width: 100%;
 }
 
 .details-poster-column {
   width: 320px;
   flex-shrink: 0;
+  margin-right: 48px;
+}
+
+[dir="rtl"] .details-poster-column {
+  margin-right: 0;
+  margin-left: 48px;
 }
 
 .details-poster-frame {
