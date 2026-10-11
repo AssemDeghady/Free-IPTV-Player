@@ -159,8 +159,7 @@ it('Entry focus never targets search inputs; search nav cannot trap focus', () =
   assert.ok(home.includes(':not(input)'));
   assert.ok(navJs.includes("#movies-categories-list .focusable') || null"));
   assert.ok(navJs.includes("#series-categories-list .focusable') || null"));
-  assert.ok(navJs.includes("return document.getElementById('movies-search-input') || null;"));
-  assert.ok(navJs.includes("return document.getElementById('series-search-input') || null;"));
+  assert.ok(navJs.includes("return document.getElementById('btn-header-search') || null;"));
 });
 
 it('Every I18n.t key used in JS exists in the EMBEDDED en/ar dictionaries (runtime source)', () => {
