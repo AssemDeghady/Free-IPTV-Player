@@ -20,8 +20,8 @@
     # Deploy without incrementing version in config.xml:
     .\deploy-tv.example.ps1 -SkipBump
 
-    # Deploy and update in-place without deleting app storage / playlist credentials:
-    .\deploy-tv.example.ps1 -KeepData
+    # Perform a clean uninstall (clears cached playlists, watch history, and data):
+    .\deploy-tv.example.ps1 -ClearData
 #>
 
 [CmdletBinding()]
@@ -41,7 +41,13 @@ param(
     # Skip automatic version bump in config.xml
     [switch]$SkipBump,
 
-    # Keep cached application data (localStorage / IndexedDB) across deploys
+    # Clear cached application data (localStorage / IndexedDB) by uninstalling previous version
+    [switch]$ClearData,
+
+    # Alias for -ClearData
+    [switch]$CleanInstall,
+
+    # Kept for backwards compatibility
     [switch]$KeepData
 )
 
@@ -144,9 +150,10 @@ if (Test-Path $spacedWgt) {
 }
 Write-Success "Package created: FreeIPTVPlayer.wgt"
 
-# 6. Uninstall Previous Version (Clean install if not preserving data)
-if (-not $KeepData) {
-    Write-Step "Uninstalling previous version from TV ($PkgId / $AppId)..."
+# 6. Update / Uninstall Strategy (Preserves playlists and cached data by default)
+$shouldClear = $ClearData -or $CleanInstall
+if ($shouldClear) {
+    Write-Step "Clearing cached application data: Uninstalling previous version from TV ($PkgId / $AppId)..."
     $uninstallOut = tizen uninstall -s $Target -p $PkgId 2>&1
     if ($uninstallOut -match "Fail") {
         # Fallback using SDB app_launcher
@@ -155,7 +162,8 @@ if (-not $KeepData) {
     }
     Write-Host "Uninstallation status: $uninstallOut"
 } else {
-    Write-Step "Skipping uninstall to preserve application data (localStorage/IndexedDB)..."
+    Write-Step "Preserving local application data (playlists, favorites, cache) across deploy..."
+    Write-Success "In-place package update active (pass -ClearData to perform a clean uninstall)"
 }
 
 # 7. Install New Package on TV
