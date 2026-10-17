@@ -9,6 +9,7 @@
   window.FreeIPTV = window.FreeIPTV || {};
 
   var memoryStore = {};
+  var parsedCache = {};
   var isLocalStorageSupported = false;
   var KEY_PREFIX = 'fiptv_';
 
@@ -39,7 +40,7 @@
     },
 
     /**
-     * Retrieve a value by key.
+     * Retrieve a value by key (with in-memory parsed object cache to avoid main-thread JSON.parse stalls on TV CPUs).
      * @param {string} key
      * @param {*} [defaultValue=null]
      * @returns {*}
@@ -49,6 +50,10 @@
         defaultValue = null;
       }
       var fullKey = getPrefixedKey(key);
+
+      if (parsedCache.hasOwnProperty(fullKey)) {
+        return parsedCache[fullKey];
+      }
 
       try {
         var rawValue = null;
@@ -63,7 +68,9 @@
           return defaultValue;
         }
 
-        return JSON.parse(rawValue);
+        var parsed = JSON.parse(rawValue);
+        parsedCache[fullKey] = parsed;
+        return parsed;
       } catch (error) {
         if (window.FreeIPTV.Logger) {
           window.FreeIPTV.Logger.warn('Storage.get failed for key ' + key + ', returning default:', error);
@@ -80,6 +87,7 @@
      */
     set: function (key, value) {
       var fullKey = getPrefixedKey(key);
+      parsedCache[fullKey] = value;
 
       try {
         var serialized = JSON.stringify(value);
@@ -113,6 +121,7 @@
           window.localStorage.removeItem(fullKey);
         }
         delete memoryStore[fullKey];
+        delete parsedCache[fullKey];
         return true;
       } catch (error) {
         if (window.FreeIPTV.Logger) {
@@ -129,10 +138,13 @@
      */
     has: function (key) {
       var fullKey = getPrefixedKey(key);
+      if (parsedCache.hasOwnProperty(fullKey) || memoryStore.hasOwnProperty(fullKey)) {
+        return true;
+      }
       if (isLocalStorageSupported && window.localStorage.getItem(fullKey) !== null) {
         return true;
       }
-      return memoryStore.hasOwnProperty(fullKey);
+      return false;
     },
 
     /**
@@ -153,6 +165,7 @@
           }
         }
         memoryStore = {};
+        parsedCache = {};
         return true;
       } catch (error) {
         if (window.FreeIPTV.Logger) {

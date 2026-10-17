@@ -1459,6 +1459,20 @@
         }
       }
 
+      // Pre-index category names for O(1) groupTitle lookup across large 20k+ channel lists
+      var nameLookup = {};
+      for (var nk = 0; nk < categoryKeyOrder.length; nk++) {
+        var nObj = nodeMap[categoryKeyOrder[nk]];
+        if (nObj) {
+          if (nObj.originalName && !nameLookup[nObj.originalName]) {
+            nameLookup[nObj.originalName] = nObj;
+          }
+          if (nObj.name && !nameLookup[nObj.name]) {
+            nameLookup[nObj.name] = nObj;
+          }
+        }
+      }
+
       // 2. Associate channels to categories
       for (var c = 0; c < channelList.length; c++) {
         var ch = channelList[c];
@@ -1470,16 +1484,10 @@
           assigned = true;
         }
 
-        // Match by groupTitle
+        // Match by groupTitle in O(1)
         if (!assigned && ch.groupTitle) {
           var gt = ch.groupTitle.trim();
-          var foundNode = null;
-          for (var k in nodeMap) {
-            if (nodeMap[k].originalName === gt || nodeMap[k].name === gt) {
-              foundNode = nodeMap[k];
-              break;
-            }
-          }
+          var foundNode = nameLookup[gt] || null;
 
           if (foundNode) {
             foundNode.channels.push(ch);
@@ -1498,6 +1506,7 @@
                 channels: [],
                 channelCount: 0
               };
+              nameLookup[gt] = nodeMap[dynKey];
             }
             nodeMap[dynKey].channels.push(ch);
             assigned = true;
@@ -1544,12 +1553,20 @@
      */
     getChannelsForCategoryNode: function (node) {
       if (!node) return [];
-      var result = [].concat(node.channels || []);
-      if (Array.isArray(node.children)) {
-        for (var i = 0; i < node.children.length; i++) {
-          result = result.concat(this.getChannelsForCategoryNode(node.children[i]));
+      var result = [];
+      function collect(n) {
+        if (n.channels && n.channels.length) {
+          for (var c = 0; c < n.channels.length; c++) {
+            result.push(n.channels[c]);
+          }
+        }
+        if (Array.isArray(n.children)) {
+          for (var i = 0; i < n.children.length; i++) {
+            collect(n.children[i]);
+          }
         }
       }
+      collect(node);
       return result;
     },
 
@@ -1793,22 +1810,45 @@
       });
     },
 
+    _favItemsRef: null,
+    _favLookup: null,
+
     /**
-     * Check if a structured item is favorited.
+     * Build or return O(1) favorites lookup hash table.
+     * @returns {Object}
+     */
+    _getFavoriteLookup: function () {
+      var Storage = window.FreeIPTV.Storage;
+      if (!Storage) return {};
+      var rawItems = Storage.get(STORAGE_FAVORITES_ITEMS_KEY, []) || [];
+      if (this._favItemsRef !== rawItems || !this._favLookup) {
+        this._favItemsRef = rawItems;
+        var map = {};
+        for (var i = 0; i < rawItems.length; i++) {
+          var it = rawItems[i];
+          if (it && it.contentId !== undefined && it.contentId !== null) {
+            map['*:' + it.contentId] = true;
+            if (it.contentType) {
+              map[it.contentType + ':' + it.contentId] = true;
+            }
+          }
+        }
+        this._favLookup = map;
+      }
+      return this._favLookup;
+    },
+
+    /**
+     * Check if a structured item is favorited in O(1) time.
      * @param {string} contentId
      * @param {string} [contentType]
      * @returns {boolean}
      */
     isFavoriteItem: function (contentId, contentType) {
-      var items = this.getFavorites();
-      for (var i = 0; i < items.length; i++) {
-        if (items[i].contentId === contentId) {
-          if (!contentType || items[i].contentType === contentType) {
-            return true;
-          }
-        }
-      }
-      return false;
+      if (contentId === undefined || contentId === null) return false;
+      var lookup = this._getFavoriteLookup();
+      var key = (contentType ? contentType : '*') + ':' + contentId;
+      return Boolean(lookup[key]);
     },
 
     /**
@@ -1864,6 +1904,8 @@
         Storage.set(STORAGE_FAVORITES_KEY, legacyIds);
       }
 
+      this._favItemsRef = null;
+      this._favLookup = null;
       Storage.set(STORAGE_FAVORITES_ITEMS_KEY, items);
 
       if (window.FreeIPTV.Events && window.FreeIPTV.Constants) {
@@ -2149,9 +2191,10 @@
 
       var q = (query || '').trim().toLowerCase();
       var cat = (categoryFilter || '').trim();
+      var hasCatFilter = Boolean(cat && cat.toLowerCase() !== 'all');
 
       return channels.filter(function (channel) {
-        if (cat && cat.toLowerCase() !== 'all' && channel.groupTitle !== cat) {
+        if (hasCatFilter && channel.groupTitle !== cat) {
           return false;
         }
 
@@ -2159,17 +2202,16 @@
           return true;
         }
 
-        var nameMatch = channel.name && channel.name.toLowerCase().indexOf(q) !== -1;
-        var tvgNameMatch = channel.tvgName && channel.tvgName.toLowerCase().indexOf(q) !== -1;
-        var groupMatch = channel.groupTitle && channel.groupTitle.toLowerCase().indexOf(q) !== -1;
-        var chnoMatch = channel.tvgChno && String(channel.tvgChno).indexOf(q) !== -1;
-
-        return nameMatch || tvgNameMatch || groupMatch || chnoMatch;
+        if (channel._searchStr === undefined) {
+          channel._searchStr = ((channel.name || '') + ' ' + (channel.tvgName || '') + ' ' + (channel.groupTitle || '') + ' ' + (channel.tvgChno || '')).toLowerCase();
+        }
+        return channel._searchStr.indexOf(q) !== -1;
       });
     },
 
     /**
      * Unified Global Search across live channels, movies, and series.
+     * Uses pre-normalized cached strings and stops scanning once 30 matches per type are found.
      * @param {string} query
      * @returns {Promise<{ live: Array, movies: Array, series: Array, totalCount: number }>}
      */
@@ -2194,22 +2236,38 @@
         var movies = (results[1] && results[1].movies) || [];
         var series = (results[2] && results[2].series) || [];
 
-        var matchedChannels = channels.filter(function (c) {
-          return (c.name && c.name.toLowerCase().indexOf(q) !== -1) ||
-                 (c.groupTitle && c.groupTitle.toLowerCase().indexOf(q) !== -1);
-        }).slice(0, 30);
+        var matchedChannels = [];
+        for (var ci = 0; ci < channels.length && matchedChannels.length < 30; ci++) {
+          var c = channels[ci];
+          if (c._s === undefined) {
+            c._s = ((c.name || '') + ' ' + (c.groupTitle || '')).toLowerCase();
+          }
+          if (c._s.indexOf(q) !== -1) {
+            matchedChannels.push(c);
+          }
+        }
 
-        var matchedMovies = movies.filter(function (m) {
-          return (m.name && m.name.toLowerCase().indexOf(q) !== -1) ||
-                 (m.genre && m.genre.toLowerCase().indexOf(q) !== -1) ||
-                 (m.cast && m.cast.toLowerCase().indexOf(q) !== -1);
-        }).slice(0, 30);
+        var matchedMovies = [];
+        for (var mi = 0; mi < movies.length && matchedMovies.length < 30; mi++) {
+          var m = movies[mi];
+          if (m._s === undefined) {
+            m._s = ((m.name || '') + ' ' + (m.genre || '') + ' ' + (m.cast || '')).toLowerCase();
+          }
+          if (m._s.indexOf(q) !== -1) {
+            matchedMovies.push(m);
+          }
+        }
 
-        var matchedSeries = series.filter(function (s) {
-          return (s.name && s.name.toLowerCase().indexOf(q) !== -1) ||
-                 (s.genre && s.genre.toLowerCase().indexOf(q) !== -1) ||
-                 (s.cast && s.cast.toLowerCase().indexOf(q) !== -1);
-        }).slice(0, 30);
+        var matchedSeries = [];
+        for (var si = 0; si < series.length && matchedSeries.length < 30; si++) {
+          var s = series[si];
+          if (s._s === undefined) {
+            s._s = ((s.name || '') + ' ' + (s.genre || '') + ' ' + (s.cast || '')).toLowerCase();
+          }
+          if (s._s.indexOf(q) !== -1) {
+            matchedSeries.push(s);
+          }
+        }
 
         return {
           live: matchedChannels,

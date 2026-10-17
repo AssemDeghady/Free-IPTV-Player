@@ -597,11 +597,19 @@
       }
 
       var endIndex = Math.min(renderedCount + CHUNK_SIZE, filteredChannels.length);
+      var frag = document.createDocumentFragment ? document.createDocumentFragment() : null;
 
       for (var i = renderedCount; i < endIndex; i++) {
         var channel = filteredChannels[i];
         var card = this.createChannelElement(channel, i);
-        container.appendChild(card);
+        if (frag) {
+          frag.appendChild(card);
+        } else {
+          container.appendChild(card);
+        }
+      }
+      if (frag) {
+        container.appendChild(frag);
       }
 
       renderedCount = endIndex;
@@ -639,6 +647,7 @@
         img.className = 'channel-logo-img';
         img.alt = '';
         img.loading = 'lazy';
+        img.decoding = 'async';
         img.src = channel.logoUrl;
 
         img.onerror = function () {
@@ -713,7 +722,9 @@
       }
 
       if (currentPreviewChannel !== channel) {
-        this.stopChannelPreview();
+        if (isPreviewActive || currentPreviewChannel) {
+          this.stopChannelPreview();
+        }
         this.renderPreviewStatus(window.FreeIPTV.I18n ? window.FreeIPTV.I18n.t('live.preview_loading') : 'Loading preview...', true);
 
         previewTimer = setTimeout(function () {
@@ -816,13 +827,15 @@
     renderPreviewStatus: function (text, showSpinner) {
       var statusEl = document.getElementById('live-preview-status');
       var spinnerEl = document.getElementById('live-preview-spinner');
-      if (statusEl) {
-        statusEl.textContent = text || '';
+      var nextText = text || '';
+      if (statusEl && statusEl.textContent !== nextText) {
+        statusEl.textContent = nextText;
       }
       if (spinnerEl) {
-        if (showSpinner) {
+        var isHidden = spinnerEl.classList.contains('hidden');
+        if (showSpinner && isHidden) {
           spinnerEl.classList.remove('hidden');
-        } else {
+        } else if (!showSpinner && !isHidden) {
           spinnerEl.classList.add('hidden');
         }
       }

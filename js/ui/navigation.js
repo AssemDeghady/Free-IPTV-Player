@@ -12,6 +12,7 @@
   var currentElement = null;
   var currentRoute = 'home';
   var zoneHistory = {}; // Remembers last focused element per zone
+  var loadMoreTimer = null;
 
   var Navigation = {
     /**
@@ -269,19 +270,23 @@
         zoneHistory[zone] = currentElement;
       }
 
-      // Check if more channels / items should be rendered (deferred so keypress navigation remains 60fps)
-      (function (curEl, z) {
-        setTimeout(function () {
-          if (!curEl || !document.body.contains(curEl)) return;
-          if (z === 'live_channels' && window.FreeIPTV.LiveTV) {
-            window.FreeIPTV.LiveTV.checkLoadMore(curEl);
-          } else if (z === 'movies_grid' && window.FreeIPTV.Movies) {
-            window.FreeIPTV.Movies.checkLoadMore(curEl);
-          } else if (z === 'series_grid' && window.FreeIPTV.Series) {
-            window.FreeIPTV.Series.checkLoadMore(curEl);
-          }
-        }, 16);
-      })(currentElement, zone);
+      // Check if more channels / items should be rendered (debounced so rapid keypress navigation stays 60fps)
+      if (loadMoreTimer) {
+        clearTimeout(loadMoreTimer);
+      }
+      var targetEl = currentElement;
+      var targetZone = zone;
+      loadMoreTimer = setTimeout(function () {
+        loadMoreTimer = null;
+        if (!targetEl || !document.body.contains(targetEl)) return;
+        if (targetZone === 'live_channels' && window.FreeIPTV.LiveTV) {
+          window.FreeIPTV.LiveTV.checkLoadMore(targetEl);
+        } else if (targetZone === 'movies_grid' && window.FreeIPTV.Movies) {
+          window.FreeIPTV.Movies.checkLoadMore(targetEl);
+        } else if (targetZone === 'series_grid' && window.FreeIPTV.Series) {
+          window.FreeIPTV.Series.checkLoadMore(targetEl);
+        }
+      }, 16);
 
       if (window.FreeIPTV.Events && window.FreeIPTV.Constants) {
         window.FreeIPTV.Events.emit(window.FreeIPTV.Constants.EVENTS.NAV_FOCUS_CHANGED, {
@@ -1297,9 +1302,13 @@
         }
         if (direction === Constants.DIRECTIONS.DOWN) {
           if (!isNaN(gIdx) && container) {
-            var target = container.querySelector('[data-index="' + (gIdx + COLS) + '"]');
+            var downIdx = gIdx + COLS;
+            var downChild = container.children && container.children[downIdx];
+            var target = (downChild && downChild.getAttribute('data-index') === String(downIdx))
+              ? downChild
+              : container.querySelector('[data-index="' + downIdx + '"]');
             if (target) return target;
-            var last = container.lastElementChild;
+            var last = container.lastElementChild || (container.children && container.children.length > 0 ? container.children[container.children.length - 1] : null);
             if (last && last.classList.contains('focusable')) {
               var lastIdx = parseInt(last.getAttribute('data-index'), 10);
               if (!isNaN(lastIdx) && Math.floor(gIdx / COLS) < Math.floor(lastIdx / COLS)) {
@@ -1310,7 +1319,11 @@
         }
         if (direction === Constants.DIRECTIONS.UP) {
           if (!isNaN(gIdx) && gIdx - COLS >= 0 && container) {
-            var targetUp = container.querySelector('[data-index="' + (gIdx - COLS) + '"]');
+            var upIdx = gIdx - COLS;
+            var upChild = container.children && container.children[upIdx];
+            var targetUp = (upChild && upChild.getAttribute('data-index') === String(upIdx))
+              ? upChild
+              : container.querySelector('[data-index="' + upIdx + '"]');
             if (targetUp) return targetUp;
           }
           return document.getElementById('movies-search-input') ||
@@ -1362,9 +1375,13 @@
         }
         if (direction === Constants.DIRECTIONS.DOWN) {
           if (!isNaN(gIdx) && container) {
-            var target = container.querySelector('[data-index="' + (gIdx + COLS) + '"]');
+            var sDownIdx = gIdx + COLS;
+            var sDownChild = container.children && container.children[sDownIdx];
+            var target = (sDownChild && sDownChild.getAttribute('data-index') === String(sDownIdx))
+              ? sDownChild
+              : container.querySelector('[data-index="' + sDownIdx + '"]');
             if (target) return target;
-            var last = container.lastElementChild;
+            var last = container.lastElementChild || (container.children && container.children.length > 0 ? container.children[container.children.length - 1] : null);
             if (last && last.classList.contains('focusable')) {
               var lastIdx = parseInt(last.getAttribute('data-index'), 10);
               if (!isNaN(lastIdx) && Math.floor(gIdx / COLS) < Math.floor(lastIdx / COLS)) {
@@ -1375,7 +1392,11 @@
         }
         if (direction === Constants.DIRECTIONS.UP) {
           if (!isNaN(gIdx) && gIdx - COLS >= 0 && container) {
-            var targetUp = container.querySelector('[data-index="' + (gIdx - COLS) + '"]');
+            var sUpIdx = gIdx - COLS;
+            var sUpChild = container.children && container.children[sUpIdx];
+            var targetUp = (sUpChild && sUpChild.getAttribute('data-index') === String(sUpIdx))
+              ? sUpChild
+              : container.querySelector('[data-index="' + sUpIdx + '"]');
             if (targetUp) return targetUp;
           }
           return document.getElementById('series-search-input') ||

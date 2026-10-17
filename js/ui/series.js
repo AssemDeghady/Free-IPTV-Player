@@ -44,21 +44,40 @@
     return isNaN(d) ? 0 : d;
   }
 
+  var lastLoadedRow = -1;
+
   function loadNearbyImages(container, focusIdx) {
     if (!container) return;
+    var curRow = Math.floor(focusIdx / 5);
+    if (curRow === lastLoadedRow) return;
+    lastLoadedRow = curRow;
+
     var minIdx = Math.max(0, focusIdx - 10);
     var maxIdx = focusIdx + 15;
+    var unloadDist = 60;
     var cards = container.children;
     for (var i = 0; i < cards.length; i++) {
       var card = cards[i];
       var idx = parseInt(card.getAttribute('data-index'), 10);
-      if (!isNaN(idx) && idx >= minIdx && idx <= maxIdx) {
-        var img = card.querySelector('img[data-src]');
+      if (isNaN(idx)) continue;
+
+      if (idx >= minIdx && idx <= maxIdx) {
+        var img = card._img || card.querySelector('img[data-src]');
         if (img) {
           var src = img.getAttribute('data-src');
           if (src) {
             img.src = src;
             img.removeAttribute('data-src');
+          }
+        }
+      } else if (Math.abs(idx - focusIdx) > unloadDist && card._img && card._posterUrl) {
+        if (!card._img.getAttribute('data-src')) {
+          card._img.setAttribute('data-src', card._posterUrl);
+          card._img.removeAttribute('src');
+          card._img.classList.remove('poster-img-loaded');
+          card._img.classList.add('poster-img-loading');
+          if (card._fallback) {
+            card._fallback.style.display = 'flex';
           }
         }
       }
@@ -90,6 +109,7 @@
     categoryIndex = {};
     if (!seriesList || !seriesList.length) return;
 
+    var topRecent = [];
     for (var i = 0; i < seriesList.length; i++) {
       var s = seriesList[i];
       if (s._s === undefined) {
@@ -108,12 +128,24 @@
       var cat = s.categoryName || 'Other';
       if (!categoryIndex[cat]) categoryIndex[cat] = [];
       categoryIndex[cat].push(s);
+
+      // Single-pass O(N) top-20 newest selection (avoids cloning & sorting full catalog)
+      var ts = s._ts || 0;
+      if (topRecent.length < 20 || ts > (topRecent[topRecent.length - 1]._ts || 0)) {
+        var insIdx = topRecent.length;
+        while (insIdx > 0 && ts > (topRecent[insIdx - 1]._ts || 0)) {
+          insIdx--;
+        }
+        if (insIdx < 20) {
+          topRecent.splice(insIdx, 0, s);
+          if (topRecent.length > 20) {
+            topRecent.pop();
+          }
+        }
+      }
     }
 
-    var sorted = seriesList.slice().sort(function (a, b) {
-      return b._ts - a._ts;
-    });
-    precomputedRecentlyAdded = sorted.slice(0, 20);
+    precomputedRecentlyAdded = topRecent;
   }
 
   var isRestoringBrowsingContext = false;
@@ -596,11 +628,12 @@
     renderGrid: function (reset) {
       var container = document.getElementById('series-grid-container');
       if (!container) return;
-      applyPosterHeight(container);
 
       if (reset) {
+        applyPosterHeight(container);
         container.innerHTML = '';
         renderedCount = 0;
+        lastLoadedRow = -1;
       }
 
       if (filteredSeries.length === 0) {
@@ -612,14 +645,19 @@
         return;
       }
 
-      var self = this;
       var targetEnd = Math.min(renderedCount + CHUNK_SIZE, filteredSeries.length);
       var endIndex = targetEnd;
+      var frag = document.createDocumentFragment ? document.createDocumentFragment() : null;
+      var targetParent = frag || container;
 
       for (var i = renderedCount; i < endIndex; i++) {
         var series = filteredSeries[i];
         var card = this.createSeriesCard(series, i);
-        container.appendChild(card);
+        targetParent.appendChild(card);
+      }
+
+      if (frag) {
+        container.appendChild(frag);
       }
 
       renderedCount = endIndex;
@@ -655,12 +693,16 @@
       fallbackSvg.style.display = 'flex';
       fallbackSvg.innerHTML = '<svg viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>';
       posterBox.appendChild(fallbackSvg);
+      card._fallback = fallbackSvg;
 
       var posterUrl = series.posterUrl || series.poster || series.cover || series.streamIcon || '';
+      card._posterUrl = posterUrl;
       if (posterUrl) {
         var img = document.createElement('img');
         img.className = 'series-poster-img poster-img-loading';
         img.alt = '';
+        img.decoding = 'async';
+        card._img = img;
 
         img.onload = function () {
           this.classList.remove('poster-img-loading');
@@ -673,7 +715,7 @@
           fallbackSvg.style.display = 'flex';
         };
 
-        if (index < 25) {
+        if (index < 15) {
           img.src = posterUrl;
           if (img.complete && img.naturalWidth > 0) {
             img.classList.remove('poster-img-loading');

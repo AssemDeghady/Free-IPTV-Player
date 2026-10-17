@@ -24,6 +24,8 @@
       }
     },
 
+    _dashboardDirty: false,
+
     /**
      * Bind data change events to refresh dashboard.
      */
@@ -38,10 +40,16 @@
           self.renderDashboard();
         });
         window.FreeIPTV.Events.on(window.FreeIPTV.Constants.EVENTS.HISTORY_UPDATED, function () {
+          if (window.FreeIPTV.Player && window.FreeIPTV.Player.isActive && window.FreeIPTV.Player.isActive()) {
+            self._dashboardDirty = true;
+            return;
+          }
+          self._dashboardDirty = false;
           self.renderDashboard();
         });
         window.FreeIPTV.Events.on(window.FreeIPTV.Constants.EVENTS.VIEW_CHANGED, function (data) {
           if (data && data.route === 'home') {
+            self._dashboardDirty = false;
             self.renderDashboard();
           }
         });
@@ -583,10 +591,13 @@
 
       var views = document.querySelectorAll('.view-screen');
       for (var i = 0; i < views.length; i++) {
+        var wasVisible = !views[i].classList.contains('hidden');
         views[i].classList.add('hidden');
-        var inactives = views[i].querySelectorAll('.focusable');
-        for (var idx = 0; idx < inactives.length; idx++) {
-          inactives[idx].setAttribute('tabindex', '-1');
+        if (wasVisible) {
+          var inactives = views[i].querySelectorAll('.focusable');
+          for (var idx = 0; idx < inactives.length; idx++) {
+            inactives[idx].setAttribute('tabindex', '-1');
+          }
         }
       }
 

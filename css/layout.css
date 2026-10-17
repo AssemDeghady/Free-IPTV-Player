@@ -635,7 +635,6 @@ html[dir="rtl"] .live-tv-panes > * + * {
   font-weight: var(--font-weight-medium);
   text-align: left;
   outline: none;
-  transition: all var(--transition-fast);
   gap: 8px;
   box-sizing: border-box;
 }
@@ -664,7 +663,6 @@ html[dir="rtl"] .live-tv-panes > * + * {
   font-size: var(--font-size-sm);
   box-sizing: border-box;
   outline: none;
-  transition: all var(--transition-fast);
 }
 
 .category-search-input:focus,
@@ -721,7 +719,7 @@ html[dir="rtl"] .live-tv-panes > * + * {
   color: var(--text-primary);
   text-align: left;
   outline: none;
-  transition: all var(--transition-fast);
+  transition: transform var(--transition-fast);
   flex-shrink: 0;
 }
 
@@ -1143,8 +1141,7 @@ html[dir="rtl"] .settings-refresh-options > * + * {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: rgba(5, 8, 15, 0.88);
-  backdrop-filter: blur(8px);
+  background-color: rgba(5, 8, 15, 0.94);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1868,15 +1865,14 @@ body.player-active .app-splash-screen {
   height: 60px;
   min-width: 60px;
   padding: 0 24px;
-  background-color: rgba(26, 34, 52, 0.85);
+  background-color: rgba(20, 28, 45, 0.94);
   border: 2px solid rgba(255, 255, 255, 0.15);
   border-radius: var(--radius-md);
   color: var(--text-primary);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
   outline: none;
-  transition: all var(--transition-fast);
-  backdrop-filter: blur(8px);
+  transition: transform var(--transition-fast);
 }
 
 .btn-player-control svg {
@@ -1920,23 +1916,21 @@ body.player-active .app-splash-screen {
   align-items: center;
   gap: 14px;
   padding: 24px 36px;
-  background-color: rgba(10, 14, 23, 0.85);
+  background-color: rgba(10, 14, 23, 0.94);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  backdrop-filter: blur(12px);
   color: #ffffff;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7);
 }
 
 .player-dev-notice {
   padding: 12px 24px;
-  background-color: rgba(245, 158, 11, 0.15);
+  background-color: rgba(24, 18, 8, 0.92);
   border: 1px solid rgba(245, 158, 11, 0.4);
   border-radius: var(--radius-md);
   color: #fbbf24;
   font-size: var(--font-size-xs);
   text-align: center;
-  backdrop-filter: blur(8px);
   max-width: 600px;
 }
 
@@ -1963,7 +1957,7 @@ body.player-active .app-splash-screen {
 }
 
 /* ============================================================
-   PHASE 5 � COMPLETE IPTV APPLICATION STYLES
+   PHASE 5  COMPLETE IPTV APPLICATION STYLES
    ============================================================ */
 
 /* 1. MOVIES & SERIES GRIDS */
@@ -1990,7 +1984,6 @@ body.player-active .app-splash-screen {
   outline: none;
   cursor: pointer;
   text-align: left;
-  transition: all var(--transition-fast);
   min-height: 380px;
 }
 
@@ -2140,11 +2133,7 @@ html[dir="rtl"] .home-row-title {
   outline: none;
   cursor: none;
   overflow: hidden;
-  transition:
-    transform var(--transition-fast),
-    border-color var(--transition-fast),
-    box-shadow var(--transition-fast),
-    background var(--transition-fast);
+  transition: transform var(--transition-fast);
 }
 
 .home-quick-card::before {
@@ -2284,8 +2273,7 @@ html[dir="rtl"] .home-row-title {
   inset: -20px -40px -20px -40px;
   background-size: cover;
   background-position: center top;
-  opacity: 0.18;
-  filter: blur(28px);
+  opacity: 0.14;
   pointer-events: none;
   z-index: 0;
 }
@@ -2575,8 +2563,7 @@ html[dir="rtl"] .btn-page-back .back-arrow {
   min-width: 260px;
   max-height: 320px;
   overflow-y: auto;
-  background: rgba(15, 23, 42, 0.98);
-  backdrop-filter: blur(16px);
+  background: rgba(12, 18, 34, 0.99);
   border: 2px solid var(--accent-primary);
   border-radius: var(--radius-md);
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.85);
@@ -2606,7 +2593,7 @@ html[dir="rtl"] .btn-page-back .back-arrow {
   outline: none;
   cursor: pointer;
   text-align: left;
-  transition: all var(--transition-fast);
+  transition: transform var(--transition-fast);
 }
 
 .season-dropdown-item.active {
@@ -2657,7 +2644,7 @@ html[dir="rtl"] .btn-page-back .back-arrow {
   outline: none;
   cursor: pointer;
   text-align: left;
-  transition: all var(--transition-fast);
+  transition: transform var(--transition-fast);
   min-height: 96px;
 }
 
@@ -3687,7 +3674,7 @@ html[dir="rtl"] .global-search-input {
   position: absolute;
   top: 120px;
   right: 48px;
-  background: rgba(15, 23, 42, 0.85);
+  background: rgba(12, 18, 34, 0.94);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: var(--radius-md);
   padding: 12px 24px;
@@ -3695,7 +3682,6 @@ html[dir="rtl"] .global-search-input {
   font-size: 16px;
   font-weight: 700;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(8px);
   z-index: 530;
 }
 
@@ -4412,7 +4398,6 @@ html[dir="rtl"] .player-episodes-seasons-bar > * + * {
   white-space: nowrap;
   flex-shrink: 0;
   cursor: pointer;
-  transition: all 0.15s ease;
 }
 
 .player-season-tab.active {
@@ -4451,7 +4436,6 @@ html[dir="rtl"] .player-episodes-seasons-bar > * + * {
   background: rgba(30, 41, 59, 0.65);
   border: 2px solid rgba(255, 255, 255, 0.08);
   cursor: pointer;
-  transition: all 0.15s ease;
   flex-shrink: 0;
 }
 

@@ -44,21 +44,40 @@
     return isNaN(d) ? 0 : d;
   }
 
+  var lastLoadedRow = -1;
+
   function loadNearbyImages(container, focusIdx) {
     if (!container) return;
+    var curRow = Math.floor(focusIdx / 5);
+    if (curRow === lastLoadedRow) return;
+    lastLoadedRow = curRow;
+
     var minIdx = Math.max(0, focusIdx - 10);
     var maxIdx = focusIdx + 15;
+    var unloadDist = 60;
     var cards = container.children;
     for (var i = 0; i < cards.length; i++) {
       var card = cards[i];
       var idx = parseInt(card.getAttribute('data-index'), 10);
-      if (!isNaN(idx) && idx >= minIdx && idx <= maxIdx) {
-        var img = card.querySelector('img[data-src]');
+      if (isNaN(idx)) continue;
+
+      if (idx >= minIdx && idx <= maxIdx) {
+        var img = card._img || card.querySelector('img[data-src]');
         if (img) {
           var src = img.getAttribute('data-src');
           if (src) {
             img.src = src;
             img.removeAttribute('data-src');
+          }
+        }
+      } else if (Math.abs(idx - focusIdx) > unloadDist && card._img && card._posterUrl) {
+        if (!card._img.getAttribute('data-src')) {
+          card._img.setAttribute('data-src', card._posterUrl);
+          card._img.removeAttribute('src');
+          card._img.classList.remove('poster-img-loaded');
+          card._img.classList.add('poster-img-loading');
+          if (card._fallback) {
+            card._fallback.style.display = 'flex';
           }
         }
       }
@@ -86,6 +105,7 @@
     categoryIndex = {};
     if (!movies || !movies.length) return;
 
+    var topRecent = [];
     for (var i = 0; i < movies.length; i++) {
       var m = movies[i];
       if (m._s === undefined) {
@@ -98,12 +118,24 @@
       var cat = m.categoryName || 'Other';
       if (!categoryIndex[cat]) categoryIndex[cat] = [];
       categoryIndex[cat].push(m);
+
+      // Single-pass O(N) top-20 newest selection (avoids cloning & sorting 15,000+ items)
+      var ts = m._ts || 0;
+      if (topRecent.length < 20 || ts > (topRecent[topRecent.length - 1]._ts || 0)) {
+        var insIdx = topRecent.length;
+        while (insIdx > 0 && ts > (topRecent[insIdx - 1]._ts || 0)) {
+          insIdx--;
+        }
+        if (insIdx < 20) {
+          topRecent.splice(insIdx, 0, m);
+          if (topRecent.length > 20) {
+            topRecent.pop();
+          }
+        }
+      }
     }
 
-    var sorted = movies.slice().sort(function (a, b) {
-      return b._ts - a._ts;
-    });
-    precomputedRecentlyAdded = sorted.slice(0, 20);
+    precomputedRecentlyAdded = topRecent;
   }
 
   var isRestoringBrowsingContext = false;
@@ -564,11 +596,12 @@
     renderGrid: function (reset) {
       var container = document.getElementById('movies-grid-container');
       if (!container) return;
-      applyPosterHeight(container);
 
       if (reset) {
+        applyPosterHeight(container);
         container.innerHTML = '';
         renderedCount = 0;
+        lastLoadedRow = -1;
       }
 
       if (filteredMovies.length === 0) {
@@ -580,14 +613,19 @@
         return;
       }
 
-      var self = this;
       var targetEnd = Math.min(renderedCount + CHUNK_SIZE, filteredMovies.length);
       var endIndex = targetEnd;
+      var frag = document.createDocumentFragment ? document.createDocumentFragment() : null;
+      var targetParent = frag || container;
 
       for (var i = renderedCount; i < endIndex; i++) {
         var movie = filteredMovies[i];
         var card = this.createMovieCard(movie, i);
-        container.appendChild(card);
+        targetParent.appendChild(card);
+      }
+
+      if (frag) {
+        container.appendChild(frag);
       }
 
       renderedCount = endIndex;
@@ -623,12 +661,16 @@
       fallbackSvg.style.display = 'flex';
       fallbackSvg.innerHTML = '<svg viewBox="0 0 24 24"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/></svg>';
       posterBox.appendChild(fallbackSvg);
+      card._fallback = fallbackSvg;
 
       var posterUrl = movie.posterUrl || movie.poster || movie.streamIcon || movie.cover || '';
+      card._posterUrl = posterUrl;
       if (posterUrl) {
         var img = document.createElement('img');
         img.className = 'movie-poster-img poster-img-loading';
         img.alt = '';
+        img.decoding = 'async';
+        card._img = img;
 
         img.onload = function () {
           this.classList.remove('poster-img-loading');
@@ -641,7 +683,7 @@
           fallbackSvg.style.display = 'flex';
         };
 
-        if (index < 25) {
+        if (index < 15) {
           img.src = posterUrl;
           if (img.complete && img.naturalWidth > 0) {
             img.classList.remove('poster-img-loading');

@@ -12,7 +12,7 @@
   var MAX_RETRIES = 2;
   var CONTROLS_HIDE_DELAY = 4500; // 4.5s inactivity
   var PROGRESS_TICK_INTERVAL = 1000; // 1s UI progress update
-  var PROGRESS_SAVE_INTERVAL = 5000; // 5s persistent progress save
+  var PROGRESS_SAVE_INTERVAL = 15000; // 15s persistent progress save (plus immediate save on close)
 
   var currentMedia = null; // { type: 'live'|'movie'|'episode', id, title, subtitle, streamUrl, duration, position }
   var currentChannel = null; // backward compatibility
@@ -1024,6 +1024,8 @@
         this.closeEpisodesOverlay(false);
       }
 
+      isPlayerActive = false;
+
       // Final progress save
       if (currentMedia && currentMedia.type !== 'live') {
         var engine = window.FreeIPTV.PlayerManager || window.FreeIPTV.AVPlayEngine;
@@ -1046,8 +1048,6 @@
           });
         }
       }
-
-      isPlayerActive = false;
       currentSessionId++;
       clearTimeout(controlsTimer);
       clearTimeout(retryTimer);
