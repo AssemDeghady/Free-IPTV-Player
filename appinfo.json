@@ -1,6 +1,6 @@
 {
   "id": "org.freeiptvplayer.app",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "vendor": "Free IPTV Player Team",
   "type": "web",
   "main": "index.html",
