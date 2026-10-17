@@ -89,9 +89,42 @@ class MockElement {
 
   set innerHTML(val) {
     this._innerHTML = String(val || '');
-    if (val === '') {
-      this.children = [];
+    this.children = [];
+    if (!this._innerHTML) return;
+
+    if (this._innerHTML.includes('id="home-recent-grid"')) {
+      const gridDiv = new MockElement('div', 'home-recent-grid');
+      gridDiv.className = 'home-row-grid';
+      this.appendChild(gridDiv);
+      return;
     }
+
+    // Parse simple button rows for PlaylistsView.render() testing
+    const rowMatch = this._innerHTML.match(/<div class="(playlist-actions-row|item-buttons-row)">([\s\S]*?)<\/div>/);
+    if (rowMatch) {
+      const rowDiv = new MockElement('div');
+      rowDiv.className = rowMatch[1];
+      const btnRegex = /<button([^>]*)>([\s\S]*?)<\/button>/g;
+      let m;
+      while ((m = btnRegex.exec(rowMatch[2])) !== null) {
+        const btn = new MockElement('button');
+        const attrsStr = m[1];
+        const attrRegex = /([a-zA-Z0-9_-]+)="([^"]*)"/g;
+        let am;
+        while ((am = attrRegex.exec(attrsStr)) !== null) {
+          btn.setAttribute(am[1], am[2]);
+        }
+        btn.textContent = m[2].replace(/<[^>]+>/g, '').trim();
+        rowDiv.appendChild(btn);
+      }
+      this.appendChild(rowDiv);
+    }
+  }
+
+  hasAttribute(k) {
+    if (k === 'id') return Boolean(this.id);
+    if (k === 'class') return Boolean(this.className);
+    return this.attributes[k] !== undefined;
   }
 
   setAttribute(k, v) {
@@ -137,7 +170,10 @@ class MockElement {
   }
 
   focus() {
-    globalDoc.activeElement = this;
+    const naturallyFocusable = ['BUTTON', 'INPUT', 'SELECT', 'TEXTAREA', 'A'];
+    if (naturallyFocusable.includes(this.tagName) || this.hasAttribute('tabindex')) {
+      globalDoc.activeElement = this;
+    }
   }
 
   contains(node) {
@@ -320,7 +356,9 @@ const scripts = [
   '../js/ui/home.js',
   '../js/ui/player.js',
   '../js/ui/movies.js',
-  '../js/ui/series.js'
+  '../js/ui/series.js',
+  '../js/ui/playlists.js',
+  '../js/ui/settings.js'
 ];
 
 for (const rel of scripts) {
@@ -381,6 +419,38 @@ function setupDom() {
   viewSeriesDetails.appendChild(seriesPosterImg);
   viewSeriesDetails.appendChild(seriesPosterPlaceholder);
   globalDoc.body.appendChild(viewSeriesDetails);
+
+  // Playlists view
+  const viewPlaylists = new MockElement('div', 'view-playlists');
+  viewPlaylists.className = 'view-screen hidden';
+  const btnPlaylistsAdd = new MockElement('button', 'btn-playlists-add');
+  btnPlaylistsAdd.className = 'btn btn-primary focusable';
+  btnPlaylistsAdd.setAttribute('data-nav-zone', 'playlists_header');
+  const playlistsActiveContainer = new MockElement('div', 'playlists-active-container');
+  const playlistsListContainer = new MockElement('div', 'playlists-list-container');
+  viewPlaylists.appendChild(btnPlaylistsAdd);
+  viewPlaylists.appendChild(playlistsActiveContainer);
+  viewPlaylists.appendChild(playlistsListContainer);
+  globalDoc.body.appendChild(viewPlaylists);
+
+  // Settings view
+  const viewSettings = new MockElement('div', 'view-settings');
+  viewSettings.className = 'view-screen hidden';
+  const settingsBtnAddPlaylist = new MockElement('button', 'settings-btn-add-playlist');
+  settingsBtnAddPlaylist.className = 'btn btn-primary focusable';
+  settingsBtnAddPlaylist.setAttribute('data-nav-zone', 'settings');
+  const settingsPlaylistsContainer = new MockElement('div', 'settings-playlists-container');
+  const btnLangEn = new MockElement('button', 'btn-lang-en');
+  btnLangEn.className = 'btn btn-secondary focusable';
+  btnLangEn.setAttribute('data-nav-zone', 'settings');
+  const btnLangAr = new MockElement('button', 'btn-lang-ar');
+  btnLangAr.className = 'btn btn-secondary focusable';
+  btnLangAr.setAttribute('data-nav-zone', 'settings');
+  viewSettings.appendChild(settingsBtnAddPlaylist);
+  viewSettings.appendChild(settingsPlaylistsContainer);
+  viewSettings.appendChild(btnLangEn);
+  viewSettings.appendChild(btnLangAr);
+  globalDoc.body.appendChild(viewSettings);
 
   // Player view & controls
   const viewPlayer = new MockElement('div', 'view-player');
@@ -448,6 +518,8 @@ function setupDom() {
 setupDom();
 FreeIPTV.Navigation.init();
 FreeIPTV.Player.init();
+FreeIPTV.Playlists.init();
+FreeIPTV.Settings.init();
 
 // =========================================================================
 // 1. COVER PLACEHOLDER WHILE WAITING FOR IMAGE TO LOAD
@@ -647,7 +719,8 @@ FreeIPTV.I18n = {
     if (key === 'player.now_playing') return 'Now Playing';
     return key;
   },
-  isRTL: function () { return false; }
+  isRTL: function () { return false; },
+  getLanguage: function () { return 'en'; }
 };
 
 // Focus #player-btn-episodes and simulate document.activeElement staying on #player-btn-episodes
@@ -750,6 +823,138 @@ FreeIPTV.Navigation.move('up');
 assert(FreeIPTV.Navigation.getCurrent() === seriesSearchEl, 'Pressing UP from top row of Series grid focuses #series-search-input');
 FreeIPTV.Navigation.move('down');
 assert(FreeIPTV.Navigation.getCurrent() === sCard4, 'Pressing DOWN from #series-search-input returns focus to last focused series card');
+viewSeriesEl.classList.add('hidden');
+
+// =========================================================================
+// 5. MULTI-PLAYLIST D-PAD NAVIGATION & ACTIVATION (PLAYLISTS & SETTINGS)
+// =========================================================================
+console.log('\n--- 5. Multi-Playlist D-Pad Navigation & Activation (Playlists & Settings) ---');
+
+// Configure two playlists: Hydra (active) and Test (inactive)
+const mockPlaylists = [
+  { id: 'pl_hydra', name: 'Hydra', type: 'xtream', serverUrl: 'http://hydra.tv:8080', username: 'user1', channelCount: 28067 },
+  { id: 'pl_test', name: 'Test', type: 'xtream', serverUrl: 'http://test.tv:8080', username: 'user2', channelCount: 1500 }
+];
+let currentActiveId = 'pl_hydra';
+
+FreeIPTV.PlaylistManager.getPlaylists = function () {
+  return mockPlaylists;
+};
+FreeIPTV.PlaylistManager.getAllPlaylists = function () {
+  return mockPlaylists;
+};
+FreeIPTV.PlaylistManager.getActivePlaylistId = function () {
+  return currentActiveId;
+};
+FreeIPTV.PlaylistManager.getActivePlaylist = function () {
+  return mockPlaylists.find(p => p.id === currentActiveId) || null;
+};
+FreeIPTV.PlaylistManager.getPlaylistById = function (id) {
+  return mockPlaylists.find(p => p.id === id) || null;
+};
+FreeIPTV.PlaylistManager.setActivePlaylist = function (id) {
+  currentActiveId = id;
+  if (FreeIPTV.Events && FreeIPTV.Constants) {
+    FreeIPTV.Events.emit(FreeIPTV.Constants.EVENTS.PLAYLIST_ACTIVE_CHANGED, { id: id });
+  }
+};
+FreeIPTV.PlaylistManager.connectPlaylist = function () {
+  return {
+    then: function (cb) {
+      cb({ liveCount: 1500, movieCount: 200, seriesCount: 50 });
+      return { catch: function () {} };
+    }
+  };
+};
+
+// 5A. Test #view-playlists navigation (Hydra card -> Test card -> Activate button -> Enter)
+const viewPlaylistsEl = globalDoc.getElementById('view-playlists');
+viewPlaylistsEl.classList.remove('hidden');
+FreeIPTV.Playlists.render();
+
+const btnAddPlaylist = globalDoc.getElementById('btn-playlists-add');
+const btnActiveRefresh = globalDoc.getElementById('btn-active-refresh');
+const btnActiveRename = globalDoc.getElementById('btn-active-rename');
+const btnActiveDelete = globalDoc.getElementById('btn-active-delete');
+let savedCards = globalDoc.querySelectorAll('#playlists-list-container .playlist-item-card.focusable');
+
+assert(savedCards.length === 2, `#view-playlists renders 2 saved playlist cards (Hydra & Test, found ${savedCards.length})`);
+assert(savedCards[0].getAttribute('tabindex') === '0' && savedCards[1].getAttribute('tabindex') === '0', 'Both saved playlist cards have tabindex="0" so document.activeElement updates on focus');
+
+// Start at #btn-playlists-add -> DOWN to #btn-active-refresh -> RIGHT to #btn-active-rename -> RIGHT to #btn-active-delete
+FreeIPTV.Navigation.focus(btnAddPlaylist);
+FreeIPTV.Navigation.move('down');
+assert(FreeIPTV.Navigation.getCurrent() === btnActiveRefresh, 'Playlists: DOWN from #btn-playlists-add focuses #btn-active-refresh');
+FreeIPTV.Navigation.move('right');
+assert(FreeIPTV.Navigation.getCurrent() === btnActiveRename, 'Playlists: RIGHT focuses #btn-active-rename');
+FreeIPTV.Navigation.move('right');
+assert(FreeIPTV.Navigation.getCurrent() === btnActiveDelete, 'Playlists: RIGHT focuses #btn-active-delete');
+
+// DOWN from #btn-active-delete focuses first saved playlist card (Hydra) AND updates document.activeElement
+FreeIPTV.Navigation.move('down');
+assert(FreeIPTV.Navigation.getCurrent() === savedCards[0], 'Playlists: DOWN from active playlist action buttons focuses first saved card (Hydra)');
+assert(globalDoc.activeElement === savedCards[0], 'Playlists: document.activeElement is updated to Hydra card (not stuck on #btn-active-delete)');
+
+// RIGHT from Hydra card focuses second saved playlist card (Test)
+FreeIPTV.Navigation.move('right');
+assert(FreeIPTV.Navigation.getCurrent() === savedCards[1], 'Playlists: RIGHT from Hydra card moves focus to second saved playlist card (Test)');
+assert(globalDoc.activeElement === savedCards[1], 'Playlists: document.activeElement is updated to Test card');
+
+// LEFT from Test card returns to Hydra card, and RIGHT goes back to Test card
+FreeIPTV.Navigation.move('left');
+assert(FreeIPTV.Navigation.getCurrent() === savedCards[0], 'Playlists: LEFT from Test card returns focus to Hydra card');
+FreeIPTV.Navigation.move('right');
+assert(FreeIPTV.Navigation.getCurrent() === savedCards[1], 'Playlists: RIGHT from Hydra card focuses Test card again');
+
+// DOWN from Test card focuses its inner "Activate" button (.btn-card-activate)
+const testCardBtns = savedCards[1].querySelectorAll('.item-buttons-row .focusable');
+assert(testCardBtns.length === 4, `Test card has 4 action buttons: Activate, Refresh, Rename, Delete (found ${testCardBtns.length})`);
+FreeIPTV.Navigation.move('down');
+assert(FreeIPTV.Navigation.getCurrent() === testCardBtns[0], 'Playlists: DOWN from Test card focuses its "Activate" button');
+assert(testCardBtns[0].getAttribute('data-action') === 'activate', 'Focused button on Test card has data-action="activate"');
+
+// Press Enter (triggerActive) on Activate button to set Test playlist active
+FreeIPTV.Navigation.triggerActive();
+assert(currentActiveId === 'pl_test', 'Playlists: Pressing Enter on Test card "Activate" button switches active playlist to pl_test');
+
+viewPlaylistsEl.classList.add('hidden');
+
+// 5B. Test #view-settings Configured IPTV Playlists row-aware navigation
+// Reset active playlist to Hydra (Row 0: 2 buttons [Refresh, Delete]) and Test inactive (Row 1: 3 buttons [Set Active, Refresh, Delete])
+currentActiveId = 'pl_hydra';
+const viewSettingsEl = globalDoc.getElementById('view-settings');
+viewSettingsEl.classList.remove('hidden');
+FreeIPTV.Settings.renderPlaylists();
+
+const settingsCards = globalDoc.querySelectorAll('#settings-playlists-container .playlist-card');
+assert(settingsCards.length === 2, `#view-settings renders 2 playlist rows (found ${settingsCards.length})`);
+const row0Btns = settingsCards[0].querySelectorAll('.btn-settings-action.focusable');
+const row1Btns = settingsCards[1].querySelectorAll('.btn-settings-action.focusable');
+assert(row0Btns.length === 2, `Settings Row 0 (active Hydra) has 2 buttons [Refresh, Delete] (found ${row0Btns.length})`);
+assert(row1Btns.length === 3, `Settings Row 1 (inactive Test) has 3 buttons [Set Active, Refresh, Delete] (found ${row1Btns.length})`);
+
+// Start at #settings-btn-add-playlist -> DOWN to Row 0 Refresh (row0Btns[0])
+const settingsAddBtn = globalDoc.getElementById('settings-btn-add-playlist');
+FreeIPTV.Navigation.focus(settingsAddBtn);
+FreeIPTV.Navigation.move('down');
+assert(FreeIPTV.Navigation.getCurrent() === row0Btns[0], 'Settings: DOWN from #settings-btn-add-playlist focuses Row 0 Refresh button');
+
+// DOWN from Row 0 Refresh (col 0) lands directly on Row 1 "Set Active" (row1Btns[0], col 0) — NOT skipping to Row 1 Refresh!
+FreeIPTV.Navigation.move('down');
+assert(FreeIPTV.Navigation.getCurrent() === row1Btns[0], 'Settings: DOWN from Row 0 Refresh focuses Row 1 "Set Active" button');
+assert(row1Btns[0].getAttribute('data-action') === 'set_active', 'Settings Row 1 first button is "Set Active" (data-action="set_active")');
+
+// RIGHT from Row 1 "Set Active" focuses Row 1 "Refresh" (row1Btns[1]), and LEFT goes back to "Set Active" (row1Btns[0])
+FreeIPTV.Navigation.move('right');
+assert(FreeIPTV.Navigation.getCurrent() === row1Btns[1], 'Settings: RIGHT from Row 1 "Set Active" focuses Row 1 "Refresh"');
+FreeIPTV.Navigation.move('left');
+assert(FreeIPTV.Navigation.getCurrent() === row1Btns[0], 'Settings: LEFT from Row 1 "Refresh" focuses Row 1 "Set Active" (not blocked by % 3 math)');
+
+// Activate Test playlist from Settings
+FreeIPTV.Navigation.triggerActive();
+assert(currentActiveId === 'pl_test', 'Settings: Pressing Enter on Row 1 "Set Active" activates pl_test');
+
+viewSettingsEl.classList.add('hidden');
 
 console.log('\n================================================================');
 console.log(` SUITE COMPLETE: ${passed} PASSED, ${failed} FAILED`);
@@ -758,3 +963,4 @@ console.log('================================================================');
 if (failed > 0) {
   process.exit(1);
 }
+

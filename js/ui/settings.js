@@ -38,15 +38,23 @@
         });
         window.FreeIPTV.Events.on(window.FreeIPTV.Constants.EVENTS.PLAYLIST_ADDED, function () {
           self.renderPlaylists();
+          self.renderDiagnostics();
+          self.renderAboutStats();
         });
         window.FreeIPTV.Events.on(window.FreeIPTV.Constants.EVENTS.PLAYLIST_REMOVED, function () {
           self.renderPlaylists();
+          self.renderDiagnostics();
+          self.renderAboutStats();
         });
         window.FreeIPTV.Events.on(window.FreeIPTV.Constants.EVENTS.PLAYLIST_UPDATED, function () {
           self.renderPlaylists();
+          self.renderDiagnostics();
+          self.renderAboutStats();
         });
         window.FreeIPTV.Events.on(window.FreeIPTV.Constants.EVENTS.PLAYLIST_ACTIVE_CHANGED, function () {
           self.renderPlaylists();
+          self.renderDiagnostics();
+          self.renderAboutStats();
         });
         window.FreeIPTV.Events.on(window.FreeIPTV.Constants.EVENTS.LANGUAGE_CHANGED, function () {
           self.renderSettings();
@@ -269,6 +277,19 @@
       var container = document.getElementById('settings-playlists-container');
       if (!container) return;
 
+      var viewSettings = document.getElementById('view-settings');
+      var isSettingsVisible = Boolean(viewSettings && !viewSettings.classList.contains('hidden'));
+      var nav = window.FreeIPTV.Navigation;
+      var prevFocused = (isSettingsVisible && nav && typeof nav.getCurrent === 'function') ? nav.getCurrent() : null;
+      var prevWasInContainer = Boolean(prevFocused && container.contains(prevFocused));
+      var prevPlaylistId = null;
+      if (prevWasInContainer && prevFocused) {
+        var prevCard = prevFocused.closest ? prevFocused.closest('.playlist-card') : null;
+        if (prevCard) {
+          prevPlaylistId = prevCard.getAttribute('data-playlist-id');
+        }
+      }
+
       container.innerHTML = '';
       this.updateLanguageButtons();
 
@@ -283,6 +304,10 @@
         emptyMsg.className = 'empty-settings-notice';
         emptyMsg.textContent = window.FreeIPTV.I18n ? window.FreeIPTV.I18n.t('settings.no_playlists') : 'No playlists configured yet.';
         container.appendChild(emptyMsg);
+        if (prevWasInContainer && nav) {
+          var fallbackAdd = document.getElementById('settings-btn-add-playlist');
+          if (fallbackAdd) nav.focus(fallbackAdd);
+        }
         return;
       }
 
@@ -292,6 +317,7 @@
         var p = playlists[i];
         var itemCard = document.createElement('div');
         itemCard.className = 'playlist-card' + (p.id === activeId ? ' is-active' : '');
+        itemCard.setAttribute('data-playlist-id', p.id);
 
         var infoGroup = document.createElement('div');
         infoGroup.className = 'playlist-card-info';
@@ -358,7 +384,10 @@
         if (p.id !== activeId) {
           var btnSetActive = document.createElement('button');
           btnSetActive.className = 'btn-settings-action focusable';
+          btnSetActive.setAttribute('tabindex', isSettingsVisible ? '0' : '-1');
           btnSetActive.setAttribute('data-nav-zone', 'settings_actions');
+          btnSetActive.setAttribute('data-action', 'set_active');
+          btnSetActive.setAttribute('data-playlist-id', p.id);
           btnSetActive.textContent = window.FreeIPTV.I18n ? window.FreeIPTV.I18n.t('settings.btn_set_active') : 'Set Active';
           (function (pId) {
             btnSetActive.addEventListener('click', function () {
@@ -371,7 +400,10 @@
         // Refresh button
         var btnRefresh = document.createElement('button');
         btnRefresh.className = 'btn-settings-action focusable';
+        btnRefresh.setAttribute('tabindex', isSettingsVisible ? '0' : '-1');
         btnRefresh.setAttribute('data-nav-zone', 'settings_actions');
+        btnRefresh.setAttribute('data-action', 'refresh');
+        btnRefresh.setAttribute('data-playlist-id', p.id);
         btnRefresh.textContent = window.FreeIPTV.I18n ? window.FreeIPTV.I18n.t('settings.btn_refresh') : 'Refresh';
         (function (pId, refreshBtn) {
           refreshBtn.addEventListener('click', function () {
@@ -393,7 +425,10 @@
         // Delete button
         var btnDelete = document.createElement('button');
         btnDelete.className = 'btn-settings-action btn-danger focusable';
+        btnDelete.setAttribute('tabindex', isSettingsVisible ? '0' : '-1');
         btnDelete.setAttribute('data-nav-zone', 'settings_actions');
+        btnDelete.setAttribute('data-action', 'delete');
+        btnDelete.setAttribute('data-playlist-id', p.id);
         btnDelete.textContent = window.FreeIPTV.I18n ? window.FreeIPTV.I18n.t('settings.btn_delete') : 'Delete';
         (function (pId) {
           btnDelete.addEventListener('click', function () {
@@ -405,6 +440,22 @@
         itemCard.appendChild(infoGroup);
         itemCard.appendChild(actionsGroup);
         container.appendChild(itemCard);
+      }
+
+      if (prevWasInContainer && nav && (!prevFocused || !document.body.contains(prevFocused))) {
+        var targetBtn = null;
+        if (prevPlaylistId) {
+          var matchingCard = container.querySelector('.playlist-card[data-playlist-id="' + prevPlaylistId + '"]');
+          if (matchingCard) {
+            targetBtn = matchingCard.querySelector('.focusable');
+          }
+        }
+        if (!targetBtn) {
+          targetBtn = container.querySelector('.focusable') || document.getElementById('settings-btn-add-playlist');
+        }
+        if (targetBtn) {
+          nav.focus(targetBtn);
+        }
       }
     },
 

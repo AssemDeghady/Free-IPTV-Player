@@ -168,7 +168,8 @@ const suites = [
   'test-xtream-series-seasons.cjs',
   'test-html5-playback.cjs',
   'test-player-navigation-regression.cjs',
-  'test-content-cache.cjs'
+  'test-content-cache.cjs',
+  'test-player-continue-cover-episodes.cjs'
 ];
 
 suites.forEach(suite => {

@@ -245,6 +245,13 @@
       currentElement = el;
       currentElement.classList.add('focused');
 
+      if (currentElement.getAttribute && currentElement.setAttribute) {
+        var curTabIndex = currentElement.getAttribute('tabindex');
+        if (curTabIndex === null || curTabIndex === undefined || curTabIndex === '-1') {
+          currentElement.setAttribute('tabindex', '0');
+        }
+      }
+
       try {
         currentElement.focus();
         if (currentElement.scrollIntoViewIfNeeded) {
@@ -508,9 +515,9 @@
         return this.handleSearchNavigation(zone, direction);
       } else if (zone === 'favorites_tabs' || zone === 'favorites_grid') {
         return this.handleFavoritesNavigation(zone, direction);
-      } else if (zone === 'playlists_actions' || zone === 'playlists_grid') {
+      } else if (zone === 'playlists_actions' || zone === 'playlists_grid' || zone === 'playlists_header' || zone === 'playlists') {
         return this.handlePlaylistsNavigation(zone, direction);
-      } else if (zone === 'settings_actions' || zone === 'settings_diagnostics') {
+      } else if (zone === 'settings_actions' || zone === 'settings_diagnostics' || zone === 'settings') {
         return this.handleSettingsNavigation(direction);
       } else if (zone === Constants.NAV_ZONES.MAIN) {
         return this.handleMainNavigation(direction);
@@ -1563,25 +1570,141 @@
     handlePlaylistsNavigation: function (zone, direction) {
       var Constants = window.FreeIPTV.Constants;
 
-      if (direction === Constants.DIRECTIONS.LEFT) {
+      var sidebarFallback = function () {
         var sidebarLink = document.querySelector('[data-route="playlists"]');
         if (sidebarLink) return sidebarLink;
-        return document.querySelector('.app-sidebar .focusable.active') || document.querySelector('.app-sidebar .focusable');
+        return document.querySelector('.app-sidebar .focusable.active') || document.querySelector('.app-sidebar .focusable') || null;
+      };
+
+      var btnAdd = document.getElementById('btn-playlists-add');
+      var activeBtns = Array.prototype.slice.call(document.querySelectorAll('#playlists-active-container .focusable')).filter(function (el) {
+        return !el.disabled && el.getAttribute('tabindex') !== '-1' && !el.classList.contains('hidden');
+      });
+      var savedCards = Array.prototype.slice.call(document.querySelectorAll('#playlists-list-container .playlist-item-card.focusable')).filter(function (el) {
+        return !el.disabled && el.getAttribute('tabindex') !== '-1' && !el.classList.contains('hidden');
+      });
+
+      var cols = Math.max(1, savedCards.length);
+      if (savedCards.length > 1 && savedCards[0] && savedCards[1] && savedCards[0].offsetTop !== undefined) {
+        var top0 = savedCards[0].offsetTop;
+        for (var k = 1; k < savedCards.length; k++) {
+          if (savedCards[k].offsetTop > top0) {
+            cols = k;
+            break;
+          }
+        }
       }
 
+      // 1. Top "Add Playlist" button
+      if (currentElement === btnAdd) {
+        if (direction === Constants.DIRECTIONS.UP) {
+          return document.getElementById('header-active-playlist') ||
+                 document.querySelector('.app-header .focusable') || null;
+        } else if (direction === Constants.DIRECTIONS.DOWN) {
+          return activeBtns[0] || savedCards[0] || document.querySelector('#playlists-list-container .focusable') || null;
+        } else if (direction === Constants.DIRECTIONS.LEFT) {
+          return sidebarFallback();
+        }
+        return null;
+      }
+
+      // 2. Active Playlist action buttons row (Reconnect / Refresh, Rename, Delete)
+      var aIdx = activeBtns.indexOf(currentElement);
+      if (aIdx !== -1) {
+        if (direction === Constants.DIRECTIONS.LEFT) {
+          if (aIdx > 0) return activeBtns[aIdx - 1];
+          return sidebarFallback();
+        } else if (direction === Constants.DIRECTIONS.RIGHT) {
+          if (aIdx < activeBtns.length - 1) return activeBtns[aIdx + 1];
+          return null;
+        } else if (direction === Constants.DIRECTIONS.UP) {
+          return btnAdd || document.getElementById('header-active-playlist') || document.querySelector('.app-header .focusable') || null;
+        } else if (direction === Constants.DIRECTIONS.DOWN) {
+          return savedCards[0] || document.querySelector('#playlists-list-container .focusable') || null;
+        }
+        return null;
+      }
+
+      // 3. Saved Playlist Cards (.playlist-item-card)
+      var cIdx = savedCards.indexOf(currentElement);
+      if (cIdx !== -1) {
+        if (direction === Constants.DIRECTIONS.RIGHT) {
+          if (cIdx < savedCards.length - 1) return savedCards[cIdx + 1];
+          return null;
+        } else if (direction === Constants.DIRECTIONS.LEFT) {
+          if (cIdx > 0) return savedCards[cIdx - 1];
+          return sidebarFallback();
+        } else if (direction === Constants.DIRECTIONS.DOWN) {
+          var ownBtns = Array.prototype.slice.call(currentElement.querySelectorAll('.item-buttons-row .focusable')).filter(function (el) {
+            return !el.disabled && el.getAttribute('tabindex') !== '-1' && !el.classList.contains('hidden');
+          });
+          if (ownBtns.length > 0) return ownBtns[0];
+          if (cIdx + cols < savedCards.length) return savedCards[cIdx + cols];
+          return null;
+        } else if (direction === Constants.DIRECTIONS.UP) {
+          if (cIdx >= cols) return savedCards[cIdx - cols];
+          return activeBtns[0] || btnAdd || document.getElementById('header-active-playlist') || document.querySelector('.app-header .focusable') || null;
+        }
+        return null;
+      }
+
+      // 4. Action buttons inside a Saved Playlist Card (.btn-card-activate, .btn-card-action)
+      var parentCard = currentElement && currentElement.closest ? currentElement.closest('.playlist-item-card') : null;
+      if (parentCard) {
+        var pCardIdx = savedCards.indexOf(parentCard);
+        var cardBtns = Array.prototype.slice.call(parentCard.querySelectorAll('.item-buttons-row .focusable')).filter(function (el) {
+          return !el.disabled && el.getAttribute('tabindex') !== '-1' && !el.classList.contains('hidden');
+        });
+        var bIdx = cardBtns.indexOf(currentElement);
+
+        if (direction === Constants.DIRECTIONS.RIGHT) {
+          if (bIdx >= 0 && bIdx < cardBtns.length - 1) {
+            return cardBtns[bIdx + 1];
+          }
+          if (pCardIdx >= 0 && pCardIdx < savedCards.length - 1) {
+            var nextCard = savedCards[pCardIdx + 1];
+            var nextBtns = Array.prototype.slice.call(nextCard.querySelectorAll('.item-buttons-row .focusable')).filter(function (el) {
+              return !el.disabled && el.getAttribute('tabindex') !== '-1' && !el.classList.contains('hidden');
+            });
+            return nextBtns[0] || nextCard;
+          }
+          return null;
+        } else if (direction === Constants.DIRECTIONS.LEFT) {
+          if (bIdx > 0) {
+            return cardBtns[bIdx - 1];
+          }
+          if (pCardIdx > 0) {
+            var prevCard = savedCards[pCardIdx - 1];
+            var prevBtns = Array.prototype.slice.call(prevCard.querySelectorAll('.item-buttons-row .focusable')).filter(function (el) {
+              return !el.disabled && el.getAttribute('tabindex') !== '-1' && !el.classList.contains('hidden');
+            });
+            return prevBtns[prevBtns.length - 1] || prevCard;
+          }
+          return sidebarFallback();
+        } else if (direction === Constants.DIRECTIONS.UP) {
+          return parentCard || activeBtns[0] || btnAdd || null;
+        } else if (direction === Constants.DIRECTIONS.DOWN) {
+          if (pCardIdx >= 0 && pCardIdx + cols < savedCards.length) {
+            return savedCards[pCardIdx + cols];
+          }
+          return null;
+        }
+      }
+
+      // Generic fallback within #view-playlists
       var items = Array.prototype.slice.call(document.querySelectorAll('#view-playlists .focusable'));
       var idx = items.indexOf(currentElement);
       if (idx === -1) return items[0] || null;
 
-      if (direction === Constants.DIRECTIONS.DOWN) {
+      if (direction === Constants.DIRECTIONS.DOWN || direction === Constants.DIRECTIONS.RIGHT) {
         if (idx + 1 < items.length) return items[idx + 1];
         return null;
       } else if (direction === Constants.DIRECTIONS.UP) {
         if (idx > 0) return items[idx - 1];
         return document.querySelector('.app-header .focusable') || null;
-      } else if (direction === Constants.DIRECTIONS.RIGHT) {
-        if (idx + 1 < items.length) return items[idx + 1];
-        return null;
+      } else if (direction === Constants.DIRECTIONS.LEFT) {
+        if (idx > 0) return items[idx - 1];
+        return sidebarFallback();
       }
 
       return null;
@@ -1609,10 +1732,40 @@
       var btnLangAr = document.getElementById('btn-lang-ar');
       var btnDiag = document.getElementById('btn-refresh-diagnostics');
 
-      // Check if current element is in the playlists list
+      // Check if current element is in the playlists list (grouped per .playlist-card row)
       var playlistContainer = document.getElementById('settings-playlists-container');
-      var playlistItems = playlistContainer ? Array.prototype.slice.call(playlistContainer.querySelectorAll('.focusable')) : [];
+      var playlistItems = playlistContainer ? Array.prototype.slice.call(playlistContainer.querySelectorAll('.focusable')).filter(function (el) {
+        return !el.disabled && el.getAttribute('tabindex') !== '-1' && !el.classList.contains('hidden');
+      }) : [];
       var isPlaylistChild = playlistItems.indexOf(currentElement) !== -1;
+
+      var playlistRows = [];
+      var curPlaylistRow = -1;
+      var curPlaylistCol = -1;
+      if (playlistContainer) {
+        var pCards = playlistContainer.querySelectorAll('.playlist-card');
+        for (var pc = 0; pc < pCards.length; pc++) {
+          var rBtns = Array.prototype.slice.call(pCards[pc].querySelectorAll('.focusable')).filter(function (el) {
+            return !el.disabled && el.getAttribute('tabindex') !== '-1' && !el.classList.contains('hidden');
+          });
+          if (rBtns.length > 0) {
+            var colMatch = rBtns.indexOf(currentElement);
+            if (colMatch !== -1) {
+              curPlaylistRow = playlistRows.length;
+              curPlaylistCol = colMatch;
+            }
+            playlistRows.push(rBtns);
+          }
+        }
+        if (playlistRows.length === 0 && playlistItems.length > 0) {
+          var flatMatch = playlistItems.indexOf(currentElement);
+          if (flatMatch !== -1) {
+            curPlaylistRow = 0;
+            curPlaylistCol = flatMatch;
+          }
+          playlistRows.push(playlistItems);
+        }
+      }
 
       // Auto-Refresh interval buttons
       var refreshIntervalBtns = Array.prototype.slice.call(view.querySelectorAll('.btn-refresh-interval:not([disabled])')).filter(function (el) {
@@ -1629,13 +1782,16 @@
                  document.querySelector('.app-header .focusable') || null;
         }
         if (isPlaylistChild) {
-          var pIdx = playlistItems.indexOf(currentElement);
-          if (pIdx <= 2) {
-            return btnAdd || document.getElementById('btn-header-settings');
+          if (curPlaylistRow > 0) {
+            var prevRow = playlistRows[curPlaylistRow - 1];
+            return prevRow[Math.min(curPlaylistCol, prevRow.length - 1)] || prevRow[0];
           }
-          return playlistItems[pIdx - 3] || btnAdd;
+          return btnAdd || document.getElementById('btn-header-settings');
         }
         if (currentElement === toggleAutoResume) {
+          if (playlistRows.length > 0) {
+            return playlistRows[playlistRows.length - 1][0];
+          }
           return playlistItems[playlistItems.length - 1] || btnAdd || document.getElementById('btn-header-settings');
         }
         if (currentElement === toggleAutoNext) {
@@ -1658,12 +1814,12 @@
 
       } else if (direction === Constants.DIRECTIONS.DOWN) {
         if (currentElement === btnAdd) {
-          return playlistItems[0] || toggleAutoResume || (index < settingsItems.length - 1 ? settingsItems[index + 1] : null);
+          return (playlistRows.length > 0 ? playlistRows[0][0] : playlistItems[0]) || toggleAutoResume || (index < settingsItems.length - 1 ? settingsItems[index + 1] : null);
         }
         if (isPlaylistChild) {
-          var pIdx2 = playlistItems.indexOf(currentElement);
-          if (pIdx2 + 3 < playlistItems.length) {
-            return playlistItems[pIdx2 + 3];
+          if (curPlaylistRow >= 0 && curPlaylistRow < playlistRows.length - 1) {
+            var nextRow = playlistRows[curPlaylistRow + 1];
+            return nextRow[Math.min(curPlaylistCol, nextRow.length - 1)] || nextRow[0];
           }
           return toggleAutoResume;
         }
@@ -1686,11 +1842,12 @@
         return null;
 
       } else if (direction === Constants.DIRECTIONS.RIGHT) {
-        if (isPlaylistChild) {
-          var pIdx3 = playlistItems.indexOf(currentElement);
-          if (pIdx3 < playlistItems.length - 1 && (pIdx3 % 3 !== 2)) {
-            return playlistItems[pIdx3 + 1];
+        if (isPlaylistChild && curPlaylistRow >= 0) {
+          var curRowR = playlistRows[curPlaylistRow];
+          if (curPlaylistCol >= 0 && curPlaylistCol < curRowR.length - 1) {
+            return curRowR[curPlaylistCol + 1];
           }
+          return null;
         }
         if (isRefreshChild) {
           if (refreshIdx < refreshIntervalBtns.length - 1) {
@@ -1707,10 +1864,10 @@
         return null;
 
       } else if (direction === Constants.DIRECTIONS.LEFT) {
-        if (isPlaylistChild) {
-          var pIdx4 = playlistItems.indexOf(currentElement);
-          if (pIdx4 > 0 && (pIdx4 % 3 !== 0)) {
-            return playlistItems[pIdx4 - 1];
+        if (isPlaylistChild && curPlaylistRow >= 0) {
+          var curRowL = playlistRows[curPlaylistRow];
+          if (curPlaylistCol > 0) {
+            return curRowL[curPlaylistCol - 1];
           }
           return document.querySelector('.app-sidebar .focusable.active') || document.querySelector('.app-sidebar .focusable');
         }

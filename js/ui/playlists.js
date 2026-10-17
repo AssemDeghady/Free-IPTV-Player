@@ -139,9 +139,52 @@
      * Render the active playlist card and all saved playlists list.
      */
     render: function () {
+      var view = document.getElementById('view-playlists');
+      var isViewVisible = Boolean(view && !view.classList.contains('hidden'));
+      var nav = window.FreeIPTV.Navigation;
+      var prevFocused = (isViewVisible && nav && typeof nav.getCurrent === 'function') ? nav.getCurrent() : null;
+      var prevWasInPlaylists = Boolean(prevFocused && view && view.contains(prevFocused));
+      var prevCardId = null;
+      var prevActiveBtnId = null;
+
+      if (prevWasInPlaylists && prevFocused) {
+        var parentCard = prevFocused.closest ? prevFocused.closest('.playlist-item-card') : null;
+        if (parentCard) {
+          prevCardId = parentCard.getAttribute('data-playlist-id');
+        } else if (prevFocused.getAttribute && prevFocused.getAttribute('data-playlist-id')) {
+          prevCardId = prevFocused.getAttribute('data-playlist-id');
+        } else if (prevFocused.id) {
+          prevActiveBtnId = prevFocused.id;
+        }
+      }
+
       this.updateHeaderIndicator();
       this.renderActivePlaylistSection();
       this.renderSavedPlaylistsList();
+
+      if (view && isViewVisible) {
+        var focusables = view.querySelectorAll('.focusable');
+        for (var f = 0; f < focusables.length; f++) {
+          focusables[f].setAttribute('tabindex', '0');
+        }
+
+        if (prevWasInPlaylists && nav && (!prevFocused || !document.body.contains(prevFocused))) {
+          var targetToRestore = null;
+          if (prevCardId) {
+            targetToRestore = view.querySelector('#playlists-list-container .playlist-item-card[data-playlist-id="' + prevCardId + '"]');
+          } else if (prevActiveBtnId) {
+            targetToRestore = document.getElementById(prevActiveBtnId);
+          }
+          if (!targetToRestore) {
+            targetToRestore = view.querySelector('#playlists-list-container .playlist-item-card.focusable') ||
+                              document.getElementById('btn-playlists-add') ||
+                              view.querySelector('.focusable');
+          }
+          if (targetToRestore) {
+            nav.focus(targetToRestore);
+          }
+        }
+      }
     },
 
     /**
@@ -197,13 +240,13 @@
           (active.type === 'xtream' ? '<div class="stat-item"><span class="stat-val">' + seriesCount + '</span> <span class="stat-lbl">' + (I18n ? I18n.t('home.stat_series') : 'Series') + '</span></div>' : '') +
         '</div>' +
         '<div class="playlist-actions-row">' +
-          '<button id="btn-active-refresh" class="btn-playlist-action focusable" data-nav-zone="playlists_actions">' +
+          '<button id="btn-active-refresh" class="btn-playlist-action focusable" tabindex="0" data-nav-zone="playlists_actions">' +
             '&#8635; ' + (I18n ? I18n.t('playlists.btn_refresh') : 'Reconnect / Refresh') +
           '</button>' +
-          '<button id="btn-active-rename" class="btn-playlist-action focusable" data-nav-zone="playlists_actions">' +
+          '<button id="btn-active-rename" class="btn-playlist-action focusable" tabindex="0" data-nav-zone="playlists_actions">' +
             '&#9998; ' + (I18n ? I18n.t('playlists.btn_rename') : 'Rename') +
           '</button>' +
-          '<button id="btn-active-delete" class="btn-playlist-action btn-danger focusable" data-nav-zone="playlists_actions">' +
+          '<button id="btn-active-delete" class="btn-playlist-action btn-danger focusable" tabindex="0" data-nav-zone="playlists_actions">' +
             '&#128465; ' + (I18n ? I18n.t('playlists.btn_delete') : 'Delete') +
           '</button>' +
         '</div>';
@@ -278,6 +321,7 @@
 
         var card = document.createElement('div');
         card.className = 'playlist-item-card focusable' + (isCurrentActive ? ' is-active' : '');
+        card.setAttribute('tabindex', '0');
         card.setAttribute('data-nav-zone', 'playlists_grid');
         card.setAttribute('data-playlist-id', p.id);
 
@@ -295,18 +339,38 @@
           '<div class="item-meta" id="playlist-meta-' + p.id + '">' + initialMetaText + '</div>' +
           '<div class="item-buttons-row">' +
             (!isCurrentActive ? 
-              '<button class="btn-card-activate focusable" data-nav-zone="playlists_grid" data-action="activate" data-id="' + p.id + '">' +
+              '<button class="btn-card-activate focusable" tabindex="0" data-nav-zone="playlists_grid" data-action="activate" data-id="' + p.id + '">' +
                 (I18n ? I18n.t('playlists.btn_activate') : 'Activate') +
               '</button>' : '') +
-            '<button class="btn-card-action focusable" data-nav-zone="playlists_grid" data-action="refresh" data-id="' + p.id + '" title="Refresh">&#8635;</button>' +
-            '<button class="btn-card-action focusable" data-nav-zone="playlists_grid" data-action="rename" data-id="' + p.id + '" title="Rename">&#9998;</button>' +
-            '<button class="btn-card-action btn-danger focusable" data-nav-zone="playlists_grid" data-action="delete" data-id="' + p.id + '" title="Delete">&#128465;</button>' +
+            '<button class="btn-card-action focusable" tabindex="0" data-nav-zone="playlists_grid" data-action="refresh" data-id="' + p.id + '" title="Refresh">&#8635;</button>' +
+            '<button class="btn-card-action focusable" tabindex="0" data-nav-zone="playlists_grid" data-action="rename" data-id="' + p.id + '" title="Rename">&#9998;</button>' +
+            '<button class="btn-card-action btn-danger focusable" tabindex="0" data-nav-zone="playlists_grid" data-action="delete" data-id="' + p.id + '" title="Delete">&#128465;</button>' +
           '</div>';
 
-        // Card click -> if not active, clicking anywhere activates it
+        // Bind direct click handlers on inner action buttons + card click
         (function (playlistItem, cardEl) {
+          var actionBtns = cardEl.querySelectorAll('[data-action]');
+          for (var b = 0; b < actionBtns.length; b++) {
+            (function (btn) {
+              btn.addEventListener('click', function (e) {
+                if (e && e.stopPropagation) e.stopPropagation();
+                var action = btn.getAttribute('data-action');
+                var id = btn.getAttribute('data-id');
+                if (action === 'activate') {
+                  self.handleActivate(id);
+                } else if (action === 'refresh') {
+                  self.handleRefresh(id, btn);
+                } else if (action === 'rename') {
+                  self.handleRename(id, playlistItem.name);
+                } else if (action === 'delete') {
+                  self.handleDelete(id, playlistItem.name);
+                }
+              });
+            })(actionBtns[b]);
+          }
+
           cardEl.addEventListener('click', function (e) {
-            var actionBtn = e.target.closest('[data-action]');
+            var actionBtn = e && e.target && e.target.closest ? e.target.closest('[data-action]') : null;
             if (actionBtn) {
               var action = actionBtn.getAttribute('data-action');
               var id = actionBtn.getAttribute('data-id');
@@ -360,7 +424,11 @@
         window.FreeIPTV.LiveTV.loadActivePlaylist();
       }
       if (window.FreeIPTV.Home) {
-        window.FreeIPTV.Home.render();
+        if (typeof window.FreeIPTV.Home.renderDashboard === 'function') {
+          window.FreeIPTV.Home.renderDashboard();
+        } else if (typeof window.FreeIPTV.Home.render === 'function') {
+          window.FreeIPTV.Home.render();
+        }
       }
 
       this.render();
