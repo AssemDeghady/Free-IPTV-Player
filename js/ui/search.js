@@ -278,25 +278,35 @@
       posterWrap.className = 'search-poster-wrap';
 
       var fallback = document.createElement('div');
-      fallback.className = 'search-poster-fallback';
+      fallback.className = 'search-poster-fallback cover-placeholder';
       fallback.innerHTML = type === 'movie' ?
         '<svg viewBox="0 0 24 24"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/></svg>' :
         '<svg viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>';
+      posterWrap.appendChild(fallback);
 
       var posterUrl = item.posterUrl || item.poster || item.cover || item.logoUrl || item.streamIcon || '';
       if (posterUrl) {
         var img = document.createElement('img');
-        img.src = posterUrl;
+        img.className = 'poster-img-loading';
         img.alt = '';
         img.loading = 'lazy';
+        img.onload = function () {
+          this.classList.remove('poster-img-loading');
+          this.classList.add('poster-img-loaded');
+          fallback.style.display = 'none';
+        };
         img.onerror = function () {
           this.style.display = 'none';
           fallback.style.display = 'flex';
         };
+        img.src = posterUrl;
+        if (img.complete && img.naturalWidth > 0) {
+          img.classList.remove('poster-img-loading');
+          img.classList.add('poster-img-loaded');
+          fallback.style.display = 'none';
+        }
         posterWrap.appendChild(img);
-        fallback.style.display = 'none';
       }
-      posterWrap.appendChild(fallback);
 
       var infoWrap = document.createElement('div');
       infoWrap.className = 'search-card-info';

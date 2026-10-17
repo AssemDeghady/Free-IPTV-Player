@@ -528,15 +528,41 @@
         var cwList = (PlaylistManager && typeof PlaylistManager.getContinueWatching === 'function')
           ? PlaylistManager.getContinueWatching(null, activePlaylist ? activePlaylist.id : null) : [];
         var cwSeriesMap = {};
+        var cwSeriesOrder = [];
         for (var cwi = 0; cwi < cwList.length; cwi++) {
-          if (cwList[cwi].contentType === 'episode' && cwList[cwi].seriesId) {
-            cwSeriesMap[cwList[cwi].seriesId] = true;
+          var cwItem = cwList[cwi];
+          if (cwItem.contentType === 'episode' && cwItem.seriesId && !cwSeriesMap[cwItem.seriesId]) {
+            cwSeriesMap[cwItem.seriesId] = cwItem;
+            cwSeriesOrder.push(cwItem.seriesId);
           }
         }
-        filteredSeries = allSeries.filter(function (s) {
-          if (!cwSeriesMap[s.id]) {
-            return false;
+        var seriesById = {};
+        for (var sbi = 0; sbi < allSeries.length; sbi++) {
+          seriesById[allSeries[sbi].id] = allSeries[sbi];
+        }
+        var cwSeriesList = [];
+        for (var oi = 0; oi < cwSeriesOrder.length; oi++) {
+          var sid = cwSeriesOrder[oi];
+          var latestEp = cwSeriesMap[sid];
+          var existingSeries = seriesById[sid];
+          if (existingSeries) {
+            cwSeriesList.push(Object.assign({}, existingSeries, {
+              cwLatestEpisode: latestEp
+            }));
+          } else if (latestEp) {
+            var cleanSName = latestEp.seriesName || String(latestEp.title || '').replace(/\s*-\s*S\d+E\d+$/i, '') || 'Series';
+            cwSeriesList.push({
+              id: sid,
+              seriesId: sid,
+              name: cleanSName,
+              posterUrl: latestEp.posterUrl || latestEp.poster || '',
+              poster: latestEp.posterUrl || latestEp.poster || '',
+              categoryName: 'Continue Watching',
+              cwLatestEpisode: latestEp
+            });
           }
+        }
+        filteredSeries = cwSeriesList.filter(function (s) {
           if (!q) return true;
           return searchText(s).indexOf(q) !== -1;
         });
@@ -623,31 +649,42 @@
       var posterBox = document.createElement('div');
       posterBox.className = 'series-poster-wrap series-poster-box';
 
+      // Always render cover placeholder while image is waiting to load or if missing/broken
+      var fallbackSvg = document.createElement('div');
+      fallbackSvg.className = 'poster-fallback-icon cover-placeholder';
+      fallbackSvg.style.display = 'flex';
+      fallbackSvg.innerHTML = '<svg viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>';
+      posterBox.appendChild(fallbackSvg);
+
       var posterUrl = series.posterUrl || series.poster || series.cover || series.streamIcon || '';
       if (posterUrl) {
         var img = document.createElement('img');
-        img.className = 'series-poster-img';
+        img.className = 'series-poster-img poster-img-loading';
         img.alt = '';
+
+        img.onload = function () {
+          this.classList.remove('poster-img-loading');
+          this.classList.add('poster-img-loaded');
+          fallbackSvg.style.display = 'none';
+        };
+
+        img.onerror = function () {
+          this.style.display = 'none';
+          fallbackSvg.style.display = 'flex';
+        };
+
         if (index < 25) {
           img.src = posterUrl;
+          if (img.complete && img.naturalWidth > 0) {
+            img.classList.remove('poster-img-loading');
+            img.classList.add('poster-img-loaded');
+            fallbackSvg.style.display = 'none';
+          }
         } else {
           img.setAttribute('data-src', posterUrl);
         }
 
-        img.onerror = function () {
-          this.style.display = 'none';
-          var fallback = document.createElement('div');
-          fallback.className = 'poster-fallback-icon';
-          fallback.innerHTML = '<svg viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>';
-          posterBox.appendChild(fallback);
-        };
-
         posterBox.appendChild(img);
-      } else {
-        var fallbackSvg = document.createElement('div');
-        fallbackSvg.className = 'poster-fallback-icon';
-        fallbackSvg.innerHTML = '<svg viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>';
-        posterBox.appendChild(fallbackSvg);
       }
 
       // Rating badge if available
@@ -664,13 +701,152 @@
       title.textContent = (window.FreeIPTV.cleanTitle ? window.FreeIPTV.cleanTitle(series.name) : series.name);
       posterBox.appendChild(title);
 
+      // Episode badge & progress bar for Continue Watching
+      if (activeCategory === 'continue_watching' && series.cwLatestEpisode) {
+        var cwEp = series.cwLatestEpisode;
+        var sNum = Number(cwEp.seasonNumber) || 1;
+        var eNum = Number(cwEp.episodeNumber) || 1;
+        var epBadge = document.createElement('div');
+        epBadge.className = 'series-card-sub series-cw-episode-badge';
+        epBadge.textContent = 'S' + (sNum < 10 ? '0' + sNum : sNum) + 'E' + (eNum < 10 ? '0' + eNum : eNum);
+        posterBox.appendChild(epBadge);
+
+        var progPct = series.cwProgressPercent || cwEp.progressPercent || 0;
+        if (progPct > 0) {
+          var progTrack = document.createElement('div');
+          progTrack.className = 'poster-progress-track';
+          var progFill = document.createElement('div');
+          progFill.className = 'poster-progress-fill';
+          progFill.style.width = Math.min(100, Math.max(5, progPct)) + '%';
+          progTrack.appendChild(progFill);
+          posterBox.appendChild(progTrack);
+        }
+      }
+
       card.appendChild(posterBox);
 
       card.addEventListener('click', function () {
+        if (activeCategory === 'continue_watching' && window.FreeIPTV.Player) {
+          self.resumeLatestEpisode(series);
+          return;
+        }
         self.openSeriesDetails(series);
       });
 
       return card;
+    },
+
+    /**
+     * Resume the latest watched episode of a series directly from Continue Watching.
+     * @param {Object} series
+     */
+    resumeLatestEpisode: function (series) {
+      if (!series || !window.FreeIPTV.Player) return;
+      var PlaylistManager = window.FreeIPTV.PlaylistManager;
+      var activePlaylistId = (PlaylistManager && PlaylistManager.getActivePlaylistId) ? PlaylistManager.getActivePlaylistId() : null;
+
+      var cwEp = series.cwLatestEpisode || null;
+      if (PlaylistManager && typeof PlaylistManager.getContinueWatching === 'function') {
+        var cwList = PlaylistManager.getContinueWatching(null, activePlaylistId) || [];
+        for (var i = 0; i < cwList.length; i++) {
+          if (cwList[i].contentType === 'episode' && String(cwList[i].seriesId) === String(series.id)) {
+            cwEp = cwList[i];
+            break;
+          }
+        }
+      }
+      if (!cwEp && PlaylistManager && typeof PlaylistManager.getWatchHistory === 'function') {
+        var histList = PlaylistManager.getWatchHistory(null, activePlaylistId) || [];
+        for (var h = 0; h < histList.length; h++) {
+          if (histList[h].contentType === 'episode' && String(histList[h].seriesId) === String(series.id)) {
+            cwEp = histList[h];
+            break;
+          }
+        }
+      }
+
+      if (!cwEp) {
+        this.openSeriesDetails(series);
+        return;
+      }
+
+      var prog = (PlaylistManager && PlaylistManager.getPlaybackProgress)
+        ? PlaylistManager.getPlaybackProgress(cwEp.contentId)
+        : null;
+      var posSec = (prog && prog.positionSeconds > 0) ? prog.positionSeconds : (cwEp.positionSeconds || 0);
+      var resumeMs = posSec * 1000;
+      var targetSeason = Number(cwEp.seasonNumber) || 1;
+      var targetEpNum = Number(cwEp.episodeNumber) || 1;
+
+      var fallbackEpObj = {
+        id: cwEp.contentId,
+        name: cwEp.subtitle || ('Episode ' + targetEpNum),
+        title: cwEp.subtitle || ('Episode ' + targetEpNum),
+        episodeNumber: targetEpNum,
+        seasonNumber: targetSeason,
+        streamUrl: cwEp.streamUrl,
+        posterUrl: cwEp.posterUrl || series.posterUrl || series.poster || '',
+        durationSecs: cwEp.durationSeconds || 0
+      };
+
+      var plId = activePlaylistId || (series && series.playlistId) || null;
+      if (PlaylistManager && typeof PlaylistManager.getSeriesDetails === 'function') {
+        PlaylistManager.getSeriesDetails(plId, series).then(function (details) {
+          var content = (details && (details.content || details.allEpisodes)) ? (details.content || details.allEpisodes).slice() : [];
+          if (content.length === 0 && details && details.episodesBySeason && typeof details.episodesBySeason === 'object') {
+            var sKeys = Object.keys(details.episodesBySeason);
+            for (var k = 0; k < sKeys.length; k++) {
+              var sArr = details.episodesBySeason[sKeys[k]];
+              if (Array.isArray(sArr)) {
+                for (var j = 0; j < sArr.length; j++) {
+                  content.push(sArr[j]);
+                }
+              }
+            }
+          }
+          var seasonEps = [];
+          var matchedEp = null;
+
+          for (var ci = 0; ci < content.length; ci++) {
+            var ep = content[ci];
+            var sNum = Number(ep.seasonNumber);
+            if (isNaN(sNum) || sNum < 0) sNum = 1;
+            if (String(ep.id) === String(cwEp.contentId)) {
+              matchedEp = ep;
+              targetSeason = sNum;
+            }
+          }
+
+          for (var si = 0; si < content.length; si++) {
+            var epItem = content[si];
+            var epSeason = Number(epItem.seasonNumber);
+            if (isNaN(epSeason) || epSeason < 0) epSeason = 1;
+            if (epSeason === targetSeason) {
+              seasonEps.push(epItem);
+            }
+          }
+
+          seasonEps.sort(function (a, b) {
+            return (Number(a.episodeNumber) || 0) - (Number(b.episodeNumber) || 0);
+          });
+
+          if (!matchedEp && seasonEps.length > 0) {
+            matchedEp = seasonEps.find(function (e) { return Number(e.episodeNumber) === targetEpNum; }) || fallbackEpObj;
+          }
+
+          window.FreeIPTV.Player.playEpisode(
+            series,
+            targetSeason,
+            matchedEp || fallbackEpObj,
+            resumeMs,
+            seasonEps.length > 0 ? seasonEps : [fallbackEpObj]
+          );
+        }).catch(function () {
+          window.FreeIPTV.Player.playEpisode(series, targetSeason, fallbackEpObj, resumeMs, [fallbackEpObj]);
+        });
+      } else {
+        window.FreeIPTV.Player.playEpisode(series, targetSeason, fallbackEpObj, resumeMs, [fallbackEpObj]);
+      }
     },
 
     /**
@@ -945,11 +1121,29 @@
       }
 
       var posterEl = document.getElementById('series-details-poster');
+      var placeholderEl = document.getElementById('series-details-poster-placeholder');
       var seriesPoster = series.posterUrl || series.poster || series.cover || series.streamIcon || '';
       if (posterEl) {
+        if (placeholderEl) placeholderEl.style.display = 'flex';
         if (seriesPoster) {
-          posterEl.src = seriesPoster;
+          posterEl.classList.remove('poster-img-loaded');
+          posterEl.classList.add('poster-img-loading');
           posterEl.style.display = 'block';
+          posterEl.onload = function () {
+            posterEl.classList.remove('poster-img-loading');
+            posterEl.classList.add('poster-img-loaded');
+            if (placeholderEl) placeholderEl.style.display = 'none';
+          };
+          posterEl.onerror = function () {
+            posterEl.style.display = 'none';
+            if (placeholderEl) placeholderEl.style.display = 'flex';
+          };
+          posterEl.src = seriesPoster;
+          if (posterEl.complete && posterEl.naturalWidth > 0) {
+            posterEl.classList.remove('poster-img-loading');
+            posterEl.classList.add('poster-img-loaded');
+            if (placeholderEl) placeholderEl.style.display = 'none';
+          }
         } else {
           posterEl.style.display = 'none';
         }
@@ -1203,24 +1397,32 @@
       thumbBox.className = 'episode-thumb-box';
 
       var fallbackIcon = document.createElement('div');
-      fallbackIcon.className = 'episode-fallback-icon';
+      fallbackIcon.className = 'episode-fallback-icon cover-placeholder';
       fallbackIcon.innerHTML = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+      thumbBox.appendChild(fallbackIcon);
 
       if (ep.thumbnailUrl) {
         var img = document.createElement('img');
-        img.className = 'episode-thumb-img';
+        img.className = 'episode-thumb-img poster-img-loading';
         img.alt = '';
         img.loading = 'lazy';
-        img.src = ep.thumbnailUrl;
+        img.onload = function () {
+          this.classList.remove('poster-img-loading');
+          this.classList.add('poster-img-loaded');
+          fallbackIcon.style.display = 'none';
+        };
         img.onerror = function () {
           this.style.display = 'none';
           fallbackIcon.style.display = 'flex';
         };
+        img.src = ep.thumbnailUrl;
+        if (img.complete && img.naturalWidth > 0) {
+          img.classList.remove('poster-img-loading');
+          img.classList.add('poster-img-loaded');
+          fallbackIcon.style.display = 'none';
+        }
         thumbBox.appendChild(img);
-        fallbackIcon.style.display = 'none';
       }
-
-      thumbBox.appendChild(fallbackIcon);
 
       // Info
       var infoCol = document.createElement('div');

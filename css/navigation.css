@@ -235,6 +235,26 @@ html[dir="rtl"] .season-dropdown-item:focus {
   transform: scale(1.02);
 }
 
+.player-season-tab.focused,
+.player-season-tab:focus,
+.player-episodes-close-btn.focused,
+.player-episodes-close-btn:focus {
+  background-color: var(--focus-bg-color);
+  border-color: var(--focus-border-color);
+  box-shadow: 0 0 16px rgba(59, 130, 246, 0.8);
+  color: #ffffff;
+  transform: scale(1.04);
+}
+
+.player-episode-item.focused,
+.player-episode-item:focus {
+  background-color: var(--focus-bg-color);
+  border-color: var(--focus-border-color);
+  box-shadow: 0 0 16px rgba(59, 130, 246, 0.75);
+  color: #ffffff;
+  transform: scale(1.01);
+}
+
 .live-epg-schedule-item.focused,
 .live-epg-schedule-item:focus {
   background-color: var(--focus-bg-color);

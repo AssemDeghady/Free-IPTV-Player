@@ -502,14 +502,22 @@
           var cw = cwItems[ci];
           var existing = movieMap[cw.contentId];
           if (existing) {
-            cwMovies.push(existing);
+            cwMovies.push(Object.assign({}, existing, {
+              cwPositionSeconds: cw.positionSeconds || 0,
+              cwDurationSeconds: cw.durationSeconds || 0,
+              cwProgressPercent: cw.progressPercent || 0
+            }));
           } else {
             cwMovies.push({
               id: cw.contentId,
+              streamId: cw.contentId,
               name: cw.title,
               posterUrl: cw.posterUrl,
               streamUrl: cw.streamUrl,
-              categoryName: 'Continue Watching'
+              categoryName: 'Continue Watching',
+              cwPositionSeconds: cw.positionSeconds || 0,
+              cwDurationSeconds: cw.durationSeconds || 0,
+              cwProgressPercent: cw.progressPercent || 0
             });
           }
         }
@@ -609,31 +617,42 @@
       var posterBox = document.createElement('div');
       posterBox.className = 'movie-poster-wrap movie-poster-box';
 
+      // Always render cover placeholder while image is waiting to load or if missing/broken
+      var fallbackSvg = document.createElement('div');
+      fallbackSvg.className = 'poster-fallback-icon cover-placeholder';
+      fallbackSvg.style.display = 'flex';
+      fallbackSvg.innerHTML = '<svg viewBox="0 0 24 24"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/></svg>';
+      posterBox.appendChild(fallbackSvg);
+
       var posterUrl = movie.posterUrl || movie.poster || movie.streamIcon || movie.cover || '';
       if (posterUrl) {
         var img = document.createElement('img');
-        img.className = 'movie-poster-img';
+        img.className = 'movie-poster-img poster-img-loading';
         img.alt = '';
+
+        img.onload = function () {
+          this.classList.remove('poster-img-loading');
+          this.classList.add('poster-img-loaded');
+          fallbackSvg.style.display = 'none';
+        };
+
+        img.onerror = function () {
+          this.style.display = 'none';
+          fallbackSvg.style.display = 'flex';
+        };
+
         if (index < 25) {
           img.src = posterUrl;
+          if (img.complete && img.naturalWidth > 0) {
+            img.classList.remove('poster-img-loading');
+            img.classList.add('poster-img-loaded');
+            fallbackSvg.style.display = 'none';
+          }
         } else {
           img.setAttribute('data-src', posterUrl);
         }
 
-        img.onerror = function () {
-          this.style.display = 'none';
-          var fallback = document.createElement('div');
-          fallback.className = 'poster-fallback-icon';
-          fallback.innerHTML = '<svg viewBox="0 0 24 24"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/></svg>';
-          posterBox.appendChild(fallback);
-        };
-
         posterBox.appendChild(img);
-      } else {
-        var fallbackSvg = document.createElement('div');
-        fallbackSvg.className = 'poster-fallback-icon';
-        fallbackSvg.innerHTML = '<svg viewBox="0 0 24 24"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/></svg>';
-        posterBox.appendChild(fallbackSvg);
       }
 
       // Rating badge if available
@@ -650,9 +669,37 @@
       title.textContent = (window.FreeIPTV.cleanTitle ? window.FreeIPTV.cleanTitle(movie.name) : movie.name);
       posterBox.appendChild(title);
 
+      // Progress bar for Continue Watching
+      if (activeCategory === 'continue_watching' || movie.cwPositionSeconds > 0) {
+        var progPct = movie.cwProgressPercent || 0;
+        if (!progPct && window.FreeIPTV.PlaylistManager && window.FreeIPTV.PlaylistManager.getPlaybackProgress) {
+          var pObj = window.FreeIPTV.PlaylistManager.getPlaybackProgress(movie.id);
+          if (pObj && pObj.progressPercent) progPct = pObj.progressPercent;
+        }
+        if (progPct > 0) {
+          var progTrack = document.createElement('div');
+          progTrack.className = 'poster-progress-track';
+          var progFill = document.createElement('div');
+          progFill.className = 'poster-progress-fill';
+          progFill.style.width = Math.min(100, Math.max(5, progPct)) + '%';
+          progTrack.appendChild(progFill);
+          posterBox.appendChild(progTrack);
+        }
+      }
+
       card.appendChild(posterBox);
 
       card.addEventListener('click', function () {
+        if (activeCategory === 'continue_watching' && window.FreeIPTV.Player) {
+          var progress = (window.FreeIPTV.PlaylistManager && window.FreeIPTV.PlaylistManager.getPlaybackProgress)
+            ? window.FreeIPTV.PlaylistManager.getPlaybackProgress(movie.id)
+            : null;
+          var posSec = (progress && progress.positionSeconds > 0)
+            ? progress.positionSeconds
+            : (movie.cwPositionSeconds || 0);
+          window.FreeIPTV.Player.playMovie(movie, posSec * 1000);
+          return;
+        }
         self.openMovieDetails(movie);
       });
 
@@ -699,7 +746,7 @@
         btnResume.addEventListener('click', function () {
           if (selectedMovie && window.FreeIPTV.Player) {
             var progress = window.FreeIPTV.PlaylistManager ? window.FreeIPTV.PlaylistManager.getPlaybackProgress(selectedMovie.id) : null;
-            var pos = progress ? progress.positionSeconds : 0;
+            var pos = progress ? (progress.positionSeconds * 1000) : 0;
             window.FreeIPTV.Player.playMovie(selectedMovie, pos);
           }
         });
@@ -860,11 +907,29 @@
       }
 
       var posterEl = document.getElementById('movie-details-poster');
+      var placeholderEl = document.getElementById('movie-details-poster-placeholder');
       var moviePoster = movie.posterUrl || movie.poster || movie.streamIcon || movie.cover || '';
       if (posterEl) {
+        if (placeholderEl) placeholderEl.style.display = 'flex';
         if (moviePoster) {
-          posterEl.src = moviePoster;
+          posterEl.classList.remove('poster-img-loaded');
+          posterEl.classList.add('poster-img-loading');
           posterEl.style.display = 'block';
+          posterEl.onload = function () {
+            posterEl.classList.remove('poster-img-loading');
+            posterEl.classList.add('poster-img-loaded');
+            if (placeholderEl) placeholderEl.style.display = 'none';
+          };
+          posterEl.onerror = function () {
+            posterEl.style.display = 'none';
+            if (placeholderEl) placeholderEl.style.display = 'flex';
+          };
+          posterEl.src = moviePoster;
+          if (posterEl.complete && posterEl.naturalWidth > 0) {
+            posterEl.classList.remove('poster-img-loading');
+            posterEl.classList.add('poster-img-loaded');
+            if (placeholderEl) placeholderEl.style.display = 'none';
+          }
         } else {
           posterEl.style.display = 'none';
         }

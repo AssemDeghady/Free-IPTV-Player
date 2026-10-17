@@ -267,7 +267,9 @@
     'movies.favorites': 'Favorites',
     'movies.continue_watching': 'Continue Watching',
     'series.favorites': 'Favorites',
-    'series.continue_watching': 'Continue Watching'
+    'series.continue_watching': 'Continue Watching',
+    'player.episodes': 'Episodes',
+    'player.now_playing': 'NOW PLAYING'
   };
 
   // Built-in Arabic translation bundle (zero-latency bootstrap and offline-safe)
@@ -525,7 +527,9 @@
     'movies.favorites': 'المفضلة',
     'movies.continue_watching': 'متابعة المشاهدة',
     'series.favorites': 'المفضلة',
-    'series.continue_watching': 'متابعة المشاهدة'
+    'series.continue_watching': 'متابعة المشاهدة',
+    'player.episodes': 'الحلقات',
+    'player.now_playing': 'يعرض الآن'
   };
 
   /**

@@ -140,24 +140,34 @@
       mediaWrap.className = 'favorite-card-media';
 
       var fallback = document.createElement('div');
-      fallback.className = 'favorite-card-fallback';
+      fallback.className = 'favorite-card-fallback cover-placeholder';
       var svgIcon = '<svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>';
       fallback.innerHTML = svgIcon;
+      mediaWrap.appendChild(fallback);
 
       var posterUrl = item.posterUrl || item.poster || item.cover || item.logoUrl || item.streamIcon || '';
       if (posterUrl) {
         var img = document.createElement('img');
-        img.src = posterUrl;
+        img.className = 'poster-img-loading';
         img.alt = '';
         img.loading = 'lazy';
+        img.onload = function () {
+          this.classList.remove('poster-img-loading');
+          this.classList.add('poster-img-loaded');
+          fallback.style.display = 'none';
+        };
         img.onerror = function () {
           this.style.display = 'none';
           fallback.style.display = 'flex';
         };
+        img.src = posterUrl;
+        if (img.complete && img.naturalWidth > 0) {
+          img.classList.remove('poster-img-loading');
+          img.classList.add('poster-img-loaded');
+          fallback.style.display = 'none';
+        }
         mediaWrap.appendChild(img);
-        fallback.style.display = 'none';
       }
-      mediaWrap.appendChild(fallback);
 
       // Type Badge (LIVE, MOVIE, SERIES)
       var badge = document.createElement('div');

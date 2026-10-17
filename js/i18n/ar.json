@@ -240,5 +240,7 @@
   "movies.continue_watching": "متابعة المشاهدة",
   "movies.favorites": "المفضلة",
   "series.continue_watching": "متابعة المشاهدة",
-  "series.favorites": "المفضلة"
+  "series.favorites": "المفضلة",
+  "player.episodes": "الحلقات",
+  "player.now_playing": "يعرض الآن"
 }

@@ -184,8 +184,9 @@
           }
         }
 
+        var isEpisodesOpen = Boolean(Player.isEpisodesModalOpen && Player.isEpisodesModalOpen());
         var controlsOverlay = document.getElementById('player-controls-overlay');
-        var isControlsHidden = controlsOverlay && controlsOverlay.classList.contains('hidden');
+        var isControlsHidden = !isEpisodesOpen && controlsOverlay && controlsOverlay.classList.contains('hidden');
 
         // STATE A: Controls are HIDDEN -> Left / Right perform quick seek (+/-10s)
         // Any other nav key (Enter, Up, Down) wakes up controls and focuses play/pause.
@@ -219,6 +220,9 @@
         }
         // STATE B: Controls are VISIBLE -> do NOT seek on Left/Right!
         // Fall through to standard Navigation.move(LEFT/RIGHT) to navigate between player buttons.
+        if (!isEpisodesOpen && Player.resetControlsTimer) {
+          Player.resetControlsTimer();
+        }
       }
 
       // Player controls visible but focus is elsewhere (e.g. a hidden page behind the video):
@@ -226,17 +230,26 @@
       if (Player && Player.isActive() && Navigation) {
         var errEl = document.getElementById('player-error-overlay');
         var errShown = errEl && !errEl.classList.contains('hidden');
+        var episodesOpen = Boolean(Player.isEpisodesModalOpen && Player.isEpisodesModalOpen());
         var curEl = Navigation.getCurrent ? Navigation.getCurrent() : null;
-        var inCtl = curEl && curEl.closest && (curEl.closest('#player-controls-overlay') || curEl.closest('#player-error-overlay'));
         var navKey = keyCode === Constants.KEYS.ENTER || keyCode === Constants.KEYS.UP ||
                      keyCode === Constants.KEYS.DOWN || keyCode === Constants.KEYS.LEFT ||
                      keyCode === Constants.KEYS.RIGHT;
-        if (navKey && !errShown && !inCtl) {
-          var pBtn = document.getElementById('player-btn-play-pause');
-          if (pBtn) {
-            Navigation.focus(pBtn);
-            event.preventDefault();
-            return;
+
+        if (episodesOpen) {
+          var inEpisodes = curEl && document.body.contains(curEl) && curEl.closest && curEl.closest('#player-episodes-overlay');
+          if (navKey && !inEpisodes && Player.focusEpisodesOverlayDefault) {
+            Player.focusEpisodesOverlayDefault();
+          }
+        } else {
+          var inCtl = curEl && document.body.contains(curEl) && curEl.closest && (curEl.closest('#player-controls-overlay') || curEl.closest('#player-error-overlay'));
+          if (navKey && !errShown && !inCtl) {
+            var pBtn = document.getElementById('player-btn-play-pause');
+            if (pBtn) {
+              Navigation.focus(pBtn);
+              event.preventDefault();
+              return;
+            }
           }
         }
       }

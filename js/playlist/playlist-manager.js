@@ -1893,27 +1893,55 @@
 
       var history = Storage.get(STORAGE_HISTORY_KEY, []) || [];
       var now = Date.now();
+      var existingEntry = null;
 
-      // Deduplicate: remove existing entry for same contentId
+      // Deduplicate: remove existing entry for same contentId, capturing previous metadata
       history = history.filter(function (h) {
-        return !(h.contentId === item.contentId && h.contentType === item.contentType);
+        var isMatch = (String(h.contentId) === String(item.contentId) && h.contentType === item.contentType);
+        if (isMatch && !existingEntry) {
+          existingEntry = h;
+        }
+        return !isMatch;
       });
 
-      var resolvedHistPoster = item.posterUrl || item.poster || item.logoUrl || item.thumbnailUrl || item.cover || item.streamIcon || '';
+      var progressMap = Storage.get(STORAGE_PROGRESS_KEY, {}) || {};
+      var savedProg = progressMap[item.contentId] || null;
+
+      var rawPos = item.positionSeconds !== undefined ? item.positionSeconds : item.positionSec;
+      var rawDur = item.durationSeconds !== undefined ? item.durationSeconds : item.durationSec;
+
+      var resolvedPos = (rawPos !== undefined && rawPos > 0)
+        ? Math.round(rawPos)
+        : (existingEntry && existingEntry.positionSeconds > 0
+          ? existingEntry.positionSeconds
+          : (savedProg && savedProg.positionSeconds > 0 ? savedProg.positionSeconds : 0));
+
+      var resolvedDur = (rawDur !== undefined && rawDur > 0)
+        ? Math.round(rawDur)
+        : (existingEntry && existingEntry.durationSeconds > 0
+          ? existingEntry.durationSeconds
+          : (savedProg && savedProg.durationSeconds > 0 ? savedProg.durationSeconds : 0));
+
+      var resolvedHistPoster = item.posterUrl || item.poster || item.logoUrl || item.thumbnailUrl || item.cover || item.streamIcon ||
+                               (existingEntry ? (existingEntry.posterUrl || existingEntry.poster) : '') || '';
       var record = {
-        providerId: item.providerId || this.getActivePlaylistId() || '',
-        contentType: item.contentType || 'live',
+        providerId: item.providerId || (existingEntry && existingEntry.providerId) || this.getActivePlaylistId() || '',
+        contentType: item.contentType || (existingEntry && existingEntry.contentType) || 'live',
         contentId: item.contentId,
-        title: item.title || item.name || '',
+        title: item.title || item.name || (existingEntry && existingEntry.title) || '',
+        subtitle: item.subtitle || (existingEntry && existingEntry.subtitle) || '',
+        seriesName: item.seriesName || (existingEntry && existingEntry.seriesName) || '',
         posterUrl: resolvedHistPoster,
         poster: resolvedHistPoster,
-        streamUrl: item.streamUrl || '',
+        streamUrl: item.streamUrl || (existingEntry && existingEntry.streamUrl) || '',
         lastWatchedAt: now,
-        positionSeconds: item.positionSeconds || 0,
-        durationSeconds: item.durationSeconds || 0,
-        seriesId: item.seriesId || '',
-        seasonNumber: item.seasonNumber || 0,
-        episodeNumber: item.episodeNumber || 0
+        positionSeconds: resolvedPos,
+        durationSeconds: resolvedDur,
+        positionSec: resolvedPos,
+        durationSec: resolvedDur,
+        seriesId: item.seriesId || (existingEntry && existingEntry.seriesId) || '',
+        seasonNumber: item.seasonNumber || (existingEntry && existingEntry.seasonNumber) || 0,
+        episodeNumber: item.episodeNumber || (existingEntry && existingEntry.episodeNumber) || 0
       };
 
       // Prepend to top
@@ -1996,6 +2024,8 @@
           contentType: type,
           contentId: contentId,
           title: metadata.title || metadata.name,
+          subtitle: metadata.subtitle,
+          seriesName: metadata.seriesName,
           posterUrl: resolvedMetaPoster,
           poster: resolvedMetaPoster,
           positionSeconds: Math.round(pos || 0),
@@ -2058,14 +2088,17 @@
      */
     getContinueWatching: function (limit, playlistId) {
       var history = this.getWatchHistory(null, playlistId);
+      var Storage = window.FreeIPTV.Storage;
+      var progressMap = (Storage && Storage.get(STORAGE_PROGRESS_KEY, {})) || {};
       var continueList = [];
 
       for (var i = 0; i < history.length; i++) {
         var h = history[i];
         // Only movies and series episodes qualify for Continue Watching
         if (h.contentType === 'movie' || h.contentType === 'episode') {
-          var pos = h.positionSeconds || 0;
-          var dur = h.durationSeconds || 0;
+          var savedProg = progressMap[h.contentId];
+          var pos = h.positionSeconds || (savedProg && savedProg.positionSeconds) || 0;
+          var dur = h.durationSeconds || (savedProg && savedProg.durationSeconds) || 0;
           // Must have watched at least 15s and have at least 30s remaining
           if (pos >= 15 && (dur === 0 || pos < dur - 30)) {
             var remainingMins = dur > pos ? Math.round((dur - pos) / 60) : 0;
@@ -2076,10 +2109,15 @@
               contentType: h.contentType,
               contentId: h.contentId,
               title: h.title,
+              subtitle: h.subtitle || '',
+              seriesName: h.seriesName || '',
               posterUrl: h.posterUrl,
+              poster: h.poster || h.posterUrl,
               streamUrl: h.streamUrl,
               positionSeconds: pos,
               durationSeconds: dur,
+              positionSec: pos,
+              durationSec: dur,
               remainingMinutes: remainingMins,
               progressPercent: percent,
               seriesId: h.seriesId,

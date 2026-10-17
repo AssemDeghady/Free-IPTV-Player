@@ -343,32 +343,47 @@
       mediaBox.className = 'home-card-media';
 
       var fallback = document.createElement('div');
-      fallback.className = 'home-card-fallback';
+      fallback.className = 'home-card-fallback cover-placeholder';
       fallback.innerHTML = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+      mediaBox.appendChild(fallback);
 
       var posterUrl = item.posterUrl || item.poster || item.logoUrl || item.thumbnailUrl || item.cover || '';
       if (posterUrl) {
         var img = document.createElement('img');
-        img.src = posterUrl;
+        img.className = 'poster-img-loading';
         img.alt = '';
+        img.onload = function () {
+          this.classList.remove('poster-img-loading');
+          this.classList.add('poster-img-loaded');
+          fallback.style.display = 'none';
+        };
         img.onerror = function () {
           this.style.display = 'none';
-          var fb = document.createElement('div');
-          fb.className = 'home-card-fallback';
-          fb.innerHTML = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
-          mediaBox.appendChild(fb);
+          fallback.style.display = 'flex';
         };
+        img.src = posterUrl;
+        if (img.complete && img.naturalWidth > 0) {
+          img.classList.remove('poster-img-loading');
+          img.classList.add('poster-img-loaded');
+          fallback.style.display = 'none';
+        }
         mediaBox.appendChild(img);
-      } else {
-        var fallback = document.createElement('div');
-        fallback.className = 'home-card-fallback';
-        fallback.innerHTML = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
-        mediaBox.appendChild(fallback);
+      }
+
+      // Resolve playback progress (support both positionSeconds and positionSec)
+      var posSec = item.positionSeconds !== undefined ? item.positionSeconds : (item.positionSec || 0);
+      var durSec = item.durationSeconds !== undefined ? item.durationSeconds : (item.durationSec || 0);
+      if ((!posSec || !durSec) && window.FreeIPTV.PlaylistManager && window.FreeIPTV.PlaylistManager.getPlaybackProgress) {
+        var savedProg = window.FreeIPTV.PlaylistManager.getPlaybackProgress(item.contentId);
+        if (savedProg) {
+          if (!posSec) posSec = savedProg.positionSeconds || 0;
+          if (!durSec) durSec = savedProg.durationSeconds || 0;
+        }
       }
 
       // Progress bar if requested
-      if (showProgress && item.durationSec > 0 && item.positionSec > 0) {
-        var pct = Math.min(100, Math.max(0, (item.positionSec / item.durationSec) * 100));
+      if (showProgress && durSec > 0 && posSec > 0) {
+        var pct = Math.min(100, Math.max(0, (posSec / durSec) * 100));
         var pWrap = document.createElement('div');
         pWrap.className = 'home-card-progress-wrap';
         var pBar = document.createElement('div');
@@ -396,6 +411,11 @@
       card.appendChild(infoBox);
 
       card.addEventListener('click', function () {
+        var latestProg = (window.FreeIPTV.PlaylistManager && window.FreeIPTV.PlaylistManager.getPlaybackProgress)
+          ? window.FreeIPTV.PlaylistManager.getPlaybackProgress(item.contentId)
+          : null;
+        var resumeSec = latestProg && latestProg.positionSeconds > 0 ? latestProg.positionSeconds : posSec;
+
         if (item.contentType === 'live' && window.FreeIPTV.Player) {
           window.FreeIPTV.Player.playChannel({
             id: item.contentId,
@@ -404,7 +424,7 @@
             logoUrl: item.posterUrl || item.poster || item.logoUrl
           });
         } else if (item.contentType === 'movie' && window.FreeIPTV.Player) {
-          var resumePos = (item.positionSec || 0) * 1000;
+          var resumePos = (resumeSec || 0) * 1000;
           window.FreeIPTV.Player.playMovie({
             streamId: item.contentId,
             id: item.contentId,
@@ -414,16 +434,22 @@
             streamUrl: item.streamUrl
           }, resumePos);
         } else if (item.contentType === 'episode' && window.FreeIPTV.Player) {
-          var epResume = (item.positionSec || 0) * 1000;
+          var epResume = (resumeSec || 0) * 1000;
+          var cleanSeriesName = item.seriesName || String(item.title || '').replace(/\s*-\s*S\d+E\d+$/i, '') || 'Series';
+          var sNum = item.seasonNumber || 1;
+          var epNum = item.episodeNumber || 1;
           window.FreeIPTV.Player.playEpisode({
             seriesId: item.seriesId,
             id: item.seriesId,
-            name: item.title,
+            name: cleanSeriesName,
             posterUrl: item.posterUrl || item.poster || '',
             poster: item.posterUrl || item.poster || ''
-          }, item.seasonNumber || 1, {
+          }, sNum, {
             id: item.contentId,
-            title: item.subtitle,
+            name: item.subtitle || ('Episode ' + epNum),
+            title: item.subtitle || ('Episode ' + epNum),
+            episodeNumber: epNum,
+            seasonNumber: sNum,
             streamUrl: item.streamUrl
           }, epResume);
         }

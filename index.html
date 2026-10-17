@@ -430,6 +430,11 @@
               <div class="details-main-layout">
                 <div class="details-poster-column">
                   <div class="details-poster-frame">
+                    <div id="movie-details-poster-placeholder" class="poster-fallback-icon details-cover-placeholder cover-placeholder">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z" />
+                      </svg>
+                    </div>
                     <img id="movie-details-poster" class="details-poster-image" alt="" style="display: none;">
                     <img id="movie-modal-poster" class="details-poster-image-alias hidden" alt=""
                       style="display: none;">
@@ -512,6 +517,11 @@
               <div class="details-main-layout series-main-layout">
                 <div class="details-poster-column">
                   <div class="details-poster-frame">
+                    <div id="series-details-poster-placeholder" class="poster-fallback-icon details-cover-placeholder cover-placeholder">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z" />
+                      </svg>
+                    </div>
                     <img id="series-details-poster" class="details-poster-image" alt="" style="display: none;">
                     <img id="series-modal-poster" class="details-poster-image-alias hidden" alt=""
                       style="display: none;">
@@ -792,6 +802,14 @@
               <span>+15s</span>
             </button>
 
+            <button id="player-btn-episodes" class="btn-player-control focusable hidden" data-nav-zone="player_controls"
+              title="Episodes">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8 12.5v-9l6 4.5-6 4.5z" />
+              </svg>
+              <span data-i18n="player.episodes">Episodes</span>
+            </button>
+
             <button id="player-btn-audio" class="btn-player-control focusable" data-nav-zone="player_controls"
               title="Audio Track">
               <svg viewBox="0 0 24 24">
@@ -822,6 +840,25 @@
 
         <!-- OSD Toast Indicator for Seek & Tracks -->
         <div id="player-osd-toast" class="player-osd-toast hidden"></div>
+      </div>
+
+      <!-- In-Player Series Episodes List & Season Switcher Overlay -->
+      <div id="player-episodes-overlay" class="player-episodes-overlay hidden" role="dialog" aria-label="Series Episodes">
+        <div class="player-episodes-panel">
+          <div class="player-episodes-header">
+            <div class="player-episodes-title-wrap">
+              <h3 id="player-episodes-series-title" class="player-episodes-title" data-i18n="series.episodes_label">Episodes</h3>
+            </div>
+            <button id="player-episodes-close" class="btn-player-control player-episodes-close-btn focusable"
+              data-nav-zone="player_episodes_seasons" title="Back" aria-label="Back">
+              <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+                <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
+              </svg>
+            </button>
+          </div>
+          <div id="player-episodes-seasons" class="player-episodes-seasons-bar" role="tablist" aria-label="Seasons"></div>
+          <div id="player-episodes-list" class="player-episodes-list" role="listbox" aria-label="Episodes"></div>
+        </div>
       </div>
 
       <!-- Center Overlay: Buffering Spinner -->

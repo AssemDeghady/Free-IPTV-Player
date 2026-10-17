@@ -240,5 +240,7 @@
   "movies.continue_watching": "Continue Watching",
   "movies.favorites": "Favorites",
   "series.continue_watching": "Continue Watching",
-  "series.favorites": "Favorites"
+  "series.favorites": "Favorites",
+  "player.episodes": "Episodes",
+  "player.now_playing": "NOW PLAYING"
 }
