@@ -33,8 +33,17 @@
     this.userVolume = 100;
     this.currentDisplayMode = 'FIT';
     this.userListeners = {};
+    var detectedPlatform = 'Web / Browser';
+    if (typeof window !== 'undefined') {
+      if (window.FreeIPTV && window.FreeIPTV.Platform && typeof window.FreeIPTV.Platform.isWebOS === 'function' && window.FreeIPTV.Platform.isWebOS()) {
+        detectedPlatform = 'LG webOS TV';
+      } else if (window.webOS || (window.PalmSystem !== undefined && window.PalmSystem !== null) || (window.navigator && /web0s|webos/i.test(window.navigator.userAgent))) {
+        detectedPlatform = 'LG webOS TV';
+      }
+    }
+
     this.diagnostics = {
-      platform: 'Web / Browser',
+      platform: detectedPlatform,
       engine: 'HTML5 Video',
       sourceType: 'Unknown',
       nativeHls: false,
@@ -432,6 +441,26 @@
         video.removeEventListener('canplay', onCanPlay);
         resolve(true);
       }, 1500);
+    });
+  };
+
+  /**
+   * Prepare stream asynchronously with optional callbacks (AVPlayEngine parity).
+   * @param {Function} [successCallback]
+   * @param {Function} [errorCallback]
+   * @returns {Promise<boolean>}
+   */
+  HTML5PlaybackAdapter.prototype.prepareAsync = function (successCallback, errorCallback) {
+    return this.prepare().then(function (res) {
+      if (typeof successCallback === 'function') {
+        try { successCallback(); } catch (e) {}
+      }
+      return res;
+    }).catch(function (err) {
+      if (typeof errorCallback === 'function') {
+        try { errorCallback(err); } catch (e) {}
+      }
+      throw err;
     });
   };
 

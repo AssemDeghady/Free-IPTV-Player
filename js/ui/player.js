@@ -183,6 +183,27 @@
           self.handleTimelineClick(e);
         });
       }
+
+      // Magic Remote / Pointer click on video canvas wakes controls when hidden
+      var playerView = document.getElementById('view-player');
+      if (playerView) {
+        playerView.addEventListener('click', function (e) {
+          if (!isPlayerActive) return;
+          if (self.isEpisodesModalOpen && self.isEpisodesModalOpen()) return;
+          var errOverlay = document.getElementById('player-error-overlay');
+          if (errOverlay && !errOverlay.classList.contains('hidden')) return;
+          var ctlOverlay = document.getElementById('player-controls-overlay');
+          if (ctlOverlay && ctlOverlay.classList.contains('hidden')) {
+            self.showControls();
+            var playBtn = document.getElementById('player-btn-play-pause');
+            if (playBtn && window.FreeIPTV.Navigation) {
+              window.FreeIPTV.Navigation.focus(playBtn);
+            }
+          } else {
+            self.resetControlsTimer();
+          }
+        });
+      }
     },
 
     /**
@@ -402,8 +423,8 @@
         window.FreeIPTV.Logger.info('PLAYER MODE: ACTIVE');
       }
 
-      // Configure AVPlay display area & method for full screen
-      var engine = window.FreeIPTV.AVPlayEngine;
+      // Configure display area & method for full screen
+      var engine = window.FreeIPTV.PlayerManager || window.FreeIPTV.AVPlayEngine;
       if (engine && typeof engine.setDisplayArea === 'function') {
         engine.setDisplayArea(0, 0, 1920, 1080);
         engine.setDisplayMethod('FULL');
@@ -542,19 +563,24 @@
      * @param {string} state
      */
     onStateChanged: function (state) {
-      var engine = window.FreeIPTV.AVPlayEngine;
+      var engine = window.FreeIPTV.PlayerManager || window.FreeIPTV.AVPlayEngine;
       if (!engine) return;
 
-      if (state === engine.STATES.PLAYING) {
+      var states = engine.STATES ||
+                   (window.FreeIPTV.AVPlayEngine && window.FreeIPTV.AVPlayEngine.STATES) ||
+                   (window.FreeIPTV.HTML5PlaybackAdapter && window.FreeIPTV.HTML5PlaybackAdapter.prototype.STATES) ||
+                   { PLAYING: 'PLAYING', PAUSED: 'PAUSED', BUFFERING: 'BUFFERING', PREPARING: 'PREPARING', OPENING: 'OPENING', ERROR: 'ERROR' };
+
+      if (state === states.PLAYING) {
         this.showBuffering(false);
         this.updatePlayPauseIcon(true);
         retryCount = 0;
-      } else if (state === engine.STATES.PAUSED) {
+      } else if (state === states.PAUSED) {
         this.showBuffering(false);
         this.updatePlayPauseIcon(false);
-      } else if (state === engine.STATES.BUFFERING || state === engine.STATES.PREPARING || state === engine.STATES.OPENING) {
+      } else if (state === states.BUFFERING || state === states.PREPARING || state === states.OPENING) {
         this.showBuffering(true);
-      } else if (state === engine.STATES.ERROR) {
+      } else if (state === states.ERROR) {
         this.handlePlaybackError();
       }
     },

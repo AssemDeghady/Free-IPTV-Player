@@ -23,6 +23,9 @@
         if (FreeIPTV.Diagnostics) {
           FreeIPTV.Diagnostics.init();
         }
+        if (FreeIPTV.Platform && typeof FreeIPTV.Platform.initLifecycle === 'function') {
+          FreeIPTV.Platform.initLifecycle();
+        }
 
         // 2. Localization
         if (FreeIPTV.I18n) {

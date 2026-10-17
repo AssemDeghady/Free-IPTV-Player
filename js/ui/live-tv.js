@@ -87,6 +87,14 @@
           self.refreshFavoritesState();
         });
       }
+
+      if (typeof document !== 'undefined') {
+        document.addEventListener('visibilitychange', function () {
+          if (document.hidden && (isPreviewActive || currentPreviewChannel)) {
+            self.stopChannelPreview();
+          }
+        });
+      }
     },
 
     /**
@@ -747,6 +755,7 @@
       }
 
       var self = this;
+      var isTizenHardware = typeof window !== 'undefined' && window.webapis && window.webapis.avplay;
       var AVPlayEngine = window.FreeIPTV.AVPlayEngine;
       currentPreviewChannel = channel;
 
@@ -758,22 +767,12 @@
         rect = previewWindow.getBoundingClientRect();
       }
 
-      if (AVPlayEngine) {
+      if (isTizenHardware && AVPlayEngine) {
         AVPlayEngine.startPreview(streamUrl, rect)
           .then(function () {
             if (currentPreviewChannel === channel) {
               isPreviewActive = true;
               self.renderPreviewStatus('', false);
-
-              // In mock/browser fallback environment: attach HTML5 video
-              var vid = document.getElementById('live-preview-video');
-              if (vid && (!window.webapis || !window.webapis.avplay)) {
-                vid.src = streamUrl;
-                vid.muted = true;
-                vid.classList.remove('hidden');
-                var p = vid.play();
-                if (p && p.catch) p.catch(function () {});
-              }
             }
           })
           .catch(function (err) {
@@ -784,6 +783,30 @@
               }
             }
           });
+      } else {
+        // webOS TV, Desktop Browser, or Non-Tizen: Use DOM HTML5 video element
+        var vid = document.getElementById('live-preview-video');
+        if (vid) {
+          vid.src = streamUrl;
+          vid.muted = true;
+          vid.classList.remove('hidden');
+          var p = vid.play();
+          if (p && typeof p.then === 'function') {
+            p.then(function () {
+              if (currentPreviewChannel === channel) {
+                isPreviewActive = true;
+                self.renderPreviewStatus('', false);
+              }
+            }).catch(function () {
+              if (currentPreviewChannel === channel) {
+                self.renderPreviewStatus(window.FreeIPTV.I18n ? window.FreeIPTV.I18n.t('live.preview_unavailable') : 'Preview unavailable', false);
+              }
+            });
+          } else {
+            isPreviewActive = true;
+            self.renderPreviewStatus('', false);
+          }
+        }
       }
     },
 
@@ -797,8 +820,9 @@
       }
 
       if (isPreviewActive || currentPreviewChannel) {
+        var isTizenHardware = typeof window !== 'undefined' && window.webapis && window.webapis.avplay;
         var AVPlayEngine = window.FreeIPTV.AVPlayEngine;
-        if (AVPlayEngine) {
+        if (isTizenHardware && AVPlayEngine) {
           AVPlayEngine.stopPreview();
         }
 

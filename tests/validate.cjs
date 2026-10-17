@@ -23,10 +23,13 @@ function assert(condition, message) {
 console.log('\n--- 1. File Existence & Structure ---');
 const expectedFiles = [
   'config.xml',
+  'appinfo.json',
   '.tizenproject',
   'icon.png',
   'index.html',
   'README.md',
+  'deploy-tv.ps1',
+  'deploy-webos.ps1',
   'assets/icons/icon-117.png',
   'assets/icons/icon-512.png',
   'css/app.css',
@@ -88,7 +91,10 @@ const expectedFiles = [
   'tests/test-complete-iptv.cjs',
   'tests/test-phase-6-4.cjs',
   'tests/test-player-navigation-regression.cjs',
-  'tests/test-content-cache.cjs'
+  'tests/test-content-cache.cjs',
+  'js/vendor/webOSTV.js',
+  'js/core/platform.js',
+  'tests/test-webos-compatibility.cjs'
 ];
 
 expectedFiles.forEach(file => {
@@ -125,6 +131,16 @@ assert(configContent.includes('http://developer.samsung.com/privilege/avplay'), 
 assert(configContent.includes('http://developer.samsung.com/privilege/productinfo'), 'config.xml requests productinfo privilege');
 assert(configContent.includes('name="tv-samsung"'), 'config.xml targets tv-samsung profile');
 assert(configContent.includes('exec="index.html"'), 'config.xml defines index.html as entry point');
+
+// 3b. Validate appinfo.json (LG webOS Manifest)
+console.log('\n--- 3b. appinfo.json Validation (webOS) ---');
+const appinfoContent = fs.readFileSync(path.resolve(__dirname, '..', 'appinfo.json'), 'utf8');
+const parsedAppinfo = JSON.parse(appinfoContent);
+assert(parsedAppinfo.id === 'org.freeiptvplayer.app', 'appinfo.json contains id "org.freeiptvplayer.app"');
+assert(parsedAppinfo.resolution === '1920x1080', 'appinfo.json defines 1920x1080 resolution');
+assert(parsedAppinfo.disableBackHistoryAPI === true, 'appinfo.json defines disableBackHistoryAPI');
+assert(parsedAppinfo.handlesRelaunch === true, 'appinfo.json defines handlesRelaunch');
+assert(Array.isArray(parsedAppinfo.requiredACG), 'appinfo.json declares requiredACG array (webOS 26+ ACG compliance)');
 
 // 4. Validate HTML references
 console.log('\n--- 4. HTML Reference Integrity ---');
@@ -169,7 +185,8 @@ const suites = [
   'test-html5-playback.cjs',
   'test-player-navigation-regression.cjs',
   'test-content-cache.cjs',
-  'test-player-continue-cover-episodes.cjs'
+  'test-player-continue-cover-episodes.cjs',
+  'test-webos-compatibility.cjs'
 ];
 
 suites.forEach(suite => {

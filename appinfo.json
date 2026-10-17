@@ -1,0 +1,17 @@
+{
+  "id": "org.freeiptvplayer.app",
+  "version": "1.0.9",
+  "vendor": "Free IPTV Player Team",
+  "type": "web",
+  "main": "index.html",
+  "title": "Free IPTV Player",
+  "icon": "icon.png",
+  "largeIcon": "assets/icons/icon-117.png",
+  "resolution": "1920x1080",
+  "disableBackHistoryAPI": true,
+  "handlesRelaunch": true,
+  "accessibility": {
+    "supportsAudioGuidance": false
+  },
+  "requiredACG": []
+}

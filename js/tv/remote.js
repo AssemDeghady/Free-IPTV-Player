@@ -1,6 +1,6 @@
 /**
- * Free IPTV Player — Samsung TV Remote Controller
- * Registers Samsung Tizen input device keys and normalizes remote events.
+ * Free IPTV Player — Samsung Tizen & LG webOS TV Remote Controller
+ * Registers TV input device keys, handles LG Magic Remote pointer states, and normalizes remote events.
  */
 
 (function (window) {
@@ -12,9 +12,19 @@
   var backHandlers = [];
   var isInitialized = false;
 
+  function detectWebOS() {
+    if (window.FreeIPTV && window.FreeIPTV.Platform && typeof window.FreeIPTV.Platform.isWebOS === 'function') {
+      return window.FreeIPTV.Platform.isWebOS();
+    }
+    return Boolean(
+      (typeof window.PalmSystem !== 'undefined' && window.PalmSystem !== null) ||
+      (window.webOS && window.webOS.platform && window.webOS.platform.tv === true)
+    );
+  }
+
   var Remote = {
     /**
-     * Initialize Samsung TV input device keys and global key listener.
+     * Initialize TV input device keys, Magic Remote listeners, and global key listener.
      */
     init: function () {
       if (isInitialized) {
@@ -23,10 +33,35 @@
       isInitialized = true;
 
       this.registerTizenKeys();
+      this.initWebOSMagicRemote();
       this.bindKeyListeners();
 
       if (window.FreeIPTV.Logger) {
-        window.FreeIPTV.Logger.info('Remote input system initialized (Tizen API ' + (isTizenAvailable ? 'available' : 'emulated/web') + ')');
+        var runtimeLabel = isTizenAvailable ? 'Tizen API available' : (detectWebOS() ? 'LG webOS TV available' : 'emulated/web');
+        window.FreeIPTV.Logger.info('Remote input system initialized (' + runtimeLabel + ')');
+      }
+    },
+
+    /**
+     * Configure LG webOS Magic Remote pointer visibility classes and wheel events.
+     */
+    initWebOSMagicRemote: function () {
+      if (!detectWebOS() || typeof document === 'undefined') {
+        return;
+      }
+      if (document.body && document.body.classList) {
+        document.body.classList.add('webos-tv');
+      }
+      if (typeof document.addEventListener === 'function') {
+        document.addEventListener('cursorStateChange', function (e) {
+          if (!document.body || !document.body.classList) return;
+          var visible = Boolean(e && e.detail && e.detail.visibility);
+          if (visible) {
+            document.body.classList.add('magic-cursor-active');
+          } else {
+            document.body.classList.remove('magic-cursor-active');
+          }
+        }, false);
       }
     },
 
@@ -86,9 +121,10 @@
         Logger.debug('Key pressed: keyCode=' + keyCode + ', key=' + event.key);
       }
 
-      // Check for Back / Return key
+      // Check for Back / Return key (Samsung Tizen 10009, LG webOS 461, Escape 27, Backspace 8)
       if (
         keyCode === Constants.KEYS.RETURN_TIZEN ||
+        keyCode === Constants.KEYS.RETURN_WEBOS ||
         keyCode === Constants.KEYS.ESCAPE ||
         keyCode === Constants.KEYS.BACKSPACE
       ) {
@@ -127,13 +163,19 @@
       if (Player && Player.isActive()) {
         Player.resetControlsTimer();
 
-        // Dedicated Media keys
+        var mediaEngine = window.FreeIPTV.PlayerManager || window.FreeIPTV.AVPlayEngine;
+        var errorOverlay = document.getElementById('player-error-overlay');
+        var isErrorShowing = errorOverlay && !errorOverlay.classList.contains('hidden');
+        var media = Player.getCurrentMedia ? Player.getCurrentMedia() : (Player.currentMedia || null);
+        var isLive = media && media.type === 'live';
+
+        // Dedicated Media keys (Samsung & LG webOS remotes)
         if (keyCode === Constants.KEYS.PLAY) {
-          if (window.FreeIPTV.AVPlayEngine) window.FreeIPTV.AVPlayEngine.play();
+          if (mediaEngine) mediaEngine.play();
           event.preventDefault();
           return;
         } else if (keyCode === Constants.KEYS.PAUSE) {
-          if (window.FreeIPTV.AVPlayEngine) window.FreeIPTV.AVPlayEngine.pause();
+          if (mediaEngine) mediaEngine.pause();
           event.preventDefault();
           return;
         } else if (keyCode === Constants.KEYS.PLAY_PAUSE) {
@@ -144,20 +186,27 @@
           Player.closePlayer();
           event.preventDefault();
           return;
+        } else if (keyCode === Constants.KEYS.FAST_FORWARD) {
+          if (!isLive && !isErrorShowing) {
+            Player.seek(10);
+          }
+          event.preventDefault();
+          return;
+        } else if (keyCode === Constants.KEYS.REWIND) {
+          if (!isLive && !isErrorShowing) {
+            Player.seek(-10);
+          }
+          event.preventDefault();
+          return;
         }
 
-        // Channel zapping via UP / DOWN (Live TV ONLY)
-        var errorOverlay = document.getElementById('player-error-overlay');
-        var isErrorShowing = errorOverlay && !errorOverlay.classList.contains('hidden');
-        var media = Player.getCurrentMedia ? Player.getCurrentMedia() : (Player.currentMedia || null);
-        var isLive = media && media.type === 'live';
-        
+        // Channel zapping via UP / DOWN / CH+ / CH- (Live TV ONLY)
         if (!isErrorShowing && isLive) {
-          if (keyCode === Constants.KEYS.UP) {
+          if (keyCode === Constants.KEYS.UP || keyCode === Constants.KEYS.CHANNEL_DOWN) {
             Player.zapPrevious();
             event.preventDefault();
             return;
-          } else if (keyCode === Constants.KEYS.DOWN) {
+          } else if (keyCode === Constants.KEYS.DOWN || keyCode === Constants.KEYS.CHANNEL_UP) {
             Player.zapNext();
             event.preventDefault();
             return;
@@ -326,25 +375,43 @@
     },
 
     /**
-     * Exit application on Tizen TV or close window.
+     * Exit application on Tizen TV, LG webOS TV, or close window.
      */
     exitApplication: function () {
       if (window.FreeIPTV.Logger) {
         window.FreeIPTV.Logger.info('Exiting application...');
       }
 
-      if (isTizenAvailable && window.tizen.application) {
+      if (isTizenAvailable && window.tizen && window.tizen.application) {
         try {
           window.tizen.application.getCurrentApplication().exit();
+          return;
         } catch (e) {
           if (window.FreeIPTV.Logger) {
             window.FreeIPTV.Logger.error('Failed to exit via Tizen API:', e);
           }
         }
-      } else {
-        if (window.FreeIPTV.Logger) {
-          window.FreeIPTV.Logger.info('App exit requested (web environment).');
+      }
+
+      if (detectWebOS()) {
+        try {
+          if (window.webOS && typeof window.webOS.platformBack === 'function') {
+            window.webOS.platformBack();
+            return;
+          }
+          if (window.PalmSystem && typeof window.PalmSystem.platformBack === 'function') {
+            window.PalmSystem.platformBack();
+            return;
+          }
+        } catch (e2) {
+          if (window.FreeIPTV.Logger) {
+            window.FreeIPTV.Logger.error('Failed to exit via webOS API:', e2);
+          }
         }
+      }
+
+      if (window.FreeIPTV.Logger) {
+        window.FreeIPTV.Logger.info('App exit requested (web environment).');
       }
     }
   };

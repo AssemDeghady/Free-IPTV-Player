@@ -44,7 +44,8 @@
   justify-content: center;
 }
 
-.live-preview-fallback-video {
+.live-preview-fallback-video,
+.live-preview-video {
   width: 100%;
   height: 100%;
   object-fit: contain;

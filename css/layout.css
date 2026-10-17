@@ -1722,6 +1722,15 @@ body.player-active .app-root {
   margin: 0 !important;
 }
 
+/* LG webOS TV uses DOM-based HTML5 video playback, requiring an opaque black background behind the video */
+html.webos-tv.player-active,
+body.webos-tv.player-active,
+body.webos-tv.player-active .app-root,
+body.webos-tv .player-screen {
+  background: #000000 !important;
+  background-color: #000000 !important;
+}
+
 /* Hide all normal application views, header, and body when player is active */
 body.player-active .app-header,
 body.player-active .app-body,

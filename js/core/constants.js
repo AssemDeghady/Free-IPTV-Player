@@ -27,7 +27,7 @@
       SUPPORTED_LOCALES: ['en', 'ar']
     },
 
-    // Samsung Tizen TV & Keyboard Remote Key Codes
+    // Samsung Tizen TV, LG webOS TV & Keyboard Remote Key Codes
     KEYS: {
       LEFT: 37,
       UP: 38,
@@ -35,10 +35,15 @@
       DOWN: 40,
       ENTER: 13,
       RETURN_TIZEN: 10009, // Samsung Tizen Remote Back/Return key
+      RETURN_WEBOS: 461,   // LG webOS Remote Back key
       ESCAPE: 27,          // Browser / Emulator fallback
-      BACKSPACE: 8,       // Development fallback
+      BACKSPACE: 8,        // Development fallback
 
-      // Media keys (for later phases, registered ahead of time)
+      // Channel Up / Down rocker keys (LG webOS / Standard TV)
+      CHANNEL_UP: 33,
+      CHANNEL_DOWN: 34,
+
+      // Media keys (Samsung Tizen & LG webOS standard)
       PLAY: 415,
       PAUSE: 19,
       PLAY_PAUSE: 10252,

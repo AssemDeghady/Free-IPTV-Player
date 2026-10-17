@@ -9,6 +9,14 @@
   transition: transform var(--transition-fast);
 }
 
+/* LG webOS Magic Remote: keep system pointer visible when hovering over focusable elements */
+body.webos-tv .focusable,
+body.webos-tv .home-quick-card,
+body.webos-tv .btn-page-back,
+body.webos-tv .btn-action-lg {
+  cursor: pointer;
+}
+
 /* Universal Fallback Focus Highlight — Guarantees every focusable element is visibly illuminated */
 .focusable.focused,
 .focusable:focus {

@@ -13,7 +13,7 @@
 
   /**
    * Determine the current playback platform.
-   * @returns {'samsung'|'web'|'test'}
+   * @returns {'samsung'|'webos'|'web'|'test'}
    */
   function detectPlatform() {
     // 1. Explicit mock for automated unit test suites
@@ -31,7 +31,22 @@
       return 'samsung';
     }
 
-    // 3. Browser environment with HTML5 Video support
+    // 3. Hardware LG webOS TV runtime check
+    if (typeof window !== 'undefined') {
+      if (window.FreeIPTV && window.FreeIPTV.Platform && typeof window.FreeIPTV.Platform.isWebOS === 'function') {
+        if (window.FreeIPTV.Platform.isWebOS()) {
+          return 'webos';
+        }
+      } else if (
+        (typeof window.PalmSystem !== 'undefined' && window.PalmSystem !== null) ||
+        (window.webOS && window.webOS.platform && window.webOS.platform.tv === true) ||
+        (window.navigator && typeof window.navigator.userAgent === 'string' && /web0s|webos|netcast/i.test(window.navigator.userAgent))
+      ) {
+        return 'webos';
+      }
+    }
+
+    // 4. Browser environment with HTML5 Video support
     if (typeof document !== 'undefined' && typeof document.createElement === 'function') {
       return 'web';
     }
@@ -51,7 +66,7 @@
       if (window.FreeIPTV.AVPlayEngine) {
         activeAdapter = window.FreeIPTV.AVPlayEngine;
       }
-    } else if (currentPlatform === 'web') {
+    } else if (currentPlatform === 'webos' || currentPlatform === 'web') {
       if (window.FreeIPTV.HTML5PlaybackAdapter) {
         activeAdapter = new window.FreeIPTV.HTML5PlaybackAdapter();
       }
@@ -134,6 +149,24 @@
     prepare: function () {
       var a = getAdapter();
       return a ? a.prepare() : Promise.resolve(false);
+    },
+
+    prepareAsync: function (successCb, errorCb) {
+      var a = getAdapter();
+      if (a && typeof a.prepareAsync === 'function') {
+        return a.prepareAsync(successCb, errorCb);
+      }
+      return a ? a.prepare().then(function (res) {
+        if (typeof successCb === 'function') {
+          try { successCb(); } catch (e) {}
+        }
+        return res;
+      }).catch(function (err) {
+        if (typeof errorCb === 'function') {
+          try { errorCb(err); } catch (e) {}
+        }
+        throw err;
+      }) : Promise.resolve(false);
     },
 
     play: function () {
@@ -244,6 +277,19 @@
       return 'Platform: ' + currentPlatform + '\nEngine: Samsung AVPlay';
     }
   };
+
+  var STATES = {
+    IDLE: 'IDLE',
+    OPENING: 'OPENING',
+    PREPARING: 'PREPARING',
+    BUFFERING: 'BUFFERING',
+    PLAYING: 'PLAYING',
+    PAUSED: 'PAUSED',
+    STOPPING: 'STOPPING',
+    ERROR: 'ERROR'
+  };
+
+  PlayerManager.STATES = STATES;
 
   window.FreeIPTV.PlayerManager = PlayerManager;
 })(typeof window !== 'undefined' ? window : this);
