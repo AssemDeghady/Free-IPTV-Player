@@ -124,7 +124,8 @@
                     activeView.querySelector('#btn-movie-play') ||
                     activeView.querySelector('#btn-movie-page-back');
         } else if (activeRoute === 'series_details') {
-          initial = activeView.querySelector('#btn-season-selector') ||
+          initial = activeView.querySelector('#btn-series-resume:not(.hidden)') ||
+                    activeView.querySelector('#btn-season-selector') ||
                     activeView.querySelector('#btn-series-fav') ||
                     activeView.querySelector('#btn-series-page-back');
         } else if (activeRoute === 'playlists') {
@@ -796,6 +797,7 @@
       if (!container) return null;
 
       var topBarBtn = container.querySelector('#btn-series-page-back');
+      var resumeBtn = container.querySelector('#btn-series-resume:not(.hidden)');
       var seasonBtn = container.querySelector('#btn-season-selector');
       var favBtn = container.querySelector('#btn-series-fav') || container.querySelector('#series-btn-fav');
       var legacySeasons = Array.prototype.slice.call(container.querySelectorAll('.series-season-tab.focusable, #series-seasons-tabs .focusable')).filter(function (el) {
@@ -806,6 +808,7 @@
       });
 
       var isTopBar = (currentElement === topBarBtn);
+      var isResumeBtn = (currentElement === resumeBtn);
       var isSeasonBtn = (currentElement === seasonBtn);
       var isFavBtn = (currentElement === favBtn);
       var isLegacySeason = legacySeasons.indexOf(currentElement) !== -1;
@@ -813,14 +816,27 @@
 
       if (isTopBar) {
         if (direction === Constants.DIRECTIONS.DOWN || direction === Constants.DIRECTIONS.RIGHT) {
-          return seasonBtn || favBtn || episodes[0] || null;
+          return resumeBtn || seasonBtn || favBtn || episodes[0] || null;
         }
         return null;
+      } else if (isResumeBtn) {
+        if (direction === Constants.DIRECTIONS.RIGHT) {
+          return seasonBtn || favBtn || null;
+        }
+        if (direction === Constants.DIRECTIONS.LEFT || direction === Constants.DIRECTIONS.UP) {
+          return topBarBtn || null;
+        }
+        if (direction === Constants.DIRECTIONS.DOWN) {
+          return episodes[0] || null;
+        }
       } else if (isSeasonBtn) {
         if (direction === Constants.DIRECTIONS.RIGHT) {
           return favBtn || null;
         }
-        if (direction === Constants.DIRECTIONS.LEFT || direction === Constants.DIRECTIONS.UP) {
+        if (direction === Constants.DIRECTIONS.LEFT) {
+          return resumeBtn || topBarBtn || null;
+        }
+        if (direction === Constants.DIRECTIONS.UP) {
           return topBarBtn || null;
         }
         if (direction === Constants.DIRECTIONS.DOWN) {
@@ -836,7 +852,7 @@
         }
       } else if (isFavBtn) {
         if (direction === Constants.DIRECTIONS.LEFT) {
-          return seasonBtn || topBarBtn || null;
+          return seasonBtn || resumeBtn || topBarBtn || null;
         }
         if (direction === Constants.DIRECTIONS.UP) {
           return topBarBtn || null;
@@ -863,7 +879,10 @@
         }
         if (direction === Constants.DIRECTIONS.UP) {
           if (epIdx - COLS >= 0) return episodes[epIdx - COLS];
-          return seasonBtn || legacySeasons[0] || actions[actions.length - 1] || actions[0] || null;
+          var col = epIdx % COLS;
+          if (col === 0) return resumeBtn || seasonBtn || favBtn || topBarBtn || null;
+          if (col === 1) return seasonBtn || resumeBtn || favBtn || topBarBtn || null;
+          return favBtn || seasonBtn || resumeBtn || topBarBtn || null;
         }
         if (direction === Constants.DIRECTIONS.RIGHT && epIdx < episodes.length - 1) return episodes[epIdx + 1];
         if (direction === Constants.DIRECTIONS.LEFT && epIdx > 0) return episodes[epIdx - 1];

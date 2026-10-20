@@ -66,12 +66,23 @@ class MockElement {
     this.children = [];
     this.parentNode = null;
     this.style = {};
-    this.textContent = '';
+    this._textContent = '';
     this._innerHTML = '';
     this._listeners = {};
     this.offsetParent = {};
     this.complete = false;
     this.naturalWidth = 0;
+  }
+
+  get textContent() {
+    if (this.children.length === 0) {
+      return this._textContent || '';
+    }
+    return this.children.map(c => c.textContent).join('');
+  }
+
+  set textContent(val) {
+    this._textContent = String(val !== undefined && val !== null ? val : '');
   }
 
   get className() {
@@ -395,8 +406,31 @@ function setupDom() {
   const moviePosterImg = new MockElement('img', 'movie-details-poster');
   const moviePosterPlaceholder = new MockElement('div', 'movie-details-poster-placeholder');
   moviePosterPlaceholder.className = 'poster-fallback-icon cover-placeholder details-cover-placeholder';
+  const movieBtnBack = new MockElement('button', 'btn-movie-page-back');
+  movieBtnBack.className = 'btn-page-back focusable';
+  movieBtnBack.setAttribute('data-nav-zone', 'movie_details');
+  const movieBtnPlay = new MockElement('button', 'btn-movie-play');
+  movieBtnPlay.className = 'btn-primary btn-action-lg focusable';
+  movieBtnPlay.setAttribute('data-nav-zone', 'movie_details');
+  const moviePlaySpan = new MockElement('span');
+  moviePlaySpan.textContent = 'PLAY';
+  movieBtnPlay.appendChild(moviePlaySpan);
+  const movieBtnResume = new MockElement('button', 'btn-movie-resume');
+  movieBtnResume.className = 'btn-secondary btn-action-lg focusable hidden';
+  movieBtnResume.setAttribute('data-nav-zone', 'movie_details');
+  const movieResumeSpan = new MockElement('span');
+  movieResumeSpan.textContent = 'RESUME';
+  movieBtnResume.appendChild(movieResumeSpan);
+  const movieBtnFav = new MockElement('button', 'btn-movie-fav');
+  movieBtnFav.className = 'btn-secondary btn-action-lg focusable';
+  movieBtnFav.setAttribute('data-nav-zone', 'movie_details');
+
   viewMovieDetails.appendChild(moviePosterImg);
   viewMovieDetails.appendChild(moviePosterPlaceholder);
+  viewMovieDetails.appendChild(movieBtnBack);
+  viewMovieDetails.appendChild(movieBtnPlay);
+  viewMovieDetails.appendChild(movieBtnResume);
+  viewMovieDetails.appendChild(movieBtnFav);
   globalDoc.body.appendChild(viewMovieDetails);
 
   const viewSeries = new MockElement('div', 'view-series');
@@ -416,8 +450,37 @@ function setupDom() {
   const seriesPosterImg = new MockElement('img', 'series-details-poster');
   const seriesPosterPlaceholder = new MockElement('div', 'series-details-poster-placeholder');
   seriesPosterPlaceholder.className = 'poster-fallback-icon cover-placeholder details-cover-placeholder';
+  const seriesBtnBack = new MockElement('button', 'btn-series-page-back');
+  seriesBtnBack.className = 'btn-page-back focusable';
+  seriesBtnBack.setAttribute('data-nav-zone', 'series_details');
+  const seriesBtnResume = new MockElement('button', 'btn-series-resume');
+  seriesBtnResume.className = 'btn-primary btn-action-lg focusable hidden';
+  seriesBtnResume.setAttribute('data-nav-zone', 'series_details');
+  const seriesResumeSpan = new MockElement('span', 'series-resume-label');
+  seriesResumeSpan.textContent = 'RESUME';
+  seriesBtnResume.appendChild(seriesResumeSpan);
+  const seriesBtnSeason = new MockElement('button', 'btn-season-selector');
+  seriesBtnSeason.className = 'season-select-btn focusable';
+  seriesBtnSeason.setAttribute('data-nav-zone', 'series_details');
+  const seriesSeasonSpan = new MockElement('span', 'season-selector-label');
+  seriesSeasonSpan.textContent = 'Season 1';
+  seriesBtnSeason.appendChild(seriesSeasonSpan);
+  const seriesDropdownList = new MockElement('div', 'season-dropdown-list');
+  seriesDropdownList.className = 'season-dropdown-menu hidden';
+  const seriesBtnFav = new MockElement('button', 'btn-series-fav');
+  seriesBtnFav.className = 'btn-secondary btn-action-lg focusable';
+  seriesBtnFav.setAttribute('data-nav-zone', 'series_details');
+  const seriesEpisodesList = new MockElement('div', 'series-episodes-list');
+  seriesEpisodesList.className = 'series-episodes-grid';
+
   viewSeriesDetails.appendChild(seriesPosterImg);
   viewSeriesDetails.appendChild(seriesPosterPlaceholder);
+  viewSeriesDetails.appendChild(seriesBtnBack);
+  viewSeriesDetails.appendChild(seriesBtnResume);
+  viewSeriesDetails.appendChild(seriesBtnSeason);
+  viewSeriesDetails.appendChild(seriesDropdownList);
+  viewSeriesDetails.appendChild(seriesBtnFav);
+  viewSeriesDetails.appendChild(seriesEpisodesList);
   globalDoc.body.appendChild(viewSeriesDetails);
 
   // Playlists view
@@ -520,6 +583,8 @@ FreeIPTV.Navigation.init();
 FreeIPTV.Player.init();
 FreeIPTV.Playlists.init();
 FreeIPTV.Settings.init();
+FreeIPTV.Movies.init();
+FreeIPTV.Series.init();
 
 // =========================================================================
 // 1. COVER PLACEHOLDER WHILE WAITING FOR IMAGE TO LOAD
@@ -955,6 +1020,118 @@ FreeIPTV.Navigation.triggerActive();
 assert(currentActiveId === 'pl_test', 'Settings: Pressing Enter on Row 1 "Set Active" activates pl_test');
 
 viewSettingsEl.classList.add('hidden');
+
+// =========================================================================
+// 6. MOVIE & SERIES DETAILS RESUME BUTTON, PROGRESS & SPATIAL D-PAD NAV
+// =========================================================================
+console.log('\n--- 6. Movie & Series Details Resume Button & Spatial D-Pad Navigation ---');
+
+// 6A. Movie Details with continuation data (sampleMovie at 1250s)
+let moviePlayCapture = null;
+FreeIPTV.Player.playMovie = function (movie, startMs) {
+  moviePlayCapture = { movie: movie, startMs: startMs };
+};
+
+const movieResumeBtn = globalDoc.getElementById('btn-movie-resume');
+const moviePlayBtn = globalDoc.getElementById('btn-movie-play');
+const movieBackBtn = globalDoc.getElementById('btn-movie-page-back');
+
+FreeIPTV.Movies.openMovieDetails(sampleMovie);
+
+assert(!movieResumeBtn.classList.contains('hidden'), 'Movie Details: #btn-movie-resume is visible when continuation data exists');
+assert(movieResumeBtn.textContent.indexOf('20:50') !== -1, 'Movie Details: #btn-movie-resume label includes formatted time 20:50 (got: ' + movieResumeBtn.textContent.trim() + ')');
+assert(FreeIPTV.Navigation.getCurrent() === movieResumeBtn, 'Movie Details: Initial focus is placed on #btn-movie-resume');
+
+// Click #btn-movie-resume to verify resume playback at saved position
+movieResumeBtn.click();
+assert(moviePlayCapture !== null && moviePlayCapture.startMs === 1250 * 1000, 'Movie Details: Clicking #btn-movie-resume resumes at saved position (1250000ms === ' + (moviePlayCapture && moviePlayCapture.startMs) + 'ms)');
+
+FreeIPTV.Movies.closeMovieDetails();
+
+// 6B. Movie Details without continuation data (fresh movie)
+const freshMovie = { id: 'mov_fresh', name: 'Fresh Movie', streamUrl: 'http://example.com/fresh.mp4' };
+moviePlayCapture = null;
+FreeIPTV.Movies.openMovieDetails(freshMovie);
+
+assert(movieResumeBtn.classList.contains('hidden'), 'Movie Details: #btn-movie-resume is hidden when NO continuation data exists');
+assert(FreeIPTV.Navigation.getCurrent() === moviePlayBtn, 'Movie Details: Initial focus falls back to #btn-movie-play when no continuation data exists');
+
+moviePlayBtn.click();
+assert(moviePlayCapture !== null && moviePlayCapture.startMs === 0, 'Movie Details: Clicking #btn-movie-play starts playback from position 0');
+
+FreeIPTV.Movies.closeMovieDetails();
+
+// 6C. Series Details with continuation data (sampleSeries S02E04 at 840s)
+let episodePlayCapture = null;
+FreeIPTV.Player.playEpisode = function (series, seasonNum, episode, startMs, queue) {
+  episodePlayCapture = { series: series, seasonNum: seasonNum, episode: episode, startMs: startMs, queue: queue };
+};
+
+const seriesResumeBtn = globalDoc.getElementById('btn-series-resume');
+const seriesSeasonBtn = globalDoc.getElementById('btn-season-selector');
+const seriesBackBtn = globalDoc.getElementById('btn-series-page-back');
+const seriesResumeLabel = globalDoc.getElementById('series-resume-label');
+
+FreeIPTV.Series.openSeriesDetails(sampleSeries);
+
+assert(!seriesResumeBtn.classList.contains('hidden'), 'Series Details: #btn-series-resume is visible when continuation data exists');
+assert(seriesResumeLabel.textContent.indexOf('S02E04') !== -1, 'Series Details: Resume label includes S02E04 tag (got: ' + seriesResumeLabel.textContent + ')');
+assert(FreeIPTV.Navigation.getCurrent() === seriesResumeBtn, 'Series Details: Initial focus is placed on #btn-series-resume');
+assert(globalDoc.getElementById('season-selector-label').textContent.indexOf('Season 2') !== -1, 'Series Details: Season 2 is auto-selected matching continuation episode');
+
+// Click #btn-series-resume to verify resume episode playback with queue
+seriesResumeBtn.click();
+assert(episodePlayCapture !== null, 'Series Details: Clicking #btn-series-resume launches playback');
+assert(episodePlayCapture.seasonNum === 2, 'Series Details: Resumed episode is Season 2');
+assert(String(episodePlayCapture.episode.id) === 'ep_204', 'Series Details: Resumed episode is ep_204');
+assert(episodePlayCapture.startMs === 840 * 1000, 'Series Details: Resumed episode starts at saved point (840000ms === ' + episodePlayCapture.startMs + 'ms)');
+assert(Array.isArray(episodePlayCapture.queue) && episodePlayCapture.queue.length === 4, 'Series Details: Resumed episode carries full Season 2 queue (4 episodes)');
+
+// 6D. Series Details Spatial D-Pad Navigation
+// Start at #btn-series-resume -> RIGHT to #btn-season-selector
+FreeIPTV.Navigation.focus(seriesResumeBtn);
+FreeIPTV.Navigation.move('right');
+assert(FreeIPTV.Navigation.getCurrent() === seriesSeasonBtn, 'Series Details: D-pad RIGHT from #btn-series-resume moves to #btn-season-selector');
+
+// LEFT from #btn-season-selector returns to #btn-series-resume
+FreeIPTV.Navigation.move('left');
+assert(FreeIPTV.Navigation.getCurrent() === seriesResumeBtn, 'Series Details: D-pad LEFT from #btn-season-selector returns to #btn-series-resume');
+
+// UP from #btn-series-resume moves to #btn-series-page-back
+FreeIPTV.Navigation.move('up');
+assert(FreeIPTV.Navigation.getCurrent() === seriesBackBtn, 'Series Details: D-pad UP from #btn-series-resume moves to #btn-series-page-back');
+
+// DOWN from #btn-series-page-back returns to #btn-series-resume
+FreeIPTV.Navigation.move('down');
+assert(FreeIPTV.Navigation.getCurrent() === seriesResumeBtn, 'Series Details: D-pad DOWN from #btn-series-page-back focuses #btn-series-resume');
+
+// DOWN from #btn-series-resume moves into episodes list (first episode)
+const epCards = globalDoc.querySelectorAll('#series-episodes-list .episode-card.focusable');
+assert(epCards.length === 4, 'Series Details: Season 2 rendered 4 episode cards (found ' + epCards.length + ')');
+FreeIPTV.Navigation.move('down');
+assert(FreeIPTV.Navigation.getCurrent() === epCards[0], 'Series Details: D-pad DOWN from #btn-series-resume moves to first episode card');
+
+// UP from first episode card returns to #btn-series-resume
+FreeIPTV.Navigation.move('up');
+assert(FreeIPTV.Navigation.getCurrent() === seriesResumeBtn, 'Series Details: D-pad UP from first episode card returns to #btn-series-resume');
+
+// Move to second episode card (col 1) and press UP -> returns to #btn-season-selector
+FreeIPTV.Navigation.move('down'); // epCards[0]
+FreeIPTV.Navigation.move('right'); // epCards[1]
+assert(FreeIPTV.Navigation.getCurrent() === epCards[1], 'Series Details: D-pad RIGHT moves to second episode card');
+FreeIPTV.Navigation.move('up');
+assert(FreeIPTV.Navigation.getCurrent() === seriesSeasonBtn, 'Series Details: D-pad UP from second episode card (col 1) moves to #btn-season-selector');
+
+FreeIPTV.Series.closeSeriesDetails();
+
+// 6E. Series Details without continuation data (fresh series)
+const freshSeries = { id: 'ser_fresh', name: 'Fresh Series' };
+FreeIPTV.Series.openSeriesDetails(freshSeries);
+
+assert(seriesResumeBtn.classList.contains('hidden'), 'Series Details: #btn-series-resume is hidden when NO continuation data exists');
+assert(FreeIPTV.Navigation.getCurrent() === seriesSeasonBtn, 'Series Details: Initial focus falls back to #btn-season-selector when no continuation data exists');
+
+FreeIPTV.Series.closeSeriesDetails();
 
 console.log('\n================================================================');
 console.log(` SUITE COMPLETE: ${passed} PASSED, ${failed} FAILED`);

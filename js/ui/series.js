@@ -779,6 +779,85 @@
     },
 
     /**
+     * Find continuation/watch progress data for a series (latest watched episode with saved progress).
+     * @param {Object} series
+     * @returns {Object|null} { cwEpisode, contentId, seasonNumber, episodeNumber, positionSeconds, durationSeconds }
+     */
+    getSeriesContinuationData: function (series) {
+      if (!series) return null;
+      var PlaylistManager = window.FreeIPTV.PlaylistManager;
+      if (!PlaylistManager) return null;
+
+      var activePlaylistId = (PlaylistManager.getActivePlaylistId) ? PlaylistManager.getActivePlaylistId() : null;
+      var sId = String(series.id || series.seriesId || '');
+      var sName = (series.name || series.title || '').trim().toLowerCase();
+
+      var cwEp = series.cwLatestEpisode || null;
+
+      // 1. Check Continue Watching list
+      if (!cwEp && typeof PlaylistManager.getContinueWatching === 'function') {
+        var cwList = PlaylistManager.getContinueWatching(null, activePlaylistId) || [];
+        if ((!cwList || cwList.length === 0) && activePlaylistId) {
+          cwList = PlaylistManager.getContinueWatching(null, null) || [];
+        }
+        for (var i = 0; i < cwList.length; i++) {
+          var item = cwList[i];
+          if (item.contentType === 'episode') {
+            var itemSeriesId = String(item.seriesId || '');
+            var itemSeriesName = (item.seriesName || '').trim().toLowerCase();
+            if ((sId && itemSeriesId === sId) || (sName && itemSeriesName && itemSeriesName === sName)) {
+              cwEp = item;
+              break;
+            }
+          }
+        }
+      }
+
+      // 2. Check Watch History list
+      if (!cwEp && typeof PlaylistManager.getWatchHistory === 'function') {
+        var histList = PlaylistManager.getWatchHistory(null, activePlaylistId) || [];
+        if ((!histList || histList.length === 0) && activePlaylistId) {
+          histList = PlaylistManager.getWatchHistory(null, null) || [];
+        }
+        for (var h = 0; h < histList.length; h++) {
+          var hist = histList[h];
+          if (hist.contentType === 'episode') {
+            var hSeriesId = String(hist.seriesId || '');
+            var hSeriesName = (hist.seriesName || '').trim().toLowerCase();
+            if ((sId && hSeriesId === sId) || (sName && hSeriesName && hSeriesName === sName)) {
+              cwEp = hist;
+              break;
+            }
+          }
+        }
+      }
+
+      if (!cwEp) return null;
+
+      // Check if there is valid progress
+      var prog = (PlaylistManager.getPlaybackProgress) ? PlaylistManager.getPlaybackProgress(cwEp.contentId || cwEp.id) : null;
+      var pos = (prog && prog.positionSeconds > 0) ? prog.positionSeconds : (cwEp.positionSeconds || cwEp.positionSec || 0);
+      var dur = (prog && prog.durationSeconds > 0) ? prog.durationSeconds : (cwEp.durationSeconds || cwEp.durationSec || 0);
+
+      // Must have watched at least 15s and have unfinished content
+      if (pos < 15) {
+        return null;
+      }
+      if (dur > 0 && pos >= dur - 30) {
+        return null;
+      }
+
+      return {
+        cwEpisode: cwEp,
+        contentId: cwEp.contentId || cwEp.id,
+        seasonNumber: Number(cwEp.seasonNumber) || 1,
+        episodeNumber: Number(cwEp.episodeNumber) || 1,
+        positionSeconds: pos,
+        durationSeconds: dur
+      };
+    },
+
+    /**
      * Resume the latest watched episode of a series directly from Continue Watching.
      * @param {Object} series
      */
@@ -787,25 +866,8 @@
       var PlaylistManager = window.FreeIPTV.PlaylistManager;
       var activePlaylistId = (PlaylistManager && PlaylistManager.getActivePlaylistId) ? PlaylistManager.getActivePlaylistId() : null;
 
-      var cwEp = series.cwLatestEpisode || null;
-      if (PlaylistManager && typeof PlaylistManager.getContinueWatching === 'function') {
-        var cwList = PlaylistManager.getContinueWatching(null, activePlaylistId) || [];
-        for (var i = 0; i < cwList.length; i++) {
-          if (cwList[i].contentType === 'episode' && String(cwList[i].seriesId) === String(series.id)) {
-            cwEp = cwList[i];
-            break;
-          }
-        }
-      }
-      if (!cwEp && PlaylistManager && typeof PlaylistManager.getWatchHistory === 'function') {
-        var histList = PlaylistManager.getWatchHistory(null, activePlaylistId) || [];
-        for (var h = 0; h < histList.length; h++) {
-          if (histList[h].contentType === 'episode' && String(histList[h].seriesId) === String(series.id)) {
-            cwEp = histList[h];
-            break;
-          }
-        }
-      }
+      var continuation = this.getSeriesContinuationData(series);
+      var cwEp = continuation ? continuation.cwEpisode : (series.cwLatestEpisode || null);
 
       if (!cwEp) {
         this.openSeriesDetails(series);
@@ -917,6 +979,15 @@
     bindDetailsModalEvents: function () {
       var self = this;
 
+      var btnResume = document.getElementById('btn-series-resume') || document.getElementById('series-btn-resume');
+      if (btnResume) {
+        btnResume.addEventListener('click', function () {
+          if (selectedSeries) {
+            self.resumeLatestEpisode(selectedSeries);
+          }
+        });
+      }
+
       var btnFav = document.getElementById('btn-series-fav') || document.getElementById('series-btn-fav');
       if (btnFav) {
         btnFav.addEventListener('click', function () {
@@ -999,9 +1070,32 @@
         if (view) view.classList.remove('hidden');
       }
 
-      // Explicit initial focus for series details context
+      // Check series resume / continuation state
+      var continuation = this.getSeriesContinuationData(series);
+      var btnResume = document.getElementById('btn-series-resume');
       var seasonBtn = document.getElementById('btn-season-selector');
-      var initialFocusEl = seasonBtn || document.getElementById('btn-series-fav') || document.getElementById('btn-series-page-back');
+      var initialFocusEl = null;
+
+      if (btnResume && continuation && continuation.positionSeconds >= 15) {
+        var sNum = continuation.seasonNumber;
+        var epNum = continuation.episodeNumber;
+        var sTag = 'S' + (sNum < 10 ? '0' + sNum : sNum) + 'E' + (epNum < 10 ? '0' + epNum : epNum);
+        var resumeSpan = btnResume.querySelector('span') || document.getElementById('series-resume-label');
+        var rawLabel = (window.FreeIPTV.I18n ? window.FreeIPTV.I18n.t('details.resume') : 'RESUME');
+        var prefix = (rawLabel && rawLabel !== 'details.resume') ? rawLabel : 'RESUME';
+        var resumeLabel = prefix + ' ' + sTag;
+        if (resumeSpan) {
+          resumeSpan.textContent = resumeLabel;
+        } else {
+          btnResume.textContent = resumeLabel;
+        }
+        btnResume.classList.remove('hidden');
+        initialFocusEl = btnResume;
+      } else {
+        if (btnResume) btnResume.classList.add('hidden');
+        initialFocusEl = seasonBtn || document.getElementById('btn-series-fav') || document.getElementById('btn-series-page-back');
+      }
+
       if (initialFocusEl && window.FreeIPTV.Navigation) {
         window.FreeIPTV.Navigation.focus(initialFocusEl);
       }
@@ -1046,7 +1140,18 @@
         window.FreeIPTV.PlaylistManager.getSeriesDetails(activePlaylistId, series).then(function (details) {
           if (isDetailsOpen && selectedSeries && selectedSeries.id === series.id) {
             currentSeriesDetails = details || {};
-            var content = (details && (details.content || details.allEpisodes)) || [];
+            var content = (details && (details.content || details.allEpisodes)) ? (details.content || details.allEpisodes).slice() : [];
+            if (content.length === 0 && details && details.episodesBySeason && typeof details.episodesBySeason === 'object') {
+              var sKeys = Object.keys(details.episodesBySeason);
+              for (var sk = 0; sk < sKeys.length; sk++) {
+                var sArr = details.episodesBySeason[sKeys[sk]];
+                if (Array.isArray(sArr)) {
+                  for (var sj = 0; sj < sArr.length; sj++) {
+                    content.push(sArr[sj]);
+                  }
+                }
+              }
+            }
 
             // CONTENT ARRAY IS AUTHORITATIVE FOR AVAILABLE SEASONS & EPISODE GROUPING
             var contentSeasonNums = [];
@@ -1121,7 +1226,9 @@
               }
               self.renderEpisodes([]);
             } else {
-              activeSeasonNumber = availableSeasonsList[0].seasonNumber;
+              var targetSeasonNum = (continuation && continuation.seasonNumber) ? continuation.seasonNumber : availableSeasonsList[0].seasonNumber;
+              var hasSeason = availableSeasonsList.some(function (s) { return s.seasonNumber === targetSeasonNum; });
+              activeSeasonNumber = hasSeason ? targetSeasonNum : availableSeasonsList[0].seasonNumber;
               self.renderSeasonDropdown(availableSeasonsList);
               var epMap = currentSeriesDetails.episodesBySeason || {};
               var initialEps = epMap[activeSeasonNumber] || [];

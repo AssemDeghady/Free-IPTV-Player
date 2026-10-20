@@ -20,6 +20,13 @@ A clean, high-performance, and privacy-respecting IPTV player built natively for
 
 ## LG Smart TV (webOS)
 
+> [!NOTE]
+> **Branch Notice**: The LG webOS version and its dedicated packaging & deployment tooling are maintained on the **`webos`** branch.
+> To build, test, or deploy for LG Smart TVs, checkout the `webos` branch:
+> ```bash
+> git checkout webos
+> ```
+
 ### Building the webOS App (IPK Package)
 
 This project uses the official LG webOS CLI tools (`@webos-tools/cli` / `ares-*`) to package the application.

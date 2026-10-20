@@ -787,7 +787,7 @@
       if (btnResume) {
         btnResume.addEventListener('click', function () {
           if (selectedMovie && window.FreeIPTV.Player) {
-            var progress = window.FreeIPTV.PlaylistManager ? window.FreeIPTV.PlaylistManager.getPlaybackProgress(selectedMovie.id) : null;
+            var progress = self.getMovieContinuationData(selectedMovie);
             var pos = progress ? (progress.positionSeconds * 1000) : 0;
             window.FreeIPTV.Player.playMovie(selectedMovie, pos);
           }
@@ -826,6 +826,66 @@
           });
         }
       }
+    },
+
+    /**
+     * Find continuation/watch progress data for a movie.
+     * @param {Object} movie
+     * @returns {Object|null} { positionSeconds, durationSeconds }
+     */
+    getMovieContinuationData: function (movie) {
+      if (!movie) return null;
+      var PlaylistManager = window.FreeIPTV.PlaylistManager;
+      if (!PlaylistManager) return null;
+
+      var mId = movie.id || movie.streamId || movie.contentId;
+      var progress = null;
+      if (typeof PlaylistManager.getPlaybackProgress === 'function') {
+        progress = PlaylistManager.getPlaybackProgress(mId) ||
+                   (movie.streamId ? PlaylistManager.getPlaybackProgress(movie.streamId) : null) ||
+                   (movie.id ? PlaylistManager.getPlaybackProgress(movie.id) : null);
+      }
+
+      if (!progress && typeof PlaylistManager.getContinueWatching === 'function') {
+        var activePlaylistId = PlaylistManager.getActivePlaylistId ? PlaylistManager.getActivePlaylistId() : null;
+        var cwList = PlaylistManager.getContinueWatching(null, activePlaylistId) || [];
+        for (var i = 0; i < cwList.length; i++) {
+          var item = cwList[i];
+          if (item.contentType === 'movie') {
+            if (String(item.contentId) === String(mId) || String(item.contentId) === String(movie.streamId) || String(item.contentId) === String(movie.id)) {
+              progress = {
+                positionSeconds: item.positionSeconds || item.positionSec || 0,
+                durationSeconds: item.durationSeconds || item.durationSec || 0
+              };
+              break;
+            }
+          }
+        }
+      }
+
+      if (!progress && typeof PlaylistManager.getWatchHistory === 'function') {
+        var histList = PlaylistManager.getWatchHistory(null, null) || [];
+        for (var h = 0; h < histList.length; h++) {
+          var hist = histList[h];
+          if (hist.contentType === 'movie') {
+            if (String(hist.contentId) === String(mId) || String(hist.contentId) === String(movie.streamId) || String(hist.contentId) === String(movie.id)) {
+              if (hist.positionSeconds && hist.positionSeconds > 0) {
+                progress = {
+                  positionSeconds: hist.positionSeconds,
+                  durationSeconds: hist.durationSeconds
+                };
+                break;
+              }
+            }
+          }
+        }
+      }
+
+      if (!progress || !progress.positionSeconds) return null;
+      if (progress.positionSeconds < 15) return null;
+      if (progress.durationSeconds && progress.positionSeconds >= progress.durationSeconds - 30) return null;
+
+      return progress;
     },
 
     /**
@@ -878,17 +938,25 @@
         });
       }
 
-      // Check resume state
-      var progress = window.FreeIPTV.PlaylistManager ? window.FreeIPTV.PlaylistManager.getPlaybackProgress(movie.id) : null;
+      // Check resume / continuation state
+      var progress = this.getMovieContinuationData(movie);
       var btnResume = document.getElementById('btn-movie-resume');
       var btnPlay = document.getElementById('btn-movie-play');
       var initialFocusEl = null;
 
-      if (btnResume && progress && progress.positionSeconds >= 15 && (!progress.durationSeconds || progress.positionSeconds < progress.durationSeconds - 30)) {
-        var mins = Math.floor(progress.positionSeconds / 60);
+      if (btnResume && progress && progress.positionSeconds >= 15) {
+        var hrs = Math.floor(progress.positionSeconds / 3600);
+        var mins = Math.floor((progress.positionSeconds % 3600) / 60);
         var secs = progress.positionSeconds % 60;
-        var timeStr = (mins < 10 ? '0' : '') + mins + ':' + (secs < 10 ? '0' : '') + secs;
-        btnResume.textContent = (window.FreeIPTV.I18n ? window.FreeIPTV.I18n.t('movies.resume_from') : 'Resume from {time}').replace('{time}', timeStr);
+        var timeStr = (hrs > 0 ? (hrs + ':') : '') + (mins < 10 && hrs > 0 ? '0' : '') + mins + ':' + (secs < 10 ? '0' : '') + secs;
+        var resumeSpan = btnResume.querySelector('span');
+        var rawT = (window.FreeIPTV.I18n ? window.FreeIPTV.I18n.t('movies.resume_from') : 'Resume from {time}');
+        var resumeText = (rawT && rawT !== 'movies.resume_from') ? rawT.replace('{time}', timeStr) : ('Resume from ' + timeStr);
+        if (resumeSpan) {
+          resumeSpan.textContent = resumeText;
+        } else {
+          btnResume.textContent = resumeText;
+        }
         btnResume.classList.remove('hidden');
         initialFocusEl = btnResume;
       } else {

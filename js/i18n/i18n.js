@@ -161,6 +161,7 @@
     'series.episode': 'Episode {num}',
     'series.season_label': 'SEASON',
     'series.episodes_label': 'Episodes',
+    'series.resume_episode': 'Resume {episode}',
 
     'guide.title': 'TV Guide',
     'guide.badge': 'EPG Timeline',
@@ -421,6 +422,7 @@
     'series.episode': 'الحلقة {num}',
     'series.season_label': 'الموسم',
     'series.episodes_label': 'الحلقات',
+    'series.resume_episode': 'استئناف {episode}',
 
     'guide.title': 'دليل التلفزيون',
     'guide.badge': 'جدول البرامج',

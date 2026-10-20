@@ -234,6 +234,7 @@
   "series.no_seasons": "No seasons available.",
   "series.loading_seasons": "Loading seasons...",
   "series.episodes_label": "Episodes",
+  "series.resume_episode": "Resume {episode}",
   "categories.search_placeholder": "Search categories...",
   "movies.recently_added": "Recently Added",
   "series.recently_added": "Recently Added",
