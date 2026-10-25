@@ -536,6 +536,16 @@
                   <div id="series-modal-meta" class="hidden"></div>
 
                   <div class="details-actions-bar">
+                    <button id="btn-series-resume" class="btn-primary btn-action-lg focusable hidden"
+                      data-nav-zone="series_details">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path
+                          d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0 0 20 12c0-4.42-3.58-8-8-8zm-1.5 6.5v5l4-2.5-4-2.5z" />
+                      </svg>
+                      <span id="series-resume-label" data-i18n="details.resume">RESUME</span>
+                    </button>
+                    <button id="series-btn-resume" class="hidden" tabindex="-1"></button>
+
                     <!-- Season Dropdown Selector in place of Back button -->
                     <div class="series-season-selector-group">
                       <div class="season-dropdown-wrapper">
@@ -808,6 +818,14 @@
                 <path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8 12.5v-9l6 4.5-6 4.5z" />
               </svg>
               <span data-i18n="player.episodes">Episodes</span>
+            </button>
+
+            <button id="player-btn-info" class="btn-player-control focusable hidden" data-nav-zone="player_controls"
+              title="Info">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
+              </svg>
+              <span data-i18n="player.info">Info</span>
             </button>
 
             <button id="player-btn-audio" class="btn-player-control focusable" data-nav-zone="player_controls"

@@ -197,6 +197,7 @@ body.webos-tv .btn-action-lg {
 #btn-movie-play.focused,
 #btn-movie-resume.focused,
 #btn-movie-fav.focused,
+#btn-series-resume.focused,
 #btn-series-fav.focused {
   border-color: var(--focus-border-color);
   box-shadow: 0 0 20px rgba(59, 130, 246, 0.8), inset 0 0 8px rgba(255, 255, 255, 0.3);

@@ -161,6 +161,7 @@
     'series.episode': 'Episode {num}',
     'series.season_label': 'SEASON',
     'series.episodes_label': 'Episodes',
+    'series.resume_episode': 'Resume {episode}',
 
     'guide.title': 'TV Guide',
     'guide.badge': 'EPG Timeline',
@@ -269,6 +270,7 @@
     'series.favorites': 'Favorites',
     'series.continue_watching': 'Continue Watching',
     'player.episodes': 'Episodes',
+    'player.info': 'Info',
     'player.now_playing': 'NOW PLAYING'
   };
 
@@ -421,6 +423,7 @@
     'series.episode': 'الحلقة {num}',
     'series.season_label': 'الموسم',
     'series.episodes_label': 'الحلقات',
+    'series.resume_episode': 'استئناف {episode}',
 
     'guide.title': 'دليل التلفزيون',
     'guide.badge': 'جدول البرامج',
@@ -529,6 +532,7 @@
     'series.favorites': 'المفضلة',
     'series.continue_watching': 'متابعة المشاهدة',
     'player.episodes': 'الحلقات',
+    'player.info': 'معلومات',
     'player.now_playing': 'يعرض الآن'
   };
 

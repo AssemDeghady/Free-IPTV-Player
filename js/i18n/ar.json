@@ -234,6 +234,7 @@
   "series.no_seasons": "لا توجد مواسم متاحة.",
   "series.loading_seasons": "جارٍ تحميل المواسم...",
   "series.episodes_label": "الحلقات",
+  "series.resume_episode": "استئناف {episode}",
   "categories.search_placeholder": "البحث في الأقسام...",
   "movies.recently_added": "أضيف حديثاً",
   "series.recently_added": "أضيف حديثاً",
@@ -242,5 +243,6 @@
   "series.continue_watching": "متابعة المشاهدة",
   "series.favorites": "المفضلة",
   "player.episodes": "الحلقات",
+  "player.info": "معلومات",
   "player.now_playing": "يعرض الآن"
 }

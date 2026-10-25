@@ -94,7 +94,8 @@ const expectedFiles = [
   'tests/test-content-cache.cjs',
   'js/vendor/webOSTV.js',
   'js/core/platform.js',
-  'tests/test-webos-compatibility.cjs'
+  'tests/test-webos-compatibility.cjs',
+  'tests/test-player-info-preview-resume.cjs'
 ];
 
 expectedFiles.forEach(file => {
@@ -186,7 +187,8 @@ const suites = [
   'test-player-navigation-regression.cjs',
   'test-content-cache.cjs',
   'test-player-continue-cover-episodes.cjs',
-  'test-webos-compatibility.cjs'
+  'test-webos-compatibility.cjs',
+  'test-player-info-preview-resume.cjs'
 ];
 
 suites.forEach(suite => {

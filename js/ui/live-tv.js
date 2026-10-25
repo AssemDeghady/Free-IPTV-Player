@@ -30,6 +30,7 @@
   var previewTimer = null;
   var currentPreviewChannel = null;
   var isPreviewActive = false;
+  var previewHls = null;
 
   // Channel State
   var currentPlaylistId = null;
@@ -784,29 +785,74 @@
             }
           });
       } else {
-        // webOS TV, Desktop Browser, or Non-Tizen: Use DOM HTML5 video element
+        // webOS TV, Desktop Browser, or Non-Tizen: Use DOM HTML5 video element with Hls.js support
         var vid = document.getElementById('live-preview-video');
         if (vid) {
-          vid.src = streamUrl;
-          vid.muted = true;
-          vid.classList.remove('hidden');
-          var p = vid.play();
-          if (p && typeof p.then === 'function') {
-            p.then(function () {
-              if (currentPreviewChannel === channel) {
-                isPreviewActive = true;
-                self.renderPreviewStatus('', false);
+          self.setupPreviewVideo(vid, streamUrl);
+          isPreviewActive = true;
+          self.renderPreviewStatus('', false);
+        }
+      }
+    },
+
+    /**
+     * Setup HTML5 video element for preview with Hls.js fallback for .m3u8 live streams.
+     * @param {HTMLVideoElement} vid
+     * @param {string} streamUrl
+     */
+    setupPreviewVideo: function (vid, streamUrl) {
+      this.destroyPreviewHls();
+      if (!vid || !streamUrl) return;
+
+      vid.muted = true;
+      vid.classList.remove('hidden');
+
+      var isHlsStream = /\.m3u8(\?.*)?$/i.test(streamUrl) || streamUrl.indexOf('m3u8') !== -1;
+      var canNativeHls = vid.canPlayType && vid.canPlayType('application/vnd.apple.mpegurl');
+
+      if (window.Hls && window.Hls.isSupported() && (isHlsStream || !canNativeHls)) {
+        try {
+          previewHls = new window.Hls({
+            enableWorker: true,
+            lowLatencyMode: true,
+            maxBufferLength: 10,
+            maxMaxBufferLength: 20
+          });
+          previewHls.loadSource(streamUrl);
+          previewHls.attachMedia(vid);
+          previewHls.on(window.Hls.Events.MANIFEST_PARSED, function () {
+            var p = vid.play();
+            if (p && p.catch) p.catch(function () {});
+          });
+          previewHls.on(window.Hls.Events.ERROR, function (event, data) {
+            if (data && data.fatal) {
+              if (window.FreeIPTV.Logger) {
+                window.FreeIPTV.Logger.warn('HLS preview error:', data.details);
               }
-            }).catch(function () {
-              if (currentPreviewChannel === channel) {
-                self.renderPreviewStatus(window.FreeIPTV.I18n ? window.FreeIPTV.I18n.t('live.preview_unavailable') : 'Preview unavailable', false);
-              }
-            });
-          } else {
-            isPreviewActive = true;
-            self.renderPreviewStatus('', false);
+            }
+          });
+          return;
+        } catch (e) {
+          if (window.FreeIPTV.Logger) {
+            window.FreeIPTV.Logger.warn('Failed to init Hls.js for preview:', e.message);
           }
         }
+      }
+
+      vid.src = streamUrl;
+      var p = vid.play();
+      if (p && p.catch) p.catch(function () {});
+    },
+
+    /**
+     * Destroy any active preview Hls.js instance.
+     */
+    destroyPreviewHls: function () {
+      if (previewHls) {
+        try {
+          previewHls.destroy();
+        } catch (e) {}
+        previewHls = null;
       }
     },
 
@@ -818,6 +864,8 @@
         clearTimeout(previewTimer);
         previewTimer = null;
       }
+
+      this.destroyPreviewHls();
 
       if (isPreviewActive || currentPreviewChannel) {
         var isTizenHardware = typeof window !== 'undefined' && window.webapis && window.webapis.avplay;
@@ -887,8 +935,7 @@
         '</div>' +
       '</div>';
 
-      container.innerHTML = headerHtml +
-        '<div class="live-epg-loading"><div class="loading-spinner"></div></div>';
+      container.innerHTML = headerHtml;
 
       // 2. Fetch EPG data
       var activePlaylist = PlaylistManager ? PlaylistManager.getActivePlaylist() : null;
@@ -901,11 +948,7 @@
         }
 
         if (!programs || programs.length === 0) {
-          var emptyNotice = '<div class="live-epg-empty-notice">' +
-            '<div class="live-epg-empty-title">' + (I18n ? I18n.t('live.epg_unavailable') : 'EPG Unavailable') + '</div>' +
-            '<div class="live-epg-empty-desc">' + (I18n ? I18n.t('live.no_epg') : 'No program guide data available for this channel.') + '</div>' +
-          '</div>';
-          container.innerHTML = headerHtml + emptyNotice;
+          container.innerHTML = headerHtml;
           return;
         }
 
@@ -978,11 +1021,7 @@
 
         container.innerHTML = contentHtml;
       }).catch(function () {
-        var emptyNotice = '<div class="live-epg-empty-notice">' +
-          '<div class="live-epg-empty-title">' + (I18n ? I18n.t('live.epg_unavailable') : 'EPG Unavailable') + '</div>' +
-          '<div class="live-epg-empty-desc">' + (I18n ? I18n.t('live.no_epg') : 'No program guide data available for this channel.') + '</div>' +
-        '</div>';
-        container.innerHTML = headerHtml + emptyNotice;
+        container.innerHTML = headerHtml;
       });
     },
 
@@ -992,11 +1031,7 @@
     renderEpgPlaceholder: function () {
       var container = document.getElementById('live-epg-content');
       if (!container) return;
-      var I18n = window.FreeIPTV.I18n;
-      container.innerHTML = '<div class="live-epg-empty-notice">' +
-        '<div class="live-epg-empty-title">' + (I18n ? I18n.t('live.epg_header') : 'Program Guide') + '</div>' +
-        '<div class="live-epg-empty-desc">' + (I18n ? I18n.t('live.no_channels_sub') : 'Select a channel to view program guide and schedule.') + '</div>' +
-      '</div>';
+      container.innerHTML = '';
     },
 
     /**
@@ -1023,6 +1058,8 @@
      * @param {Object} channel
      */
     onChannelSelected: function (channel) {
+      this.stopChannelPreview();
+
       if (window.FreeIPTV.Logger) {
         window.FreeIPTV.Logger.info('Channel selected for playback:', channel.name, channel.streamUrl);
       }
