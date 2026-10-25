@@ -144,6 +144,12 @@
           Player.closePlayer();
           event.preventDefault();
           return;
+        } else if (keyCode === (Constants.KEYS.INFO || 457) || keyCode === 73) {
+          if (typeof Player.openMediaInfoPage === 'function') {
+            Player.openMediaInfoPage();
+            event.preventDefault();
+            return;
+          }
         }
 
         // Channel zapping via UP / DOWN (Live TV ONLY)

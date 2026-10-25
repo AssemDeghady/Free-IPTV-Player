@@ -839,6 +839,7 @@
       if (!PlaylistManager) return null;
 
       var mId = movie.id || movie.streamId || movie.contentId;
+      var mName = (movie.name || movie.title || '').trim().toLowerCase();
       var progress = null;
       if (typeof PlaylistManager.getPlaybackProgress === 'function') {
         progress = PlaylistManager.getPlaybackProgress(mId) ||
@@ -849,10 +850,17 @@
       if (!progress && typeof PlaylistManager.getContinueWatching === 'function') {
         var activePlaylistId = PlaylistManager.getActivePlaylistId ? PlaylistManager.getActivePlaylistId() : null;
         var cwList = PlaylistManager.getContinueWatching(null, activePlaylistId) || [];
+        if ((!cwList || cwList.length === 0) && activePlaylistId) {
+          cwList = PlaylistManager.getContinueWatching(null, null) || [];
+        }
         for (var i = 0; i < cwList.length; i++) {
           var item = cwList[i];
           if (item.contentType === 'movie') {
-            if (String(item.contentId) === String(mId) || String(item.contentId) === String(movie.streamId) || String(item.contentId) === String(movie.id)) {
+            var itemTitle = (item.title || item.name || '').trim().toLowerCase();
+            if (String(item.contentId) === String(mId) ||
+                String(item.contentId) === String(movie.streamId) ||
+                String(item.contentId) === String(movie.id) ||
+                (mName && itemTitle && mName === itemTitle)) {
               progress = {
                 positionSeconds: item.positionSeconds || item.positionSec || 0,
                 durationSeconds: item.durationSeconds || item.durationSec || 0
@@ -868,7 +876,11 @@
         for (var h = 0; h < histList.length; h++) {
           var hist = histList[h];
           if (hist.contentType === 'movie') {
-            if (String(hist.contentId) === String(mId) || String(hist.contentId) === String(movie.streamId) || String(hist.contentId) === String(movie.id)) {
+            var histTitle = (hist.title || hist.name || '').trim().toLowerCase();
+            if (String(hist.contentId) === String(mId) ||
+                String(hist.contentId) === String(movie.streamId) ||
+                String(hist.contentId) === String(movie.id) ||
+                (mName && histTitle && mName === histTitle)) {
               if (hist.positionSeconds && hist.positionSeconds > 0) {
                 progress = {
                   positionSeconds: hist.positionSeconds,
@@ -882,10 +894,40 @@
       }
 
       if (!progress || !progress.positionSeconds) return null;
-      if (progress.positionSeconds < 15) return null;
+      if (progress.positionSeconds < 5) return null;
       if (progress.durationSeconds && progress.positionSeconds >= progress.durationSeconds - 30) return null;
 
       return progress;
+    },
+
+    /**
+     * Dynamically update the movie resume button label and visibility.
+     * @param {Object} [movie]
+     */
+    updateResumeButton: function (movie) {
+      var m = movie || selectedMovie;
+      if (!m) return;
+      var progress = this.getMovieContinuationData(m);
+      var btnResume = document.getElementById('btn-movie-resume');
+      if (btnResume) {
+        if (progress && progress.positionSeconds >= 5) {
+          var hrs = Math.floor(progress.positionSeconds / 3600);
+          var mins = Math.floor((progress.positionSeconds % 3600) / 60);
+          var secs = progress.positionSeconds % 60;
+          var timeStr = (hrs > 0 ? (hrs + ':') : '') + (mins < 10 && hrs > 0 ? '0' : '') + mins + ':' + (secs < 10 ? '0' : '') + secs;
+          var resumeSpan = btnResume.querySelector('span');
+          var rawT = (window.FreeIPTV.I18n ? window.FreeIPTV.I18n.t('movies.resume_from') : 'Resume from {time}');
+          var resumeText = (rawT && rawT !== 'movies.resume_from') ? rawT.replace('{time}', timeStr) : ('Resume from ' + timeStr);
+          if (resumeSpan) {
+            resumeSpan.textContent = resumeText;
+          } else {
+            btnResume.textContent = resumeText;
+          }
+          btnResume.classList.remove('hidden');
+        } else {
+          btnResume.classList.add('hidden');
+        }
+      }
     },
 
     /**
@@ -939,28 +981,14 @@
       }
 
       // Check resume / continuation state
-      var progress = this.getMovieContinuationData(movie);
+      this.updateResumeButton(movie);
       var btnResume = document.getElementById('btn-movie-resume');
       var btnPlay = document.getElementById('btn-movie-play');
       var initialFocusEl = null;
 
-      if (btnResume && progress && progress.positionSeconds >= 15) {
-        var hrs = Math.floor(progress.positionSeconds / 3600);
-        var mins = Math.floor((progress.positionSeconds % 3600) / 60);
-        var secs = progress.positionSeconds % 60;
-        var timeStr = (hrs > 0 ? (hrs + ':') : '') + (mins < 10 && hrs > 0 ? '0' : '') + mins + ':' + (secs < 10 ? '0' : '') + secs;
-        var resumeSpan = btnResume.querySelector('span');
-        var rawT = (window.FreeIPTV.I18n ? window.FreeIPTV.I18n.t('movies.resume_from') : 'Resume from {time}');
-        var resumeText = (rawT && rawT !== 'movies.resume_from') ? rawT.replace('{time}', timeStr) : ('Resume from ' + timeStr);
-        if (resumeSpan) {
-          resumeSpan.textContent = resumeText;
-        } else {
-          btnResume.textContent = resumeText;
-        }
-        btnResume.classList.remove('hidden');
+      if (btnResume && !btnResume.classList.contains('hidden')) {
         initialFocusEl = btnResume;
       } else {
-        if (btnResume) btnResume.classList.add('hidden');
         initialFocusEl = btnPlay || document.getElementById('btn-movie-page-back');
       }
 

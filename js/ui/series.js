@@ -839,8 +839,8 @@
       var pos = (prog && prog.positionSeconds > 0) ? prog.positionSeconds : (cwEp.positionSeconds || cwEp.positionSec || 0);
       var dur = (prog && prog.durationSeconds > 0) ? prog.durationSeconds : (cwEp.durationSeconds || cwEp.durationSec || 0);
 
-      // Must have watched at least 15s and have unfinished content
-      if (pos < 15) {
+      // Must have watched at least 5s and have unfinished content
+      if (pos < 5) {
         return null;
       }
       if (dur > 0 && pos >= dur - 30) {
@@ -1029,6 +1029,36 @@
     },
 
     /**
+     * Dynamically update the series resume button label and visibility.
+     * @param {Object} [series]
+     */
+    updateResumeButton: function (series) {
+      var s = series || selectedSeries;
+      if (!s) return;
+      var continuation = this.getSeriesContinuationData(s);
+      var btnResume = document.getElementById('btn-series-resume');
+      if (btnResume) {
+        if (continuation && continuation.positionSeconds >= 5) {
+          var sNum = continuation.seasonNumber;
+          var epNum = continuation.episodeNumber;
+          var sTag = 'S' + (sNum < 10 ? '0' + sNum : sNum) + 'E' + (epNum < 10 ? '0' + epNum : epNum);
+          var resumeSpan = btnResume.querySelector('span') || document.getElementById('series-resume-label');
+          var rawLabel = (window.FreeIPTV.I18n ? window.FreeIPTV.I18n.t('details.resume') : 'RESUME');
+          var prefix = (rawLabel && rawLabel !== 'details.resume') ? rawLabel : 'RESUME';
+          var resumeLabel = prefix + ' ' + sTag;
+          if (resumeSpan) {
+            resumeSpan.textContent = resumeLabel;
+          } else {
+            btnResume.textContent = resumeLabel;
+          }
+          btnResume.classList.remove('hidden');
+        } else {
+          btnResume.classList.add('hidden');
+        }
+      }
+    },
+
+    /**
      * Open series details full-page view.
      * @param {Object} series
      * @param {string} [fromRoute] Origin route (series, favorites, search, home)
@@ -1071,28 +1101,15 @@
       }
 
       // Check series resume / continuation state
+      this.updateResumeButton(series);
       var continuation = this.getSeriesContinuationData(series);
       var btnResume = document.getElementById('btn-series-resume');
       var seasonBtn = document.getElementById('btn-season-selector');
       var initialFocusEl = null;
 
-      if (btnResume && continuation && continuation.positionSeconds >= 15) {
-        var sNum = continuation.seasonNumber;
-        var epNum = continuation.episodeNumber;
-        var sTag = 'S' + (sNum < 10 ? '0' + sNum : sNum) + 'E' + (epNum < 10 ? '0' + epNum : epNum);
-        var resumeSpan = btnResume.querySelector('span') || document.getElementById('series-resume-label');
-        var rawLabel = (window.FreeIPTV.I18n ? window.FreeIPTV.I18n.t('details.resume') : 'RESUME');
-        var prefix = (rawLabel && rawLabel !== 'details.resume') ? rawLabel : 'RESUME';
-        var resumeLabel = prefix + ' ' + sTag;
-        if (resumeSpan) {
-          resumeSpan.textContent = resumeLabel;
-        } else {
-          btnResume.textContent = resumeLabel;
-        }
-        btnResume.classList.remove('hidden');
+      if (btnResume && !btnResume.classList.contains('hidden')) {
         initialFocusEl = btnResume;
       } else {
-        if (btnResume) btnResume.classList.add('hidden');
         initialFocusEl = seasonBtn || document.getElementById('btn-series-fav') || document.getElementById('btn-series-page-back');
       }
 

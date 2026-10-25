@@ -270,6 +270,7 @@
     'series.favorites': 'Favorites',
     'series.continue_watching': 'Continue Watching',
     'player.episodes': 'Episodes',
+    'player.info': 'Info',
     'player.now_playing': 'NOW PLAYING'
   };
 
@@ -531,6 +532,7 @@
     'series.favorites': 'المفضلة',
     'series.continue_watching': 'متابعة المشاهدة',
     'player.episodes': 'الحلقات',
+    'player.info': 'معلومات',
     'player.now_playing': 'يعرض الآن'
   };
 

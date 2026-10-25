@@ -45,6 +45,7 @@
       STOP: 413,
       FAST_FORWARD: 417,
       REWIND: 412,
+      INFO: 457,
 
       // TV Color function keys
       COLOR_RED: 403,

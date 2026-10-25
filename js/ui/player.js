@@ -139,6 +139,15 @@
         });
       }
 
+      // In-player Media Info button (Movies and Series)
+      var btnInfo = document.getElementById('player-btn-info');
+      if (btnInfo) {
+        btnInfo.addEventListener('click', function (e) {
+          if (e && e.stopPropagation) e.stopPropagation();
+          self.openMediaInfoPage();
+        });
+      }
+
       // Back to channels / screens button
       var btnBack = document.getElementById('player-btn-back');
       if (btnBack) {
@@ -883,6 +892,7 @@
       var btnRewind = document.getElementById('player-btn-rewind');
       var btnForward = document.getElementById('player-btn-forward');
       var btnEpisodes = document.getElementById('player-btn-episodes');
+      var btnInfo = document.getElementById('player-btn-info');
       var liveBadge = document.querySelector('.player-live-badge');
 
       if (type === 'live') {
@@ -892,6 +902,7 @@
         if (btnRewind) btnRewind.classList.add('hidden');
         if (btnForward) btnForward.classList.add('hidden');
         if (btnEpisodes) btnEpisodes.classList.add('hidden');
+        if (btnInfo) btnInfo.classList.add('hidden');
         if (liveBadge) liveBadge.style.display = 'inline-block';
       } else {
         // VOD Movie or Episode
@@ -899,6 +910,7 @@
         if (btnPrev) btnPrev.classList.toggle('hidden', type !== 'episode');
         if (btnNext) btnNext.classList.toggle('hidden', type !== 'episode');
         if (btnEpisodes) btnEpisodes.classList.toggle('hidden', type !== 'episode');
+        if (btnInfo) btnInfo.classList.remove('hidden');
         if (btnRewind) btnRewind.classList.remove('hidden');
         if (btnForward) btnForward.classList.remove('hidden');
         if (liveBadge) liveBadge.style.display = 'none';
@@ -1081,6 +1093,38 @@
     },
 
     /**
+     * Open detailed info page for currently playing movie or series.
+     */
+    openMediaInfoPage: function () {
+      if (!currentMedia || currentMedia.type === 'live') return;
+      var media = currentMedia;
+      var mediaType = media.type;
+      var movieObj = mediaType === 'movie' ? (media.rawItem || {
+        id: media.id,
+        streamId: media.id,
+        name: media.title,
+        title: media.title,
+        posterUrl: media.posterUrl || media.poster || media.logoUrl,
+        streamUrl: media.streamUrl
+      }) : null;
+      var seriesObj = mediaType === 'episode' ? (media.rawSeries || this._episodeSeries || {
+        id: media.seriesId,
+        seriesId: media.seriesId,
+        name: media.seriesName,
+        title: media.seriesName,
+        posterUrl: media.posterUrl || media.poster || media.logoUrl
+      }) : null;
+
+      this.closePlayer();
+
+      if (mediaType === 'movie' && window.FreeIPTV.Movies && window.FreeIPTV.Movies.openMovieDetails) {
+        window.FreeIPTV.Movies.openMovieDetails(movieObj, 'home');
+      } else if (mediaType === 'episode' && window.FreeIPTV.Series && window.FreeIPTV.Series.openSeriesDetails) {
+        window.FreeIPTV.Series.openSeriesDetails(seriesObj, 'home');
+      }
+    },
+
+    /**
      * Explicit lifecycle: Exit dedicated player display mode (Phase 6.4).
      */
     exitPlayerMode: function () {
@@ -1101,6 +1145,13 @@
         window.FreeIPTV.Home.switchView(targetRoute);
       }
 
+      // Refresh resume button state on details pages if returning there
+      if (targetRoute === 'movie_details' && window.FreeIPTV.Movies && typeof window.FreeIPTV.Movies.updateResumeButton === 'function') {
+        window.FreeIPTV.Movies.updateResumeButton();
+      } else if (targetRoute === 'series_details' && window.FreeIPTV.Series && typeof window.FreeIPTV.Series.updateResumeButton === 'function') {
+        window.FreeIPTV.Series.updateResumeButton();
+      }
+
       // Restore focus to saved element if still connected and focusable
       if (window.FreeIPTV.Navigation) {
         if (targetFocus && document.body.contains(targetFocus) && targetFocus.offsetParent !== null) {
@@ -1112,16 +1163,17 @@
             restoreEl = document.querySelector('[data-channel-id="' + (currentChannel ? currentChannel.id : '') + '"]') ||
                         document.querySelector('#live-channels-container .focusable');
           } else if (currentMedia && currentMedia.type === 'movie') {
-            restoreEl = document.getElementById('btn-movie-resume') ||
+            restoreEl = document.querySelector('#btn-movie-resume:not(.hidden)') ||
                         document.getElementById('btn-movie-play') ||
                         document.getElementById('movie-btn-play') ||
-                        document.querySelector('#view-movie_details .focusable') ||
+                        document.querySelector('#view-movie_details .focusable:not(.hidden)') ||
                         document.querySelector('#movies-grid-container .focusable');
           } else if (currentMedia && currentMedia.type === 'episode') {
-            restoreEl = document.querySelector('.series-episode-card.focused') ||
+            restoreEl = document.querySelector('#btn-series-resume:not(.hidden)') ||
+                        document.querySelector('.series-episode-card.focused') ||
                         document.querySelector('.series-episode-card.active') ||
                         document.querySelector('#series-episodes-list .focusable') ||
-                        document.querySelector('#view-series_details .focusable');
+                        document.querySelector('#view-series_details .focusable:not(.hidden)');
           }
 
           if (!restoreEl) {
