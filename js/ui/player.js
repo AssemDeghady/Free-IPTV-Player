@@ -928,7 +928,7 @@
         if (btnRewind) btnRewind.classList.add('hidden');
         if (btnForward) btnForward.classList.add('hidden');
         if (btnEpisodes) btnEpisodes.classList.add('hidden');
-        if (btnInfo) btnInfo.classList.add('hidden');
+        if (btnInfo) btnInfo.classList.remove('hidden');
         if (liveBadge) liveBadge.style.display = 'inline-block';
       } else {
         // VOD Movie or Episode
@@ -1119,10 +1119,10 @@
     },
 
     /**
-     * Open detailed info page for currently playing movie or series.
+     * Open detailed info page for currently playing movie, series, or live channel.
      */
     openMediaInfoPage: function () {
-      if (!currentMedia || currentMedia.type === 'live') return;
+      if (!currentMedia) return;
       var media = currentMedia;
       var mediaType = media.type;
       var movieObj = mediaType === 'movie' ? (media.rawItem || {
@@ -1140,6 +1140,12 @@
         title: media.seriesName,
         posterUrl: media.posterUrl || media.poster || media.logoUrl
       }) : null;
+      var liveChannel = mediaType === 'live' ? (currentChannel || media.rawItem || {
+        id: media.id,
+        name: media.title,
+        streamUrl: media.streamUrl,
+        logoUrl: media.logoUrl
+      }) : null;
 
       this.closePlayer();
 
@@ -1147,6 +1153,13 @@
         window.FreeIPTV.Movies.openMovieDetails(movieObj, 'home');
       } else if (mediaType === 'episode' && window.FreeIPTV.Series && window.FreeIPTV.Series.openSeriesDetails) {
         window.FreeIPTV.Series.openSeriesDetails(seriesObj, 'home');
+      } else if (mediaType === 'live') {
+        if (window.FreeIPTV.Home && typeof window.FreeIPTV.Home.switchView === 'function') {
+          window.FreeIPTV.Home.switchView('live_tv');
+        }
+        if (window.FreeIPTV.LiveTV && typeof window.FreeIPTV.LiveTV.onChannelFocused === 'function' && liveChannel) {
+          window.FreeIPTV.LiveTV.onChannelFocused(liveChannel);
+        }
       }
     },
 

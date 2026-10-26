@@ -258,7 +258,7 @@ Player.init();
 
 // Test configureControlsForMediaType
 Player.configureControlsForMediaType('live');
-assert.ok(btnInfo.classList.contains('hidden'), 'player-btn-info is hidden for live media');
+assert.ok(!btnInfo.classList.contains('hidden'), 'player-btn-info is visible for live media');
 
 Player.configureControlsForMediaType('movie');
 assert.ok(!btnInfo.classList.contains('hidden'), 'player-btn-info is visible for movie media');
