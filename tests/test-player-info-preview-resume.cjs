@@ -175,6 +175,7 @@ previewVid.load = () => {};
 register(new MockElement('div', 'live-preview-status'));
 register(new MockElement('div', 'live-preview-spinner', 'hidden'));
 const epgContent = register(new MockElement('div', 'live-epg-content'));
+const epgHeader = register(new MockElement('div', 'live-epg-header', 'hidden'));
 
 // Load Constants, Logger, Events
 window.FreeIPTV.Constants = {
