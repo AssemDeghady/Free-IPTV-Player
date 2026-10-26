@@ -705,6 +705,11 @@
         self.onChannelFocused(channel);
       });
 
+      // Mouse Enter -> Focus channel for preview on PC desktop
+      btn.addEventListener('mouseenter', function () {
+        btn.focus();
+      });
+
       return btn;
     },
 
@@ -937,6 +942,11 @@
 
       container.innerHTML = headerHtml;
 
+      var epgHeader = document.getElementById('live-epg-header');
+      if (epgHeader) {
+        epgHeader.classList.add('hidden');
+      }
+
       // 2. Fetch EPG data
       var activePlaylist = PlaylistManager ? PlaylistManager.getActivePlaylist() : null;
       var pId = activePlaylist ? activePlaylist.id : (channel.playlistId || '');
@@ -949,6 +959,7 @@
 
         if (!programs || programs.length === 0) {
           container.innerHTML = headerHtml;
+          if (epgHeader) epgHeader.classList.add('hidden');
           return;
         }
 
@@ -1019,9 +1030,16 @@
           contentHtml += '</div>';
         }
 
+        if (currentProg || nextProg || upcoming.length > 0) {
+          if (epgHeader) epgHeader.classList.remove('hidden');
+        } else {
+          if (epgHeader) epgHeader.classList.add('hidden');
+        }
+
         container.innerHTML = contentHtml;
       }).catch(function () {
         container.innerHTML = headerHtml;
+        if (epgHeader) epgHeader.classList.add('hidden');
       });
     },
 
@@ -1030,8 +1048,9 @@
      */
     renderEpgPlaceholder: function () {
       var container = document.getElementById('live-epg-content');
-      if (!container) return;
-      container.innerHTML = '';
+      if (container) container.innerHTML = '';
+      var epgHeader = document.getElementById('live-epg-header');
+      if (epgHeader) epgHeader.classList.add('hidden');
     },
 
     /**
