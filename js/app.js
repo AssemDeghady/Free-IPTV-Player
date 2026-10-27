@@ -88,6 +88,23 @@
         // 7. Dismiss splash screen smoothly (Phase 6.4)
         this.dismissSplash();
 
+        // 8. Desktop web helper: Shift+T toggles TV UI mode for testing
+        if (!window.tizen && !window.webOS) {
+          window.addEventListener('keydown', function (e) {
+            if (e.shiftKey && (e.key === 'T' || e.key === 't')) {
+              var isTv = document.documentElement.classList.toggle('tv-mode');
+              try {
+                if (window.localStorage) {
+                  window.localStorage.setItem('freeiptv_tv_mode', isTv ? 'true' : 'false');
+                }
+              } catch (storageErr) {}
+              if (window.FreeIPTV && window.FreeIPTV.Logger) {
+                window.FreeIPTV.Logger.info('TV mode toggled: ' + isTv);
+              }
+            }
+          });
+        }
+
         if (FreeIPTV.Logger) {
           FreeIPTV.Logger.info('Free IPTV Player initialized successfully.');
         }

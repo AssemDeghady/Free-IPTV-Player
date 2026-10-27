@@ -14,6 +14,26 @@
   <link rel="stylesheet" href="css/layout.css">
   <link rel="stylesheet" href="css/navigation.css">
   <link rel="stylesheet" href="css/live-epg.css">
+  <link rel="stylesheet" href="css/tv-mode.css">
+
+  <script>
+    (function () {
+      try {
+        var isTV = Boolean(
+          window.tizen ||
+          window.webapis ||
+          window.webOS ||
+          /Tizen|Web0S|webOS|SmartTV|Maple|HbbTV|LG NetCast/i.test(navigator.userAgent) ||
+          window.location.search.indexOf('tv=1') !== -1 ||
+          window.location.search.indexOf('mode=tv') !== -1 ||
+          (window.localStorage && window.localStorage.getItem('freeiptv_tv_mode') === 'true')
+        );
+        if (isTV) {
+          document.documentElement.classList.add('tv-mode');
+        }
+      } catch (e) {}
+    })();
+  </script>
 </head>
 
 <body>
