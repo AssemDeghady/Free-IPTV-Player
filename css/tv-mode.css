@@ -1,0 +1,520 @@
+/**
+ * Free IPTV Player — TV 10-Foot UI Scaling (TV Mode)
+ * Sized for living room viewing distance (3m / 10ft) on 1080p and 4K displays.
+ * Automatically active on Samsung Tizen, LG webOS, TV emulators, or via ?tv=1.
+ */
+
+/* ============================================================
+   1. DESIGN TOKENS & TYPOGRAPHY SCALING
+   ============================================================ */
+html.tv-mode {
+  --space-xs: 12px;
+  --space-sm: 20px;
+  --space-md: 32px;
+  --space-lg: 44px;
+  --space-xl: 60px;
+
+  --tv-safe-top: 48px;
+  --tv-safe-bottom: 48px;
+  --tv-safe-left: 64px;
+  --tv-safe-right: 64px;
+
+  --font-size-xs: 20px;
+  --font-size-sm: 24px;
+  --font-size-base: 28px;
+  --font-size-lg: 34px;
+  --font-size-xl: 44px;
+  --font-size-2xl: 56px;
+}
+
+/* ============================================================
+   2. APP HEADER & BRANDING
+   ============================================================ */
+html.tv-mode .app-header {
+  height: 88px;
+  margin-bottom: 28px;
+  padding-bottom: 12px;
+}
+
+html.tv-mode .brand-logo-img {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+}
+
+html.tv-mode .brand-title {
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+}
+
+html.tv-mode .header-actions {
+  gap: 18px;
+}
+
+html.tv-mode .header-button {
+  height: 56px;
+  padding: 0 24px;
+  font-size: 22px;
+  font-weight: 600;
+  border-radius: 14px;
+  gap: 12px;
+}
+
+html.tv-mode .header-button svg {
+  width: 24px;
+  height: 24px;
+}
+
+html.tv-mode .header-playlist-pill {
+  max-width: 340px;
+  height: 56px;
+  padding: 0 22px;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+/* ============================================================
+   3. HOME SCREEN & QUICK ACCESS CARDS
+   ============================================================ */
+html.tv-mode .home-section-title,
+html.tv-mode .home-row-title {
+  font-size: 42px;
+  font-weight: 800;
+  margin-bottom: 24px;
+  letter-spacing: -0.5px;
+}
+
+html.tv-mode .home-quick-access-grid {
+  gap: 26px;
+}
+
+html.tv-mode .home-quick-card {
+  min-height: 240px;
+  padding: 28px 24px;
+  border-radius: 20px;
+  border-width: 3px;
+}
+
+html.tv-mode .home-quick-card::before {
+  height: 6px;
+}
+
+html.tv-mode .quick-card-icon-wrap {
+  width: 72px;
+  height: 72px;
+  border-radius: 18px;
+  margin-bottom: 20px;
+}
+
+html.tv-mode .quick-card-icon-wrap svg {
+  width: 40px;
+  height: 40px;
+}
+
+html.tv-mode .quick-card-info {
+  gap: 8px;
+}
+
+html.tv-mode .quick-card-title {
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+}
+
+html.tv-mode .quick-card-badge {
+  font-size: 19px;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+html.tv-mode .home-quick-card.focused,
+html.tv-mode .home-quick-card:focus {
+  transform: scale(1.05);
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 4px #3b82f6, 0 20px 48px rgba(0, 0, 0, 0.85);
+}
+
+html.tv-mode .home-media-card {
+  min-height: 330px;
+  border-radius: 16px;
+}
+
+html.tv-mode .home-card-title {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+html.tv-mode .home-card-meta {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+/* ============================================================
+   4. LIVE TV SCREEN & CHANNELS LIST
+   ============================================================ */
+html.tv-mode .pane-header {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  padding: 8px 12px 14px;
+  margin-bottom: 12px;
+}
+
+html.tv-mode .category-search-input {
+  height: 52px;
+  font-size: 22px;
+  padding: 0 18px;
+  border-radius: 14px;
+}
+
+html.tv-mode .category-item {
+  height: 60px;
+  min-height: 60px;
+  max-height: 60px;
+  padding: 0 20px;
+  font-size: 24px;
+  border-radius: 14px;
+}
+
+html.tv-mode .category-count {
+  font-size: 18px;
+  padding: 4px 12px;
+}
+
+html.tv-mode .channel-card {
+  height: 76px;
+  padding: 0 18px;
+  gap: 18px;
+  border-radius: 14px;
+}
+
+html.tv-mode .channel-number {
+  min-width: 44px;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+html.tv-mode .channel-logo-container {
+  width: 64px;
+  height: 48px;
+  border-radius: 10px;
+}
+
+html.tv-mode .channel-fallback-icon svg {
+  width: 28px;
+  height: 28px;
+}
+
+html.tv-mode .channel-name {
+  font-size: 24px;
+  font-weight: 600;
+}
+
+html.tv-mode .channel-category-tag {
+  font-size: 17px;
+}
+
+/* Live TV Preview Box & EPG */
+html.tv-mode .live-preview-container {
+  border-radius: 18px;
+}
+
+html.tv-mode .live-preview-window {
+  min-height: 270px;
+}
+
+html.tv-mode .preview-badge {
+  font-size: 16px;
+  padding: 5px 14px;
+}
+
+html.tv-mode .preview-muted-tag {
+  font-size: 15px;
+  padding: 5px 12px;
+}
+
+html.tv-mode .preview-status {
+  font-size: 20px;
+}
+
+html.tv-mode .live-epg-channel-header {
+  padding: 16px;
+  gap: 18px;
+}
+
+html.tv-mode .live-epg-channel-logo {
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+}
+
+html.tv-mode .live-epg-channel-name {
+  font-size: 26px;
+  font-weight: 700;
+}
+
+html.tv-mode .live-epg-channel-sub {
+  font-size: 18px;
+}
+
+html.tv-mode .live-epg-badge {
+  font-size: 15px;
+  padding: 4px 10px;
+}
+
+html.tv-mode .live-epg-prog-title {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+html.tv-mode .live-epg-prog-times {
+  font-size: 18px;
+}
+
+html.tv-mode .live-epg-prog-desc {
+  font-size: 17px;
+  line-height: 1.5;
+}
+
+html.tv-mode .live-epg-schedule-title {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+html.tv-mode .live-epg-schedule-item {
+  height: 52px;
+  padding: 0 16px;
+  font-size: 19px;
+}
+
+html.tv-mode .live-epg-schedule-time {
+  font-size: 18px;
+  min-width: 80px;
+}
+
+html.tv-mode .live-epg-schedule-name {
+  font-size: 20px;
+}
+
+/* ============================================================
+   5. MOVIES & SERIES GRIDS & DETAIL PAGES
+   ============================================================ */
+html.tv-mode .movie-card-title,
+html.tv-mode .series-card-title {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+html.tv-mode .movie-card-sub,
+html.tv-mode .series-card-sub {
+  font-size: 17px;
+  font-weight: 500;
+}
+
+html.tv-mode .live-search-input {
+  height: 52px;
+  font-size: 22px;
+  padding: 0 20px;
+  border-radius: 14px;
+}
+
+html.tv-mode .details-headline {
+  font-size: 52px;
+  font-weight: 800;
+}
+
+html.tv-mode .detail-badge {
+  font-size: 18px;
+  padding: 6px 16px;
+  border-radius: 10px;
+}
+
+html.tv-mode .btn-action-lg {
+  height: 72px;
+  padding: 0 36px;
+  font-size: 24px;
+  border-radius: 16px;
+  gap: 16px;
+}
+
+html.tv-mode .btn-action-lg svg {
+  width: 30px;
+  height: 30px;
+}
+
+html.tv-mode .details-section-heading {
+  font-size: 22px;
+  letter-spacing: 1px;
+}
+
+html.tv-mode .details-synopsis-text {
+  font-size: 24px;
+  line-height: 1.6;
+}
+
+html.tv-mode .details-credits-text {
+  font-size: 20px;
+  line-height: 1.6;
+}
+
+html.tv-mode .details-poster-column {
+  width: 380px;
+  margin-right: 56px;
+}
+
+html[dir="rtl"].tv-mode .details-poster-column {
+  margin-right: 0;
+  margin-left: 56px;
+}
+
+html.tv-mode .details-poster-frame,
+html.tv-mode .details-poster-image {
+  min-height: 570px;
+  height: 570px;
+}
+
+html.tv-mode .season-select-btn {
+  height: 64px;
+  min-width: 260px;
+  font-size: 22px;
+  padding: 0 24px;
+  border-radius: 16px;
+}
+
+html.tv-mode .season-select-btn .dropdown-arrow {
+  font-size: 16px;
+}
+
+html.tv-mode .series-episode-card,
+html.tv-mode .episode-card {
+  min-height: 120px;
+  padding: 18px;
+  gap: 20px;
+  border-radius: 16px;
+}
+
+html.tv-mode .episode-number {
+  font-size: 24px;
+  min-width: 42px;
+}
+
+html.tv-mode .episode-thumb-box {
+  width: 140px;
+  height: 88px;
+  border-radius: 10px;
+}
+
+html.tv-mode .episode-title {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+html.tv-mode .episode-desc {
+  font-size: 17px;
+  line-height: 1.45;
+}
+
+html.tv-mode .episode-meta {
+  font-size: 16px;
+}
+
+/* ============================================================
+   6. PLAYLISTS & SETTINGS SCREENS
+   ============================================================ */
+html.tv-mode .settings-section-title {
+  font-size: 34px;
+  font-weight: 800;
+  margin-bottom: 24px;
+}
+
+html.tv-mode .btn-add-playlist {
+  height: 64px;
+  padding: 0 34px;
+  font-size: 24px;
+  border-radius: 16px;
+}
+
+html.tv-mode .playlist-card {
+  padding: 28px;
+  border-radius: 18px;
+}
+
+html.tv-mode .playlist-card-title {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+html.tv-mode .playlist-meta-row {
+  font-size: 19px;
+}
+
+html.tv-mode .btn-card-action {
+  height: 48px;
+  padding: 0 22px;
+  font-size: 19px;
+  border-radius: 12px;
+}
+
+html.tv-mode .preference-row-label {
+  font-size: 22px;
+  font-weight: 600;
+}
+
+html.tv-mode .preference-checkbox {
+  width: 32px;
+  height: 32px;
+}
+
+html.tv-mode .btn-refresh-interval {
+  height: 52px;
+  padding: 0 24px;
+  font-size: 20px;
+  border-radius: 14px;
+}
+
+/* ============================================================
+   7. IN-PLAYER VIDEO CONTROLS
+   ============================================================ */
+html.tv-mode .btn-player-control {
+  height: 72px;
+  min-width: 72px;
+  font-size: 22px;
+  padding: 0 28px;
+  border-radius: 18px;
+  gap: 14px;
+}
+
+html.tv-mode .btn-player-control svg {
+  width: 30px;
+  height: 30px;
+}
+
+html.tv-mode .btn-player-primary {
+  height: 88px;
+  min-width: 88px;
+}
+
+html.tv-mode .btn-player-primary svg {
+  width: 42px;
+  height: 42px;
+}
+
+html.tv-mode .player-header-title {
+  font-size: 36px;
+  font-weight: 800;
+}
+
+html.tv-mode .player-header-subtitle {
+  font-size: 24px;
+}
+
+html.tv-mode .player-time-current,
+html.tv-mode .player-time-duration {
+  font-size: 20px;
+}
+
+html.tv-mode .player-progress-bar {
+  height: 12px;
+}
